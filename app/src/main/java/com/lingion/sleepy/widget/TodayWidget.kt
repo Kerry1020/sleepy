@@ -504,30 +504,29 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 awm.updateAppWidget(id, views)
                 Log.d(TAG, "pushTodayData static-nav id=$id ${wDp}x${hDp}dp content=$contentH tier=${navHeaderTier(context, navTitle(data, DateUtils.localizedDay(data.date.dayOfWeek.value, context)), data.dateLabel, wDp, refreshVisible = !data.isToday)}")
             } else {
-                // Today 系 overflow — 2026-09-13 用户定稿取代 2026-09-10 「无独立 bar 行」:
-                // 极端档 (2×2 缩最小且内容超高) 日期标题重复三遍、回今天按钮无处安放 →
-                // 顶栏改用真实 RemoteViews 导航视图 (标题 + ‹ › + 回今天钮), 与静态分支
-                // 同一套 configureTodayNav。壳图与条带都 emptyHeader (bitmap 不画标题,
-                // 只保留 24dp 空档), 36dp 顶栏盖住空档 → 日期只出现一次, 钮恒可点。
-                // v6 无壳翻车教训保留: 壳图层必须保留 (条带异步加载期间整卡透明)。
-                // v11: 壳图按 contentH 渲染 (与 ScrollStripService 条带同参) —
-                // 滚动位 0 时壳图与条带首屏逐像素一致; 滚动后壳图被 ListView 覆盖。
+                // Today 系 overflow v9 (2026-09-10 用户定稿放弃左右切换: 「今日的就不搞
+                // 左右切换了…样子就是跟最近两天一样, 就是这个头部和下面一起滚动」):
+                //   1:1 抄 TwoDay overflow — 壳图+条带 ListView 双层, bitmap 头部 (日期
+                //   标题) 画进长图随内容一起滚, 无独立 bar 行, 无导航键。
+                // v6 无壳翻车 (条带异步加载期间整卡透明); v7/v8 的 36dp bar 行 + 去头条带
+                // 在真机仍翻车 (巨卡), 一并退场 — 回到同台 OPPO 一直正常的 TwoDay 形态。
+                // 条带不带去头标记 (缺省带头) → 长图从头部标题起 = 壳图同参, 滚动位 0
+                // 首屏与静态渲染逐像素一致 (与 !navEnabled overflow 分支逐字节同构)。
+                // v11: 壳图也按 contentH 渲染 (与 ScrollStripService 条带同参) —
+                // 滚动位 0 时壳图与条带首屏逐像素一致; 滚动后壳图被 ListView 覆盖
+                // (ListView match_parent 容器), 壳图"多余"的高成为滚动可见区。
                 val shell = WidgetBitmapRenderers.renderToday(
                     context, data, wDp.toFloat(), contentH, variant,
-                    emptyHeader = true
+                    showBackToToday = false
                 )
                 RemoteViewsWidgetHelper.pushScrollable(
                     context, awm, id, TAG,
                     layoutRes = com.lingion.sleepy.R.layout.widget_scroll_today,
                     shellBitmap = shell,
                     scopeExtra = ScrollStripService.StripFactory.SCOPE_TODAY,
-                    configureViews = { views ->
-                        configureTodayNav(context, views, id, receiverClass!!, data, wDp)
-                    },
-                    stripHeaderless = true,
                     pushGen = pushGen
                 )
-                Log.d(TAG, "pushTodayData scroll id=$id ${wDp}x${hDp}dp content=$contentH shell=${contentH}dp (真实顶栏, 单 child 整长图)")
+                Log.d(TAG, "pushTodayData scroll id=$id ${wDp}x${hDp}dp content=$contentH shell=${contentH}dp (v9.1+v11 形态, 单 child 整长图)")
             }
         }
 

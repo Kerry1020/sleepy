@@ -115,19 +115,13 @@ class ScrollStripService : RemoteViewsService() {
                     // 复发。回归 v9.1 形态 = 单 child 整张不透明长图,与 TwoDay/
                     // WeekList 同构 (同台 OPPO 一直正常)。条带与壳图同源坐标系 →
                     // 滚动位 0 首屏与壳图逐像素一致。
-                    // 2026-09-13 真实顶栏定稿: emptyHeader 只抑制标题「绘制」;
-                    // 24dp 头部空档 (headerSpace=false) 恒保留 — 顶栏是盖在 ListView
-                    // 之上的 36dp 覆盖层, 首行课程起点必须留在 38dp (顶栏之下)。
-                    // v6 时代 headerSpace=emptyHeader 的「去头不留空档」语义服务于
-                    // 「顶栏在列表上方独立成行」的旧布局, 该布局已退场。
-                    // headerSpace=false 同时与闸门 contentH (同口径) 逐字节一致。
-                    contentHdp = WidgetBitmapRenderers.todayContentHeightDp(d, headerSpace = false)
-                    rowCount = TodayRowGeometry.rowSpans(d.courses, false).size
+                    contentHdp = WidgetBitmapRenderers.todayContentHeightDp(d, headerSpace = emptyHeader)
+                    rowCount = TodayRowGeometry.rowSpans(d.courses, emptyHeader).size
                     val renderH = ceil(contentHdp)
                     // 条带无可点按钮 — 「回到今天」文字不画 (与壳图同参, 用户 2026-09-13 定稿)
                     full = WidgetBitmapRenderers.renderToday(
                         context, d, wDp.toFloat(), renderH,
-                        emptyHeader = emptyHeader, headerSpace = false,
+                        emptyHeader = emptyHeader, headerSpace = emptyHeader,
                         showBackToToday = false
                     )
                 }
