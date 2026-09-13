@@ -13,14 +13,15 @@ import java.time.LocalDate
 /**
  * 每日课程小组件日期导航 — wiring 级单测。
  *
+ * v6 (2026-09-14): 删 prev/next 翻页按钮, 只留 ↻ 回到今天。用户定稿:
+ * 日期左 + 居中↻按钮 (仅 !isToday 时显示)。prev/next action 常量保留 (死代码,
+ * 不断 onReceive 路由兼容), 但 zones 只留 RESET。navRequestCode 保留三槽算术
+ * (不删常量 = 最小化测试断链)。
+ *
  * 仓库无 Robolectric, 这里覆盖:
- * 1) Action 常量字符串稳定契约 + navDelta / navRequestCode 算术 (R2 PendingIntent 带参
- *    在 Android 端只靠这两个常量 + companion 方法做反 disambiguation; 在 JVM 端以
- *    纯函数形式断言);
- * 2) WidgetData.isToday 默认值 + 标题头渲染 (todayHeaderParts) 在 JVM 上的字符串分支
- *    (R1/R3/R6: 今日 vs 导航态显示差异);
- * 3) 源码级守卫 (沿用 [[WidgetBitmapLifecycleTest]] 风格): TodayWidget.kt 必须接
- * 3) 源码级守卫: TodayWidget 管线 + 布局白名单 + emptyHeader/stripHeaderless 透传; StackView 机制全清除 + 低对比三角按钮渲染守卫在 TodayDateNavHeaderWiringTest。
+ * 1) Action 常量字符串稳定契约 + navDelta / navRequestCode 算术;
+ * 2) WidgetData.isToday 默认值 + 标题头渲染 (todayHeaderParts) 字符串分支;
+ * 3) 源码级守卫: TodayWidget 管线 + 布局白名单 + emptyHeader 透传。
  */
 class TodayDateNavWiringTest {
 
@@ -53,8 +54,6 @@ class TodayDateNavWiringTest {
         val pairs = (1..6).flatMap { id -> (0..2).map { ord -> id to ord } }
         val codes = pairs.map { (id, ord) -> TodayWidgetReceiver.navRequestCode(id, ord) }
         assertEquals("每个 (widgetId, zoneOrdinal) 组合必须唯一", pairs.size, codes.toSet().size)
-        // 与 open-app PI 的 requestCode (= widgetId) 不冲突: open-app 不同 ComponentName
-        // → filterEquals 不同, 本断言只保证 nav 之间互不撞
         assertFalse("navRequestCode 不能等于 widgetId 本身(会与别的 widget 撞同一个整数池)",
             TodayWidgetReceiver.navRequestCode(42, 0) == 42)
     }
@@ -115,6 +114,23 @@ class TodayDateNavWiringTest {
         assertEquals("today_nav_back_to_today", headerNoDate.rightText)
     }
 
+    // ---- v6: 导航态不再重复显示日期 (showDate + !isToday → rightText 仍是回到今天, 非日期) ----
+
+    @Test
+    fun `todayHeaderParts navigated state never duplicates date even when showDate is true`() {
+        val data = WidgetData(date = LocalDate.of(2026, 9, 10), courses = emptyList(),
+            timeJson = "", hasTable = false, isToday = false)
+        // showDate=true + !isToday → 旧逻辑产出 rightText="9/10" (日期重复); 新逻辑产出"回到今天"
+        val header = WidgetBitmapRenderers.todayHeaderParts(
+            data = data, dayName = "周四", showDate = true,
+            resolve = { resId -> resNames.getValue(resId) }
+        )
+        assertEquals("导航态 rightText 必为回到今天, 非日期重复",
+            "today_nav_back_to_today", header.rightText)
+        assertTrue("导航态 rightText 必为 action", header.rightIsAction)
+        assertFalse("导航态 rightText 不得是日期", header.rightText == data.dateLabel)
+    }
+
     private val resNames = mapOf(
         R.string.today_today to "today_today",
         R.string.today_nav_back_to_today to "today_nav_back_to_today"
@@ -145,7 +161,7 @@ class TodayDateNavWiringTest {
     @Test
     fun `TodayWidget source wires nav pipeline with view header`() {
         val src = widgetSource("TodayWidget.kt").readText()
-        // onReceive 三 action 派发 (R2)
+        // onReceive 三 action 派发 (R2) — prev/next 常量保留但不再在 zones 注册
         assertTrue("onReceive 必须 switch 三个 nav action",
             src.contains("ACTION_PREV_DAY") && src.contains("ACTION_NEXT_DAY") &&
                 src.contains("ACTION_RESET_DAY"))
@@ -181,23 +197,23 @@ class TodayDateNavWiringTest {
     }
 
     @Test
-    fun `nav zones in both today layouts use RemoteViews-whitelisted view classes`() {
-        // launcher 端 RemoteViews.apply 只放行 @RemoteView 注解的 view 类
-        // (AOSP RemoteViews.INFLATER_FILTER = clazz.isAnnotationPresent(RemoteView.class));
-        // android.view.View 无 @RemoteView 注解 → 裸 <View> 在 launcher inflate 必炸
-        // → 「载入窗口小组件时出现问题」(v1.0.53 回归: 两个今日变体都走 nav 布局,
-        //   周课表布局无裸 View 所以只有今日挂)。
+    fun `nav zones in static layout use RemoteViews-whitelisted view classes`() {
+        // v6: prev/next 已删, 只留 title + today(↻)
         listOf("widget_today_nav_static.xml").forEach { name ->
             val xml = layoutFile(name).readText()
             assertFalse(
                 "$name 禁止裸 <View> (无 @RemoteView 注解, launcher 端 inflate 抛异常)",
                 Regex("<View\\b").containsMatchIn(xml)
             )
+            // v6: prev/next 已从布局删除
+            assertFalse("$name 不得包含 prev 按钮 (v6 删 prev/next)",
+                xml.contains("widget_today_nav_prev"))
+            assertFalse("$name 不得包含 next 按钮 (v6 删 prev/next)",
+                xml.contains("widget_today_nav_next"))
+            // title + today(↻) 保留
             mapOf(
                 "widget_today_nav_title" to "TextView",
                 "widget_today_nav_today" to "ImageView",
-                "widget_today_nav_prev" to "ImageView",
-                "widget_today_nav_next" to "ImageView",
             ).forEach { (id, expect) ->
                 val idIdx = xml.indexOf("android:id=\"@+id/$id\"")
                 assertTrue("$name missing nav zone $id", idIdx >= 0)
@@ -207,9 +223,8 @@ class TodayDateNavWiringTest {
                 assertEquals("$name 的 $id 必须用 $expect (RemoteViews 白名单类)",
                     expect, tag)
             }
-            // prev/refresh/next 大点击区 (40x28dp = 视图尺寸 = 热区; refresh 按钮 2×2 定稿)
-            listOf("widget_today_nav_prev", "widget_today_nav_next",
-                "widget_today_nav_today").forEach { id ->
+            // ↻ 按钮大点击区 (40x28dp = 视图尺寸 = 热区)
+            listOf("widget_today_nav_today").forEach { id ->
                 val idIdx = xml.indexOf("android:id=\"@+id/$id\"")
                 val blockEnd = xml.indexOf('>', idIdx)
                 val block = xml.substring(xml.lastIndexOf('<', idIdx), blockEnd + 1)
@@ -217,6 +232,49 @@ class TodayDateNavWiringTest {
                     block.contains("android:clickable=\"true\""))
             }
         }
+    }
+
+    // ---- v6: configureTodayNav 不再引用 prev/next view id ----
+
+    @Test
+    fun `configureTodayNav does not reference prev or next view ids`() {
+        val src = widgetSource("TodayWidget.kt").readText()
+        val navBody = src.substringAfter("fun configureTodayNav(")
+            .substringBefore("\n    }")
+        assertFalse("configureTodayNav 不得引用 widget_today_nav_prev (v6 删 prev/next)",
+            navBody.contains("widget_today_nav_prev"))
+        assertFalse("configureTodayNav 不得引用 widget_today_nav_next (v6 删 prev/next)",
+            navBody.contains("widget_today_nav_next"))
+        assertFalse("configureTodayNav 不得渲染 renderNavTriangle (v6 删三角按钮)",
+            navBody.contains("renderNavTriangle"))
+    }
+
+    // ---- v6: zones 只留 RESET (prev/next PendingIntent 不再注册) ----
+
+    @Test
+    fun `configureTodayNav zones only contain RESET action`() {
+        val src = widgetSource("TodayWidget.kt").readText()
+        val navBody = src.substringAfter("fun configureTodayNav(")
+            .substringBefore("\n    }")
+        val zonesBlock = navBody.substringAfter("val zones = listOf(")
+            .substringBefore(")")
+        assertFalse("zones 不得包含 ACTION_PREV_DAY (v6 删翻页)",
+            zonesBlock.contains("ACTION_PREV_DAY"))
+        assertFalse("zones 不得包含 ACTION_NEXT_DAY (v6 删翻页)",
+            zonesBlock.contains("ACTION_NEXT_DAY"))
+        assertTrue("zones 必须包含 ACTION_RESET_DAY (↻ 回到今天)",
+            zonesBlock.contains("ACTION_RESET_DAY"))
+    }
+
+    // ---- v6: overflow 路径 showBackToToday=true (bitmap 显示回到今天文字, 非 today 时) ----
+
+    @Test
+    fun `overflow path shows back-to-today text in bitmap when not today`() {
+        val src = widgetSource("TodayWidget.kt").readText()
+        val overflowBlock = src.substringAfter("// Today 系 overflow v9")
+            .substringBefore("Log.d(TAG, \"pushTodayData scroll")
+        assertTrue("overflow 壳图应 showBackToToday=true (非 today 时显示回到今天文字)",
+            overflowBlock.contains("showBackToToday = true"))
     }
 
 
