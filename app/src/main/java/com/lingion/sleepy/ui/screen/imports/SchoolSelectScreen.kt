@@ -440,8 +440,12 @@ private fun SchoolRow(school: JwSchoolInfo, onClick: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // T13: status badge (supported 不渲染, 避免冗余)
-                SchoolStatusBadge(school = school)
-                Spacer(modifier = Modifier.size(6.dp))
+                // 徽章与校名之间的间距必须和徽章本身同增同减 — 无条件 Spacer 会让无徽章
+                // (supported, 占绝大多数) 的校名比第二行「协议 · 网址」凭空右移, 两行首端错位
+                if (school.status != JwSchoolInfo.STATUS_SUPPORTED) {
+                    SchoolStatusBadge(school = school)
+                    Spacer(modifier = Modifier.size(6.dp))
+                }
                 Text(
                     text = school.name,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
