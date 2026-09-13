@@ -40,7 +40,7 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 ## Fixes
 
 - Replaced the back-to-today text on the 2×2 today widget with a real refresh-icon button that returns to today (issue #31).
-- On faces without buttons (a 2×2 widget squeezed below the nav row's minimum width, or content taller than the widget), the back-to-today text is no longer drawn — an element that can't be tapped doesn't belong on screen. The date title stays.
+- On faces without buttons (a 2×2 widget squeezed below the nav row's minimum width while not on today, or content taller than the widget), the back-to-today text is no longer drawn — an element that can't be tapped doesn't belong on screen. When squeezed below the minimum width, the back-to-today button itself stays and remains tappable.
 - Removed the bare ‹ › glyphs from the 2×2 today widget header (issue #31).
 - Rebound the prev/next tap intents so arrows switch weeks on MagicOS instead of opening the app (issue #31).
 - Hide the whole widget header nav row when it can't fit, instead of shrinking it (issue #31).
@@ -54,16 +54,16 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 ## Known Limitations
 
 - The UCAS desktop layout is applied by pinning the viewport after page load; if a page re-renders late, tapping the in-app refresh button re-applies it.
-- On the 2×2 today widget the date title is hidden on narrow sizes; the three nav buttons (prev / refresh / next) take the row.
+- On the 2×2 today widget the date title is hidden on narrow sizes; the three nav buttons (prev / refresh / next) take the row. Squeezed below the nav row's minimum width, the bar shows only the back-to-today button — still a real, tappable way back.
 - Honor/MagicOS behavior was verified on the reporter's device (Win RT, MagicOS 10) via log analysis and layout reasoning, not on a physical device in hand.
 
 ## Verification
 
 - Tests: focused (SchedulePagerSyncRace, SepXrw strip/interceptor, ThemeFollowSystem, CustomThemeCardVisualParity, NavHeaderFit, CourseColorUtil) + full suite: 1715 tests / 0 failures / 0 errors
 - APK SHA-256:
-  - arm64-v8a: 57a5ba750f2b1c9c6529df1b1650827ea87c5a50e04a4241312d5434b3bab09c
-  - armeabi-v7a: c1eecaba0d3eb536a0252bd47590b2b9825edff9a5d5f295324d1d3d21a549b5
-  - x86_64: 16f7fe93edffba35b8aee8bd3d8dec66e59e28bbe29f24923f53658405b8a253
+  - arm64-v8a: 39403cc11c61b4988f3c44299097c964f17be4c17ac5395d77ba0acdcaccc8f7
+  - armeabi-v7a: db7f8e2bf0dbb00cbe430ebb62e3d02de3aade4b356962aacd878cfa2ffd208e
+  - x86_64: e68e8b09ca7bbd31566d4e01ca917fe600f1b6a3769ae0b787fa7398f6c6d884
 - Build: versionName 1.0.55 / versionCode 61
 
 ---
@@ -110,7 +110,7 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 ## 修复
 
 - 2×2 今日小组件的回到今天文字换成真实刷新图标按钮,点击回到今天(issue #31)。
-- 无按钮的面上(2×2 小组件缩到导航行最小宽度以下,或内容超高时)不再画「回到今天」文字——点不了的元素不该出现在屏幕上。日期标题保留。
+- 无按钮的面上(2×2 小组件缩到导航行最小宽度以下且不在今天,或内容超高时)不再画「回到今天」文字——点不了的元素不该出现在屏幕上。缩到最小宽度以下时,回到今天按钮本身保留,依然可点。
 - 删除 2×2 今日小组件头部的裸 ‹ › 字形(issue #31)。
 - 重绑 prev/next 点按意图,MagicOS 上箭头翻周不再打开 app(issue #31)。
 - 头部导航行放不下时整行隐藏,不再缩小(issue #31)。
@@ -124,14 +124,14 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 ## 已知限制
 
 - UCAS 桌面布局靠页面加载后钳视口实现;个别页面若重排较晚,点应用内刷新按钮会重新应用。
-- 2×2 今日小组件在窄档隐藏日期标题,三颗导航按钮(prev/刷新/next)占满这一行。
+- 2×2 今日小组件在窄档隐藏日期标题,三颗导航按钮(prev/刷新/next)占满这一行。缩到导航行最小宽度以下时只显示回到今天一颗按钮,依然是真实可点的回程。
 - 荣耀/MagicOS 行为通过报告人机型(Win RT,MagicOS 10)的日志分析与布局推演验证,未在手上真机完成验证。
 
 ## 验证
 
 - 测试:定向(SchedulePagerSyncRace / SepXrw 拦截器 / ThemeFollowSystem / CustomThemeCardVisualParity / NavHeaderFit / CourseColorUtil)+ 全量 1715 例:0 失败 / 0 错误
 - APK SHA-256:
-  - arm64-v8a: 57a5ba750f2b1c9c6529df1b1650827ea87c5a50e04a4241312d5434b3bab09c
-  - armeabi-v7a: c1eecaba0d3eb536a0252bd47590b2b9825edff9a5d5f295324d1d3d21a549b5
-  - x86_64: 16f7fe93edffba35b8aee8bd3d8dec66e59e28bbe29f24923f53658405b8a253
+  - arm64-v8a: 39403cc11c61b4988f3c44299097c964f17be4c17ac5395d77ba0acdcaccc8f7
+  - armeabi-v7a: db7f8e2bf0dbb00cbe430ebb62e3d02de3aade4b356962aacd878cfa2ffd208e
+  - x86_64: e68e8b09ca7bbd31566d4e01ca917fe600f1b6a3769ae0b787fa7398f6c6d884
 - 构建:versionName 1.0.55 / versionCode 61
