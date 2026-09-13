@@ -150,8 +150,8 @@ class ScrollStripWholeImageTest {
             body.contains("renderToday(")
         )
         assertTrue(
-            "v9 overflow 条带必须带头 (stripHeaderless 缺省 false = 头部画进长图随滚)",
-            !body.contains("stripHeaderless")
+            "2026-09-13 真实顶栏定稿: 条带必须去头 (stripHeaderless=true), 顶栏覆盖空档",
+            body.contains("stripHeaderless = true")
         )
         assertTrue(
             "v9 overflow 禁 bar 行 (widget_today_overflow 已删, configureTodayOverflow 已删)",
@@ -186,10 +186,14 @@ class ScrollStripWholeImageTest {
             "壳图 scaleType 必须 fitXY (TwoDay 同构)",
             shellBlock.contains("fitXY")
         )
-        val listBlock = xml.substring(xml.indexOf("widget_strip_list"))
+        val listBlock = xml.substring(xml.indexOf("widget_strip_list"), xml.indexOf("widget_today_header"))
         assertTrue(
-            "条带 ListView 须 match_parent (无 weight 分层, v7 巨卡宿主结构禁回流)",
+            "条带 ListView 须 match_parent (2026-09-13: 顶栏是覆盖层, weight 分层禁回流)",
             listBlock.contains("match_parent") && !listBlock.contains("layout_weight")
+        )
+        assertTrue(
+            "2026-09-13 真实顶栏定稿: 滚动布局必须带 widget_today_header 覆盖层",
+            xml.contains("widget_today_header")
         )
         assertFalse("禁裸 <View>", Regex("<View\\b").containsMatchIn(xml))
     }
