@@ -231,9 +231,8 @@ class TodayOverflowGeometryTest {
 
     @Test
     fun `nav overflow branch is byte-identical to non-nav overflow pattern`() {
-        // 2026-09-13 真实顶栏定稿 (取代 2026-09-10 「无独立 bar 行」): overflow 顶栏
-        // = 真实 RemoteViews 导航视图 (configureTodayNav), 壳图/条带 emptyHeader
-        // (bitmap 不画标题), 顶栏盖住 24dp 空档 → 日期只出现一次, 钮恒可点。
+        // v11 定稿: Today overflow = TwoDay overflow 同构 (壳图按 contentH 全展开
+        // 渲染 + 条带带头, 头部画进长图随内容滚)。v9.x 分页/v10 逐行子项都已退场。
         val src = widgetSource("TodayWidget.kt").readText()
         val body = src.substringAfter("Today 系 overflow").substringBefore("fun loadDataSync")
         assertTrue(
@@ -249,8 +248,8 @@ class TodayOverflowGeometryTest {
             !body.contains("widget_today_overflow")
         )
         assertTrue(
-            "overflow 条带必须去头 (stripHeaderless=true — bitmap 不画标题, 顶栏盖住空档)",
-            body.contains("stripHeaderless = true")
+            "v11 overflow 条带必须带头 (stripHeaderless=false = TwoDay 行为, 头部随内容滚)",
+            !body.contains("stripHeaderless")
         )
         assertTrue(
             "v11 overflow 壳图按 contentH 全展开渲染 (v9.1 契约, 与条带同参)",
@@ -277,9 +276,9 @@ class TodayOverflowGeometryTest {
 
     @Test
     fun `strip long bitmap keeps header param parity with shell`() {
-        // 2026-09-13 真实顶栏定稿: 条带 = 整张长图。emptyHeader 透传给渲染器
-        // (bitmap 不画标题); headerSpace=false 恒保留 24dp 头部空档 — 顶栏是 36dp
-        // 覆盖层, 首行课程起点必须留在 38dp (顶栏之下), 与闸门 contentH 同口径。
+        // v11: 条带 = 整张长图 (不再有续页概念)。条带与壳图同参: emptyHeader 透传
+        // 给渲染器, headerSpace = emptyHeader 同值 (条带头部随内容滚, 滚动位 0 与壳图
+        // 逐像素一致 — v9.1 契约)。
         val svc = widgetSource("ScrollStripService.kt").readText()
         val todayBody = svc.substringAfter("SCOPE_TODAY ->").substringBefore("SCOPE_TWODAY ->")
         assertTrue(
@@ -287,8 +286,8 @@ class TodayOverflowGeometryTest {
             todayBody.contains("emptyHeader = emptyHeader")
         )
         assertTrue(
-            "条带长图必须 headerSpace = false (24dp 空档恒保留, 顶栏覆盖其上)",
-            todayBody.contains("headerSpace = false")
+            "条带长图渲染必须 headerSpace = emptyHeader (v6 条带坐标系契约)",
+            todayBody.contains("headerSpace = emptyHeader")
         )
         // 渲染端锁法在 TodayOverflowScrollParityTest (header block guard 回归 emptyHeader 单条件)。
     }
