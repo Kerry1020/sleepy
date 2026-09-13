@@ -39,9 +39,9 @@ object JwWebViewClientBuilder {
      * @param webView 已创建好的 WebView (主线程传入)。仅用于一次性读 userAgent,
      *                装配完成后不持有。
      * @param school 学校信息 — 决定 interceptor 装配 + 提取 schoolHost。
-     * @param desktopMode 桌面 UA 模式 (issue #18 PCUA)。true 时 SEP 域页面在
-     *                    onPageFinished 后注入 viewport 覆盖 JS (钉布局宽 1024px,
-     *                    触发 Bootstrap 桌面分支 — UA 字符串本身对布局零影响)。
+     * @param desktopMode 桌面 UA 模式 (issue #18 PCUA)。true 时页面在 onPageFinished
+     *                    后注入 viewport 覆盖 JS (钉布局宽 1024px, 触发 Bootstrap
+     *                    桌面分支 — UA 字符串本身对布局零影响)。
      * @param onPageFinished onPageFinished 回调。
      */
     fun build(
@@ -59,7 +59,12 @@ object JwWebViewClientBuilder {
             schoolHost = schoolHost,
         )
         val interceptors = assembleInterceptors(school)
-        val desktopViewport = desktopMode && school.url.contains(UCAS_DOMAIN, ignoreCase = true)
+        // 桌面 viewport 覆盖全协议启用 (2026-09-13 用户报障: 非 UCAS 校切换 UA 毫无反应)。
+        // 根因: Chrome「桌面版网站」= UA 换 + 布局视口放宽 两件事; 本实现此前只换 UA,
+        // 非 UCAS 校不注入 viewport JS → <meta viewport width=device-width> 仍生效 →
+        // 布局宽度恒为手机屏宽, Bootstrap @media(min-width:980px) 永不命中 → 页面零变化。
+        // 全协议注入后: 桌面 UA + 1024px 视口 = 响应式门户真正切桌面分支。
+        val desktopViewport = desktopMode
         return JwWebViewClientImpl(interceptors, ctx, schoolHost, desktopViewport, onPageFinished)
     }
 
@@ -122,15 +127,14 @@ private class JwWebViewClientImpl(
 
     override fun onPageFinished(view: WebView?, url: String?) {
         onPageFinished(url)
-        // issue #18 PCUA 修复: 桌面模式 + SEP 域 → 页面加载完后注入 viewport 覆盖,
-        // 把 layout viewport 钉到 1024px 触发 @media (min-width: 980px) 桌面分支
-        // (侧栏展开)。UA 字符串对 Bootstrap 布局零影响, viewport 是唯一杠杆。
+        // issue #18 PCUA 修复 → 2026-09-13 扩全协议: 桌面模式 → 页面加载完后注入
+        // viewport 覆盖, 把 layout viewport 钉到 1024px 触发 @media (min-width: 980px)
+        // 桌面分支 (响应式门户侧栏展开)。UA 字符串对响应式布局零影响, viewport 是
+        // 唯一杠杆 — 此前仅 SEP 域注入, 非 UCAS 校切桌面 UA 毫无反应 (用户报障)。
         // onPageFinished 主线程回调, evaluateJavascript 主线程约束满足。
         // 双注入 (立即 + 300ms 重注入): chromium 对 meta 变更的重排时机不定
         // (SO 19953717 模式 — 重复注入), 第二次兜底 SPA 迟挂的 meta 重写。
-        if (desktopViewport && url != null &&
-            url.toUri().host.orEmpty().equals("sep.ucas.ac.cn", ignoreCase = true)
-        ) {
+        if (desktopViewport && url != null) {
             view?.evaluateJavascript(DESKTOP_VIEWPORT_JS, null)
             view?.postDelayed({
                 view.evaluateJavascript(DESKTOP_VIEWPORT_JS, null)

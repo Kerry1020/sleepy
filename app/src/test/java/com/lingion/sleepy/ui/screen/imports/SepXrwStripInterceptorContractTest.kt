@@ -1,5 +1,6 @@
 package com.lingion.sleepy.ui.screen.imports
 
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -230,19 +231,20 @@ class SepXrwStripInterceptorContractTest {
     }
 
     @Test
-    fun desktopViewport_injectionGatedOnSepDomainAndDesktopMode() {
-        // onPageFinished 注入必须同时满足 desktopViewport + sep.ucas.ac.cn 域 —
-        // xkgo 课表页手机宽度已可用 (报告人横屏导入实证), 禁全局注入
+    fun desktopViewport_injectionGatedOnDesktopModeOnly() {
+        // 2026-09-13 扩全协议: onPageFinished 注入只按 desktopMode 闸 —
+        // 旧版仅 SEP 域注入, 非 UCAS 校切桌面 UA 毫无反应 (用户报障: Chrome 切桌面
+        // = UA 换 + 视口放宽 两件事, 只换 UA 对响应式门户零变化)。全协议注入后,
+        // 桌面 UA + 1024px 视口 = 任何响应式门户真正切桌面分支。
         assertTrue(
             "Builder onPageFinished must gate viewport injection on desktopViewport flag",
             Regex("""if\s*\(desktopViewport && url != null""").containsMatchIn(builder)
         )
-        assertTrue(
-            "Builder onPageFinished must gate viewport injection on sep.ucas.ac.cn host",
-            Regex("""sep\.ucas\.ac\.cn""", RegexOption.IGNORE_CASE).containsMatchIn(
-                // 只看 onPageFinished 之后的注入段
-                builder.substringAfter("onPageFinished(view: WebView?, url: String?)")
-            )
+        // 禁回退: 注入段不得重新按 host 收窄 (sep.ucas 域闸 = 非 UCAS 校无反应回归)
+        val onPageSection = builder.substringAfter("onPageFinished(view: WebView?, url: String?)")
+        assertFalse(
+            "Viewport injection must NOT be re-gated on any host (all-protocol by design)",
+            onPageSection.contains("sep.ucas.ac.cn") || onPageSection.contains("ucas.ac.cn"),
         )
         assertTrue(
             "Builder onPageFinished must evaluateJavascript DESKTOP_VIEWPORT_JS",
