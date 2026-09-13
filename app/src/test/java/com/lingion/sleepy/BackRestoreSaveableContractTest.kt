@@ -141,6 +141,31 @@ class BackRestoreSaveableContractTest {
         )
     }
 
+    /** 契约 6: SchoolRow 校名与第二行「协议 · 网址」首端对齐 — 徽章与间距必须同增同减 */
+    @Test
+    fun schoolRow_badge_and_spacer_share_fate() {
+        // 根因: 徽章 supported 不渲染但 Spacer(6.dp) 无条件画 → 无徽章时校名比
+        // 第二行「协议 · 网址」凭空右移 6dp, 两行首端错位 (2026-09-13 用户报障)。
+        // 锁法: SchoolRow 体内 SchoolStatusBadge 与 Spacer 必须 1:1 同现 (徽章包裹在
+        // status != SUPPORTED 条件内)。禁止无条件 Spacer 回归。
+        val rowStart = schoolSelectSource.indexOf("fun SchoolRow(")
+        assertTrue("SchoolRow composable not found", rowStart >= 0)
+        val rowEnd = schoolSelectSource.indexOf("private fun SchoolStatusBadge", rowStart)
+        assertTrue("Cannot delimit SchoolRow body", rowEnd > rowStart)
+        val rowBody = schoolSelectSource.substring(rowStart, rowEnd)
+        val badgeCount = Regex("""SchoolStatusBadge\(school = school\)""").findAll(rowBody).count()
+        val spacerCount = Regex("""Spacer\(modifier = Modifier\.size\(6\.dp\)\)""").findAll(rowBody).count()
+        assertTrue(
+            "SchoolRow 内 SchoolStatusBadge 与 6dp Spacer 必须成对出现 (同增同减, 首端对齐): badge=$badgeCount spacer=$spacerCount",
+            badgeCount == spacerCount && badgeCount >= 1,
+        )
+        // 徽章调用必须包在 status 条件分支内(禁止无条件调用回归)
+        assertTrue(
+            "SchoolRow 的徽章+Spacer 必须包在 status != SUPPORTED 条件内",
+            Regex("""if\s*\(\s*school\.status\s*!=\s*JwSchoolInfo\.STATUS_SUPPORTED\s*\)\s*\{[^}]*SchoolStatusBadge""").containsMatchIn(rowBody)
+        )
+    }
+
     /** 不得退化: 修复不得把编辑课程会话例外破坏掉(AppRoot 的栈 saver 语义保留) */
     @Test
     fun appRoot_keeps_overlayStack_saver_editing_course_exception() {
