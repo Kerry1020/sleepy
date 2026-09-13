@@ -61,9 +61,9 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 
 - Tests: focused (SchedulePagerSyncRace, SepXrw strip/interceptor, ThemeFollowSystem, CustomThemeCardVisualParity, NavHeaderFit, CourseColorUtil) + full suite: 1716 tests / 0 failures / 0 errors
 - APK SHA-256:
-  - arm64-v8a: 267fb87ea852f65f3bc4ca1b5bf0e3753d01df9df4377504e7ab787a02dca626
-  - armeabi-v7a: e2d9853950d8e9a1cbbbfa12cb672567af5039ec665021b2812ef083278d61f0
-  - x86_64: 6c3ec1a2b140a1c8206fde8d2a9756d3a0af7f931bfff63ad2a73872caf88ed9
+  - arm64-v8a: 2083ab4db1d9df27f21516f974e8f76d672aa6b3d5cf87d44a7e83ab06eab8bc
+  - armeabi-v7a: f00ebd02c8eda5a081524f46f64f23bba6b61bfd5a8f87abb57f996a33a305f2
+  - x86_64: c69aeca8d7066c484b92cbfb6388a08ae770f81d9b0b445c806900d3e305cd49
 - Build: versionName 1.0.55 / versionCode 61
 
 ---
@@ -131,7 +131,7 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 
 - 测试:定向(SchedulePagerSyncRace / SepXrw 拦截器 / ThemeFollowSystem / CustomThemeCardVisualParity / NavHeaderFit / CourseColorUtil)+ 全量 1716 例:0 失败 / 0 错误
 - APK SHA-256:
-  - arm64-v8a: 267fb87ea852f65f3bc4ca1b5bf0e3753d01df9df4377504e7ab787a02dca626
-  - armeabi-v7a: e2d9853950d8e9a1cbbbfa12cb672567af5039ec665021b2812ef083278d61f0
-  - x86_64: 6c3ec1a2b140a1c8206fde8d2a9756d3a0af7f931bfff63ad2a73872caf88ed9
+  - arm64-v8a: 2083ab4db1d9df27f21516f974e8f76d672aa6b3d5cf87d44a7e83ab06eab8bc
+  - armeabi-v7a: f00ebd02c8eda5a081524f46f64f23bba6b61bfd5a8f87abb57f996a33a305f2
+  - x86_64: c69aeca8d7066c484b92cbfb6388a08ae770f81d9b0b445c806900d3e305cd49
 - 构建:versionName 1.0.55 / versionCode 61
