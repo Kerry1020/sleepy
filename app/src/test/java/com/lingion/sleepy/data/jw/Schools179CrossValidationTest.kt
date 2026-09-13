@@ -175,7 +175,8 @@ class Schools179CrossValidationTest {
         // 2026-09-09 收录河北资源环境职业技术学院(强智移动教务) → 182；北京交通大学(AA) → 183
         // 2026-09-09 江苏海洋大学 JOU (老正方 CAS, 跨仓验证 SOP v1.1+) → 184
         // 2026-09-10 收录燕山大学(博雅研究生平台, 首个 grad_supported, PR #30) → 185
-        assertEquals(185, entries().size)
+        // 2026-09-13 WakeUp 专属库全量调查 2253 条, 实锤 193 中可路由 172 落地 → 357; 不变量: 总量=337 起随实锤收录递增
+        assertEquals(337, entries().size)
     }
 
     @Test

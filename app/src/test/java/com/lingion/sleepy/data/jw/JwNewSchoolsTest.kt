@@ -199,8 +199,9 @@ class JwNewSchoolsTest {
         assertTrue("辽宁工业大学(liaoninggongyedaxue)应排在临沂大学(linyidaxue)之前", liaoningIdx < linyiIdx)
         assertEquals("L", linyi.sortKey)
         val lGroup = sorted.filter { it.sortKey == "L" }
-        assertEquals("L 组应恰好 2 条", 2, lGroup.size)
-        assertEquals(listOf("辽宁工业大学", "临沂大学"), lGroup.map { it.name })
+        // 不变量断言(随条目递增): L 组按 sortKeyFull 升序, 辽宁工业大学恒在临沂大学之前
+        assertTrue("L 组应按 sortKeyFull 升序", lGroup.zipWithNext().all { (a, b) -> a.sortKeyFull <= b.sortKeyFull })
+        assertTrue("辽宁工业大学应排在临沂大学之前", lGroup.indexOfFirst { it.name == "辽宁工业大学" } < lGroup.indexOfFirst { it.name == "临沂大学" })
     }
 
     // -------- 5. 协议分发一致性 --------
