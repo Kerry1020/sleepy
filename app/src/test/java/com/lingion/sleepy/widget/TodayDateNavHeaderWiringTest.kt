@@ -103,8 +103,8 @@ class TodayDateNavHeaderWiringTest {
                 .contains("renderNavRefresh"))
         val overflowCall = today.substringAfter("Today 系 overflow v9")
             .substringBefore("Log.d(TAG, \"pushTodayData scroll")
-        assertTrue("Today overflow 壳图须传 showBackToToday = false",
-            overflowCall.contains("showBackToToday = false"))
+        assertTrue("Today overflow 壳图须传 showBackToToday = true (v6: 非 today 时显示回到今天文字)",
+            overflowCall.contains("showBackToToday = true"))
         val svc = widgetSource("ScrollStripService.kt").readText()
         val strip = svc.substringAfter("SCOPE_TODAY -> {")
             .substringBefore("SCOPE_TWODAY -> {")
@@ -292,13 +292,18 @@ class TodayDateNavHeaderWiringTest {
                 xml.contains("40dp") && xml.contains("28dp"))
             assertEquals("$name 须两个等重 spacer (Space 无 @RemoteView 禁用)",
                 2, Regex("layout_weight=\"1\"").findAll(xml).count())
-            // 顶栏子视图顺序: title < prev < today < next (用户定稿)
+            // v6 (2026-09-14) 顶栏子视图顺序: title < spacer_l < today(↻) < spacer_r
+            // (prev/next 已删, ↻ 居中 = 用户定稿「日期左 + 居中↻按钮」)
             val iTitle = xml.indexOf("widget_today_nav_title")
-            val iPrev = xml.indexOf("widget_today_nav_prev")
+            val iSpacerL = xml.indexOf("widget_spacer_l")
             val iToday = xml.indexOf("widget_today_nav_today")
-            val iNext = xml.indexOf("widget_today_nav_next")
-            assertTrue("$name 顶栏顺序须 title<prev<today<next",
-                iTitle < iPrev && iPrev < iToday && iToday < iNext)
+            val iSpacerR = xml.indexOf("widget_spacer_r")
+            assertTrue("$name 顶栏顺序须 title<spacer_l<today<spacer_r",
+                iTitle < iSpacerL && iSpacerL < iToday && iToday < iSpacerR)
+            assertFalse("$name 不得包含 prev 按钮 (v6 删 prev/next)",
+                xml.contains("widget_today_nav_prev"))
+            assertFalse("$name 不得包含 next 按钮 (v6 删 prev/next)",
+                xml.contains("widget_today_nav_next"))
         }
     }
 

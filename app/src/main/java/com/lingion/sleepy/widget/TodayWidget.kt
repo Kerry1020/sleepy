@@ -176,10 +176,9 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             // issue#31 荣耀 2×2 定案: 整条导航装不下 → header GONE (bitmap 全高,
             // 无导航键 — 留着只会被标题压住/挤出界, 点哪都是开 App = 歧义)。
             if (tier == NavTier.HIDE_NAV) {
-                // HIDE_NAV 极端档 (三颗 40dp 钮物理放不下, <144dp) — 用户 2026-09-13 定稿:
-                // 极端情况也要「回到今天」按钮 (40dp 一颗任何 2×2 都装得下)。
+                // HIDE_NAV 极端档 (↻ 40dp 也放不下, <72dp) —
                 // 未翻页 (isToday=true) 无回今天语义 → 整条 GONE (pushTodayData 走 fullface,
-                // 不进本分支的带按钮路径); 翻到别天 → 只显示回今天按钮, 标题/翻页键 GONE。
+                // 不进本分支的带按钮路径); 翻到别天 → 只显示回今天按钮, 标题 GONE。
                 if (data.isToday) {
                     views.setViewVisibility(
                         com.lingion.sleepy.R.id.widget_today_header, android.view.View.GONE
@@ -187,22 +186,6 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                     views.setContentDescription(
                         com.lingion.sleepy.R.id.widget_today_header,
                         "header GONE tier=HIDE_NAV isToday=true w=$wDp"
-                    )
-                    // 真实根因 (#31 P1 v1.0.55 真机复测): MagicOS launcher 端把 prev/next
-                    // 当独立可点击元素保留, 即便父容器 GONE 也接 PendingIntent — 用户看到
-                    // 两个 < > 形状以为是翻页按钮, 点了无反应 = 困惑 = 看似「箭头还在」。
-                    // HIDE_NAV 档下把 prev/next 重绑成 tapIntent (开 App), 让 launcher 端
-                    // 无论是否尊重 GONE, 行为都收敛到「点哪都是开 App」。
-                    val tap = PendingIntent.getActivity(
-                        context, WidgetRoutes.tapRequestCode(widgetId),
-                        WidgetRoutes.tapIntent(context),
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    views.setOnClickPendingIntent(
-                        com.lingion.sleepy.R.id.widget_today_nav_prev, tap
-                    )
-                    views.setOnClickPendingIntent(
-                        com.lingion.sleepy.R.id.widget_today_nav_next, tap
                     )
                     return
                 }
@@ -212,12 +195,6 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 )
                 views.setViewVisibility(
                     com.lingion.sleepy.R.id.widget_today_nav_title, android.view.View.GONE
-                )
-                views.setViewVisibility(
-                    com.lingion.sleepy.R.id.widget_today_nav_prev, android.view.View.GONE
-                )
-                views.setViewVisibility(
-                    com.lingion.sleepy.R.id.widget_today_nav_next, android.view.View.GONE
                 )
                 // 回今天按钮 (真实可点, 40×28dp) — 极端档主形态
                 views.setImageViewBitmap(
@@ -283,23 +260,6 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 com.lingion.sleepy.R.id.widget_today_nav_today,
                 "refresh gone=${data.isToday} tier=$tier"
             )
-            // 三角按钮位图 — 低对比圆角矩形 (surfaceVariant 底 + onSurfaceVariant 图标)
-            views.setImageViewBitmap(
-                com.lingion.sleepy.R.id.widget_today_nav_prev,
-                WidgetBitmapRenderers.renderNavTriangle(context, data, pointLeft = true)
-            )
-            views.setContentDescription(
-                com.lingion.sleepy.R.id.widget_today_nav_prev,
-                "prev 40x28dp w=$wDp"
-            )
-            views.setImageViewBitmap(
-                com.lingion.sleepy.R.id.widget_today_nav_next,
-            WidgetBitmapRenderers.renderNavTriangle(context, data, pointLeft = false)
-            )
-            views.setContentDescription(
-                com.lingion.sleepy.R.id.widget_today_nav_next,
-                "next 40x28dp w=$wDp"
-            )
             // 头部容器取证标签: 档位/宽度/日期可见性一站式
             views.setContentDescription(
                 com.lingion.sleepy.R.id.widget_today_header,
@@ -312,10 +272,9 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             views.setContentDescription(
                 com.lingion.sleepy.R.id.widget_spacer_r, "spacerR tier=$tier w=$wDp"
             )
-            // 按钮语义: ‹› 翻天, nav_today = 回到今天 (v5 定案, 翻页语义删除)。
+            // v6 (2026-09-14): prev/next 翻页已删 — 只留 ↻ 回到今天。
+            // 按钮语义: nav_today = 回到今天 (用户定稿「日期左 + 居中↻按钮」)。
             val zones = listOf(
-                Triple(com.lingion.sleepy.R.id.widget_today_nav_prev, ACTION_PREV_DAY, 0),
-                Triple(com.lingion.sleepy.R.id.widget_today_nav_next, ACTION_NEXT_DAY, 1),
                 Triple(com.lingion.sleepy.R.id.widget_today_nav_today, ACTION_RESET_DAY, 2)
             )
             for ((viewId, action, ordinal) in zones) {
@@ -336,14 +295,14 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             "${data.dateLabel} · $dayName"
 
         /**
-         * 顶栏降级判定 — 2×2 刷新按钮定稿 (用户 2026-09-13): 「回到今天」文字在窄档被裁
-         * 点不了, 换成真实刷新按钮 (40dp, 恒在导航态) — 恓牲序改为标题先退:
-         *   FULL → SHORT_TITLE(去星期) → HIDE_TITLE(标题 GONE, 三钮保留) → HIDE_NAV
-         * 2×2 (148dp): req(dateOnly)=173 > 148 → HIDE_TITLE, 三钮固定件 144dp ≤ 148 ✓
-         * 4×3 (~250dp): req(full)=215 ≤ 250 → FULL ✓
-         *
-         * 底座 = prev40 + refresh40 + next40 + padding 20 + margins 14 (spacer weight=1
-         * 可压到 0)。标题按实际串测量 (fontScale 感知)。
+         * 顶栏降级判定 — v6 单钮定稿 (2026-09-14): prev/next 已删, 只留 ↻ (40dp)。
+         * 用户定稿: 日期左 + 居中↻按钮 (仅 !isToday 时显示)。
+         * 恓牲序 = 标题先退:
+         *   FULL(满标题+↻) → SHORT_TITLE(去星期+↻) → HIDE_TITLE(标题 GONE, ↻ 保留)
+         *   → HIDE_NAV(↻ 也放不下, 物理极窄)
+         * 单钮预算 = padStart10 + title + 6 + ↻40 + 6 + padEnd10;
+         * ↻ GONE (isToday) = padStart10 + title + padEnd10;
+         * 单钮固定件 (标题 GONE) = 10 + 6+40+6 + 10 = 72dp。
          */
         internal fun navHeaderTier(
             density: Float, wDp: Int, fullTitle: String, dateOnlyTitle: String,
@@ -351,24 +310,23 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             refreshVisible: Boolean = true
         ): NavTier {
             if (wDp <= 0) return NavTier.FULL  // 未知宽 → 走满配安全路径
-            // padStart10 + title + margin4 + prev40 + (6+refresh40+6) + next40 + padEnd10
+            // padStart10 + title + (6+↻40+6) + padEnd10
             fun required(title: String): Float =
-                10f + titleMeasure(title) / density + 4f + 40f + (6f + 40f + 6f) + 40f + 10f
-            // refresh GONE (isToday) 时预算只含 标题+两钮: GONE 视图连 6+6 margin 一起消失
+                10f + titleMeasure(title) / density + (6f + 40f + 6f) + 10f
+            // ↻ GONE (isToday) 时预算只含 标题
             fun requiredNoRefresh(title: String): Float =
-                10f + titleMeasure(title) / density + 4f + 40f + 40f + 10f
-            // 三钮固定件 (标题 GONE): 10 + 4 + 40×3 + 10 = 144dp
-            val threeButtonDp = 10f + 4f + 40f + 40f + 40f + 10f
+                10f + titleMeasure(title) / density + 10f
+            // 单钮固定件 (标题 GONE): 10 + 6+40+6 + 10 = 72dp
+            val oneButtonDp = 10f + 6f + 40f + 6f + 10f
             if (!refreshVisible) {
                 if (requiredNoRefresh(fullTitle) <= wDp) return NavTier.FULL
                 if (requiredNoRefresh(dateOnlyTitle) <= wDp) return NavTier.SHORT_TITLE
-                return NavTier.HIDE_NAV
+                return NavTier.HIDE_TITLE
             }
             if (required(fullTitle) <= wDp) return NavTier.FULL
             if (required(dateOnlyTitle) <= wDp) return NavTier.SHORT_TITLE
-            // date-only + 刷新按钮也装不下 → 标题 GONE, 三钮保留 (2×2 主形态:
-            // 刷新按钮恒可点, 恓牲的是标题); 三钮也放不下才整条 GONE (issue#31)
-            if (threeButtonDp <= wDp) return NavTier.HIDE_TITLE
+            // date-only + ↻ 也装不下 → 标题 GONE, ↻ 保留; ↻ 也放不下才整条 GONE
+            if (oneButtonDp <= wDp) return NavTier.HIDE_TITLE
             return NavTier.HIDE_NAV
         }
 
@@ -517,7 +475,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 // (ListView match_parent 容器), 壳图"多余"的高成为滚动可见区。
                 val shell = WidgetBitmapRenderers.renderToday(
                     context, data, wDp.toFloat(), contentH, variant,
-                    showBackToToday = false
+                    showBackToToday = true
                 )
                 RemoteViewsWidgetHelper.pushScrollable(
                     context, awm, id, TAG,
