@@ -76,14 +76,14 @@ class TodayOverflowGeometryTest {
             "TodayRowGeometry 必须纯 Kotlin (禁 Android import)",
             Regex("import android\\.").containsMatchIn(src)
         )
-        // headerSpace 参数化: 起点 14 vs 38 语义锁死
+        // headerSpace 参数化: 起点 12 vs 34 语义锁死
         assertTrue(
-            "行几何必须按 headerSpace 参数化起点 (true→14dp, false→38dp)",
+            "行几何必须按 headerSpace 参数化起点 (true→12dp, false→34dp)",
             src.contains("headerSpace")
         )
         assertTrue(
-            "行高常量 38dp 锁死 (渲染/内容两侧同一口径)",
-            src.contains("38f")
+            "行高常量 36dp 锁死 (渲染/内容两侧同一口径)",
+            src.contains("36f")
         )
     }
 
@@ -115,7 +115,7 @@ class TodayOverflowGeometryTest {
     @Test
     fun `conflict lane row spans taller than single row`() {
         // 链式区域 {1-2, 2-4, 4-5}: 栏 0 堆叠 1-2 与 4-5 (零重叠), 栏 1 = 2-4 →
-        // maxStack=2 → 行高 2*38+3=79dp (真堆叠场景; 完全重叠两课是并排两栏各1门, 行高仍38)
+        // maxStack=2 → 行高 2*36+3=75dp (真堆叠场景; 完全重叠两课是并排两栏各1门, 行高仍36)
         val courses = listOf(
             com.lingion.sleepy.data.entity.CourseEntity(
                 id = 1L, groupId = "a", tableId = 1L, courseName = "甲",
@@ -132,11 +132,11 @@ class TodayOverflowGeometryTest {
         )
         val geo = TodayRowGeometry.rowSpans(courses, headerSpace = false)
         assertEquals("链式区域并一渲染行", 1, geo.size)
-        assertEquals("冲突行高 = 2*38+3 (maxStack 镜像语义)", 79f, geo[0].bottomDp - geo[0].topDp, 0.01f)
+        assertEquals("冲突行高 = 2*36+3 (maxStack 镜像语义)", 75f, geo[0].bottomDp - geo[0].topDp, 0.01f)
         val noHeaderH = TodayRowGeometry.contentHeightDp(courses, headerSpace = false)
-        assertEquals("带头内容高 = 38 起点 + 行 79 + 底 pad 14 (末行后无 gap)", 38f + 79f + 14f, noHeaderH, 0.01f)
+        assertEquals("带头内容高 = 34 起点 + 行 75 + 底 pad 14 (末行后无 gap)", 34f + 75f + 14f, noHeaderH, 0.01f)
         val headerH = TodayRowGeometry.contentHeightDp(courses, headerSpace = true)
-        assertEquals("去头内容高 = 14 起点 + 行 79 + 底 pad 14 (末行后无 gap)", 14f + 79f + 14f, headerH, 0.01f)
+        assertEquals("去头内容高 = 12 起点 + 行 75 + 底 pad 14 (末行后无 gap)", 12f + 75f + 14f, headerH, 0.01f)
     }
 
     // ---- 修复 2 (v9.1 形态回归): 条带 = 单 child 整张不透明长图 ----
@@ -323,5 +323,34 @@ class TodayOverflowGeometryTest {
                 Regex("overScrollMode=\"never\"").containsMatchIn(xml)
             )
         }
+    }
+
+    @Test
+    fun `渲染器行几何必须与 TodayRowGeometry 逐字同源`() {
+        // 位图渲染器是 RemoteViews 无法 import 几何对象的唯一例外 = 硬编码镜像;
+        // 改常量忘改渲染器 → 窗口按 A 算、画面按 B 画 → 溢出/空洞, 此测试堵死漂移
+        val src = widgetSource("WidgetBitmapRenderers.kt").readText()
+        assertTrue(
+            "渲染器行高必须 = ROW_H_DP (${TodayRowGeometry.ROW_H_DP})",
+            src.contains("val rowH = ${TodayRowGeometry.ROW_H_DP.toInt()}f * density"),
+        )
+        assertTrue(
+            "渲染器行距必须 = ROW_GAP_DP (${TodayRowGeometry.ROW_GAP_DP})",
+            src.contains("val rowGap = ${TodayRowGeometry.ROW_GAP_DP.toInt()}f * density"),
+        )
+        assertTrue(
+            "渲染器四边 pad 必须 = PAD_TOP_DP (${TodayRowGeometry.PAD_TOP_DP})",
+            src.contains("val pad = ${TodayRowGeometry.PAD_TOP_DP.toInt()}f * density"),
+        )
+        assertTrue(
+            "标题行前进量必须 = HEADER_ADVANCE_DP (${TodayRowGeometry.HEADER_ADVANCE_DP})",
+            src.contains("y += ${TodayRowGeometry.HEADER_ADVANCE_DP.toInt()}f * density"),
+        )
+        // 双日三处镜像: 渲染器行几何 ↔ 窗口预算, 数字必须成对出现
+        val two = widgetSource("TwoDayWidget.kt").readText()
+        assertTrue("双日渲染行高 36", src.contains("val maxRowH = 36f * density"))
+        assertTrue("双日渲染行距 6", src.contains("val rowGap = 6f * density"))
+        assertTrue("双日窗口行距 6", two.contains("gapDp = 6f"))
+        assertTrue("双日窗口 availH 预算 = pad12+列头20+pad12 = 44", two.contains("hDp - 44f"))
     }
 }

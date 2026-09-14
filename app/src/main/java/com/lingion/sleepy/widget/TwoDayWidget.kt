@@ -129,9 +129,9 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
         }
 
         /**
-         * TwoDay 每列 FIXED 窗口 (设计 §4.2): availH = hDp − 66 (pad12+标签22+列头20+pad12);
-         * 行高/聚类与 twoDayContentHeightDp·renderTwoDayRegular 逐字节同源
-         * (timeJson 聚类, 单行 44, 堆叠 maxStack×44+(maxStack−1)×3, 行距 8)。
+         * TwoDay 每列 FIXED 窗口 (设计 §4.2): availH = hDp − 44 (pad12+列头20+pad12,
+         * 2026-09-14c 顶部标签行删除); 行高/聚类与 twoDayContentHeightDp·renderTwoDayRegular
+         * 逐字节同源 (timeJson 聚类, 单行 36, 堆叠 maxStack×36+(maxStack−1)×3, 行距 6)。
          * 今天列 TIME_WINDOW(nowMin), 明天列 HEAD。
          */
         internal fun computeTwoDayWindows(
@@ -139,14 +139,14 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
             hDp: Float,
             nowMin: Int?
         ): List<FixedWindowCore.WindowResult> = data.days.map { day ->
-            val availH = hDp - 66f
+            val availH = hDp - 44f
             val rows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
             val entries = FixedWindowCore.entriesOf(rows, day.timeJson) { row ->
-                if (row.laneCount == 1) 44f
+                if (row.laneCount == 1) 36f
                 else {
                     val maxStack = row.courses.groupBy { row.laneOf[it.id] }.values
                         .maxOf { it.size }.coerceAtLeast(1)
-                    maxStack * 44f + (maxStack - 1) * 3f
+                    maxStack * 36f + (maxStack - 1) * 3f
                 }
             }
             FixedWindowCore.window(
@@ -155,7 +155,7 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
                 mode = if (day.isToday && nowMin != null) FixedWindowCore.Mode.TIME_WINDOW
                 else FixedWindowCore.Mode.HEAD,
                 nowMin = if (day.isToday) nowMin else null,
-                gapDp = 8f
+                gapDp = 6f
             )
         }
 
