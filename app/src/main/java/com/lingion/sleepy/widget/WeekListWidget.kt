@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import com.lingion.sleepy.R
 import com.lingion.sleepy.SleepyApp
 import com.lingion.sleepy.util.DateUtils
 import kotlinx.coroutines.CoroutineScope
@@ -35,13 +36,32 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
         val contentH = WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         // SMALL 变体: compact 分支内部还有 150dp 升档闸, 这里直接传 variant
         val variant = variantHint
-        if (contentH <= hDp) {
+        // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; compact 档
+        // (SMALL<150dp) 走纯文本自有截断, 不叠窗口 (索引口径不同, 保持旧行为)。
+        val forceScroll = false
+        val compactFace = variant == WidgetVariant.SMALL && wDp < 150
+        val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
+        val shownDays = if (visibleDays.isEmpty()) data.days
+            else data.days.filter { it.dayOfWeek in visibleDays }.sortedBy { it.dayOfWeek }
+        val statusH = if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) 16f else 0f
+        val wins = if (!forceScroll && !compactFace && data.hasTable && shownDays.isNotEmpty() &&
+            data.days.any { it.courses.isNotEmpty() }
+        ) computeWeekListWindows(shownDays, hDp.toFloat(), statusH) else null
+        val visibleByCol = wins?.map { w -> w.visible.flatMap { it.row.courses } }
+        val footerByCol = wins?.map { w ->
+            if (w.footer) context.getString(R.string.widget_footer_more_short, w.hiddenAheadCourses)
+            else null
+        }
+        if (contentH <= hDp || wins != null) {
             // 内容装得下 — 原静态路径, 与主分支逐字节一致(REGULAR 时 variant 默认值等价旧调用)
             RemoteViewsWidgetHelper.renderAndPush(
                 context, awm, id, TAG,
                 loadData = { data },
                 renderBitmap = { d, w, h ->
-                    WidgetBitmapRenderers.renderWeekList(context, d, w, h, variant)
+                    WidgetBitmapRenderers.renderWeekList(
+                        context, d, w, h, variant,
+                        visibleByCol = visibleByCol, footerByCol = footerByCol
+                    )
                 }
             )
         } else {
@@ -87,6 +107,31 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "WeekListRV"
+
+        /**
+         * WeekList 逐列 FIXED 窗口 (设计 §4.3): HEAD 模式 (整周列表无时间锚点);
+         * availH = hDp − 58 − statusH (外pad6×2 + 标题12+14 + chip14+6 + 卡底6);
+         * 行高 16+3 含尾 gap (渲染器每课后加 3dp, 与列底对齐), 页脚同 19dp。
+         */
+        internal fun computeWeekListWindows(
+            shownDays: List<DayData>,
+            hDp: Float,
+            statusH: Float
+        ): List<FixedWindowCore.WindowResult> = shownDays.map { day ->
+            val availH = hDp - 58f - statusH
+            val entries = day.courses.map { c ->
+                FixedWindowCore.WindowEntry(
+                    com.lingion.sleepy.util.ConflictLayoutEngine.WeekLaneRow(
+                        listOf(c), mapOf(c.id to 0), 1
+                    ),
+                    19f, null, null
+                )
+            }
+            FixedWindowCore.window(
+                entries, availH, FixedWindowCore.Mode.HEAD, null,
+                gapDp = 0f, footerH = 19f
+            )
+        }
 
         /**
          * 同步版数据加载 — 7 列日列课程。与 WeekGridWidgetProvider.loadWeekData 结构一致。

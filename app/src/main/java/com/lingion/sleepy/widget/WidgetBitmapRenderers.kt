@@ -890,19 +890,25 @@ object WidgetBitmapRenderers {
      */
     fun renderWeekList(
         context: Context, data: WeekData, wDp: Float, hDp: Float,
-        variant: WidgetVariant = WidgetVariant.REGULAR
+        variant: WidgetVariant = WidgetVariant.REGULAR,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         if (variant == WidgetVariant.SMALL && wDp < 150f) {
             return renderWeekListCompact(context, data, wDp, hDp)
         }
         // SMALL 但容器被拖大 ≥150dp → 内部升档回全量排版(设计第三节决策)
-        return renderWeekListRegular(context, data, wDp, hDp)
+        return renderWeekListRegular(context, data, wDp, hDp, visibleByCol, footerByCol)
     }
 
     /**
      * WeekList 全量排版 — 原 renderWeekList 函数体原样改名迁入(REGULAR 档逐字节不变保证)
      */
-    private fun renderWeekListRegular(context: Context, data: WeekData, wDp: Float, hDp: Float): Bitmap {
+    private fun renderWeekListRegular(
+        context: Context, data: WeekData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerByCol: List<String?>?
+    ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
         val h = (hDp * density).toInt()
@@ -997,12 +1003,13 @@ object WidgetBitmapRenderers {
                 cy += chipH + 6f * density
 
                 // 课程列表 — 每门课带颜色胶囊背景
+                // FIXED 窗口 (设计 §4.3): 逐列预算截断, 列底「+N」短页脚 (无独立页脚行)
                 p.textSize = 9f * density
                 p.typeface = Typeface.DEFAULT
                 val coursePad = 3f * density
                 val courseRowH = 16f * density
                 val courseGap = 3f * density
-                day.courses.forEachIndexed { idx, course ->
+                (visibleByCol?.getOrNull(i) ?: day.courses).forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     // 课程颜色背景 (对齐 WeekGrid 风格) — 统一入口 CourseColorUtil (决策 D3)
                     // issue#22: 同名课程多地点 — 用 day.courses 同 groupId 全行,支持 AUTO/CUSTOM 模式取色
@@ -1028,6 +1035,15 @@ object WidgetBitmapRenderers {
                     canvas.drawText(displayName, x + coursePad + 2f * density, textBaseline, p)
                     p.typeface = Typeface.DEFAULT
                     cy += courseRowH + courseGap
+                }
+                // 列底「+N」短页脚 (FIXED 窗口隐藏了后续课)
+                footerByCol?.getOrNull(i)?.let { more ->
+                    p.color = s.onSurfaceVariant
+                    p.textSize = 9f * density
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    val mw = p.measureText(more)
+                    canvas.drawText(more, x + (colW - mw) / 2f, cy + 11f * density, p)
+                    p.typeface = Typeface.DEFAULT
                 }
             }
         }
@@ -1095,13 +1111,15 @@ object WidgetBitmapRenderers {
         context: Context, data: WeekData, wDp: Float, hDp: Float,
         variant: WidgetVariant = WidgetVariant.REGULAR,
         /** 每列课程上限 — 静态 face 保持 5 门裁切; 条带全展开长图传 Int.MAX_VALUE (#31) */
-        maxCoursesPerDay: Int = 5
+        maxCoursesPerDay: Int = 5,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         if (variant == WidgetVariant.SMALL && wDp < 150f) {
             return renderWeekViewCompact(context, data, wDp, hDp, maxCoursesPerDay)
         }
         // SMALL 但容器被拖大 ≥150dp → 内部升档回全量排版(设计第三节决策)
-        return renderWeekViewRegular(context, data, wDp, hDp, maxCoursesPerDay)
+        return renderWeekViewRegular(context, data, wDp, hDp, maxCoursesPerDay, visibleByCol, footerByCol)
     }
 
     /**
@@ -1130,7 +1148,9 @@ object WidgetBitmapRenderers {
      */
     private fun renderWeekViewRegular(
         context: Context, data: WeekData, wDp: Float, hDp: Float,
-        maxCoursesPerDay: Int = 5
+        maxCoursesPerDay: Int = 5,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
@@ -1234,7 +1254,8 @@ object WidgetBitmapRenderers {
                 val courseGap = 3f * density  // 3dp (原2dp太紧, workflow验证阶段推荐3dp对齐胶囊版)
                 val fm = p.fontMetrics
                 val lineH = fm.descent - fm.ascent
-                val courses = day.courses.take(maxCoursesPerDay)
+                // FIXED 窗口 (设计 §4.3): 逐列预算截断优先于 take(5); fits 分支保留 5 门口径
+                val courses = visibleByCol?.getOrNull(i) ?: day.courses.take(maxCoursesPerDay)
                 courses.forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     // today → onPrimaryContainer@0.82alpha, 其他 → onSurfaceVariant
@@ -1266,6 +1287,15 @@ object WidgetBitmapRenderers {
                     } else {
                         cy += courseGap
                     }
+                }
+                // 列底「+N」短页脚 (FIXED 窗口隐藏了后续课)
+                footerByCol?.getOrNull(i)?.let { more ->
+                    p.color = s.onSurfaceVariant
+                    p.textSize = 9f * density
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    val mw = p.measureText(more)
+                    canvas.drawText(more, x + (colW - mw) / 2f, cy - fm.ascent, p)
+                    p.typeface = Typeface.DEFAULT
                 }
             }
         }
@@ -1468,7 +1498,7 @@ object WidgetBitmapRenderers {
      * Canvas 手动换行: 最多2行, 超出截断 "…".
      * CJK 按字符断行; Latin 在空格处断行.
      */
-    private fun wrapMax2Lines(
+    internal fun wrapMax2Lines(
         text: String,
         paint: Paint,
         maxWidth: Float
