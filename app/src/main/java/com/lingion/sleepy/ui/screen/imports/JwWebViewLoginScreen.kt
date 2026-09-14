@@ -322,7 +322,7 @@ fun JwWebViewLoginScreen(
                         evaluateFetchWithTimeout(wv, BJTU_FETCH_JS)
                         return@CaptureBar
                     }
-                    // 合工大 EAMS5: 三段 fetch (for-std/course-table → for-std/lessons → POST schedule-table/datum)
+                    // 合工大 EAMS5: 四段 fetch (course-table → info/<sid> → get-data → POST schedule-table/datum)
                     // 用户已在 WebView 走完 CAS 登录并落到教务域。supwisdom 新版部署
                     // 前缀分两形态：合工大 /eams5-student、安大/矿大北京 /student —
                     // 按学校 URL 推断后替换模板占位符。
@@ -1197,18 +1197,27 @@ private const val WHUT_FETCH_JS = """
  *      - 已登录 → 302 跟到 /for-std/course-table/info/<studentId>, 页面 HTML <script>
  *        段里有 `var studentId = '2024210001';` 或对象字面量 `studentId:'2024210001',`
  *      - 未登录 → 302 跟到 /eams5-student/login, 报"登录态已失效"
- *   2) POST /eams5-student/ws/schedule-table/datum
- *      body: {"lessonIds":[], "studentId":<学号>, "weekIndex":""}
+ *      - 顺带解析 semesterId (script 段 `semesterId: 234`), 供第 3 段用
+ *   2) GET /eams5-student/for-std/course-table/info/<studentId>
+ *      → HTML <script> 段含 `bizTypeId: 23` (参考仓 parseBizTypeId 同形正则)
+ *   3) GET /eams5-student/for-std/course-table/get-data?bizTypeId=<biz>&dataId=<studentId>[&semesterId=<sem>]
+ *      → JSON 顶层 lessonIds:[<int>...] (可能包在 result 下, 两种形态都取)
+ *   4) POST /eams5-student/ws/schedule-table/datum
+ *      body: {"lessonIds":[<int>...], "studentId":<学号,纯数字转 int>, "weekIndex":""}
  *      resp: schedule-table/datum JSON 全文
- *   3) 通过 __sleepyBridge.onWiseduResult({ok, data}) 回调
+ *   5) 通过 __sleepyBridge.onWiseduResult({ok, data}) 回调
  *
- * 简化说明（v1 不完美但可用）：
- *   - 上游协议第 2 段要先调 /for-std/course-table/get-data?bizTypeId=23 拿 lessonIds[];
- *     v1 简化: 直接 POST datum, lessonIds 数组置空, 上游通常会用空数组返全量
- *   - 后续 v2: 增加 get-data 段拿 lessonIds, 与上游 Chiu-xaH/HFUT-Schedule 对齐
+ * v2 四段链说明（2026-09-11, 合肥工业大学用户反馈 datum HTTP 500）：
+ *   - v1 简化直接 POST datum + 空 lessonIds — 参考仓 JxglstuService.kt:53 注释明言
+ *     "需要提交前面获取到的数据才可以, 否则返回500错误"。HFUT 服务端对空 lessonIds
+ *     直接 500, v1 从未真正可用; 本版补齐 info → get-data 两段拿真实 lessonIds。
+ *   - 兜底: 第 2/3 段任一失败 (bizTypeId 解析不到 / get-data 非 200 / JSON 异常)
+ *     → lessonIds 退回空数组, 行为等同 v1, 保护共用本 JS 的其它 EAMS5 校
+ *     (中国矿业大学北京 cumtb.edu.cn) 不因新链路异常而整体失败。
+ *   - studentId 纯数字时转 Number 发送 (参考仓以 int 提交), 字母数字学号保持字符串。
  *
  * 外部佐证：Chiu-xaH/HFUT-Schedule JxglstuService.kt + JxglstuRepository.kt
- * (parseStudentId / parseBizTypeId), BoynChan/HfutOpenApi CourseCrawler.java。
+ * (parseStudentId / parseBizTypeId / getDatum), BoynChan/HfutOpenApi CourseCrawler.java。
  * 2026-09 用户反馈原正则只匹配 quoted-digit 形态, 学号嵌入 supwisdom 对象字面量
  * (studentId: '...') 时漏, 本版放宽正则 + 加 r.url 检测登录失效。
  */
@@ -1259,23 +1268,70 @@ private const val EAMS5_FETCH_JS = """
       // 与 JVM 端 EAMS5_STUDENT_ID_REGEX (data/jw/Eams5PathPrefix.kt) 同形 —
       // 单测锁契约, JS 端保持字符串字面量 (WebView JS context 无 JVM 调用通道)。
       var m = html.match(/studentId\s*[=:]\s*['"]?([A-Za-z0-9]+)['"]?/);
-      if (!m) return null;
-      return m[1];
+      var sid = m ? m[1] : null;
+      if (!sid) {
+        // 参考仓 dev 分支实测口径: course-table 302 Location =
+        // /eams5-student/for-std/course-table/info/<studentId>, 其直接截断该路径取学号。
+        // fetch 已自动跟随重定向, r.url (ctx.finalUrl) 即 Location 的等价物。
+        m = /for-std\/course-table\/info\/(\d+)/.exec(ctx.finalUrl);
+        if (m) sid = m[1];
+      }
+      if (!sid) return null;
+      // semesterId 若本页 script 段带就顺手拿 (get-data 查询参数), 拿不到留空由 info 页兜底
+      var sem = html.match(/semesterId\s*[=:]\s*['"]?(\d+)/);
+      return {studentId: sid, semesterId: sem ? sem[1] : ''};
     })
-    .then(function(studentId){
-      if (!studentId) {
+    .then(function(ctx){
+      if (!ctx) {
         window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'未取到 studentId,请在 course-table 页面停留后再试'}));
         return null;
       }
-      // 2) POST schedule-table/datum (lessonIds 空数组; v1 简化,上游多返全量)
-      return fetch(PREFIX + '/ws/schedule-table/datum', {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({lessonIds:[], studentId:studentId, weekIndex:''})
-      }).then(function(r){
-        if (!r.ok) throw new Error('POST schedule-table/datum 失败 HTTP ' + r.status);
-        return r.text();
+      var sid = ctx.studentId;
+      var sem = ctx.semesterId;
+      // 2) info 页拿 bizTypeId (参考仓 parseBizTypeId: /bizTypeId\s*:\s*(\d+)/ 同形)
+      return fetch(PREFIX + '/for-std/course-table/info/' + sid, {credentials:'include'})
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .catch(function(){ return ''; })
+      .then(function(infoHtml){
+        var biz = '';
+        if (infoHtml) {
+          var bm = infoHtml.match(/bizTypeId\s*[=:]\s*['"]?(\d+)/);
+          if (bm) biz = bm[1];
+          if (!sem) {
+            var sm = infoHtml.match(/semesterId\s*[=:]\s*['"]?(\d+)/);
+            if (sm) sem = sm[1];
+          }
+        }
+        // 3) get-data 拿 lessonIds[]; 任一环失败 → ids 留空数组 = v1 旧行为兜底
+        var q = '/for-std/course-table/get-data?bizTypeId=' + biz + '&dataId=' + sid;
+        if (sem) q += '&semesterId=' + sem;
+        var chain = biz
+          ? fetch(PREFIX + q, {credentials:'include'})
+              .then(function(r){ return r.ok ? r.text() : ''; })
+              .catch(function(){ return ''; })
+          : Promise.resolve('');
+        return chain.then(function(txt){
+          var ids = [];
+          try {
+            var j = JSON.parse(txt);
+            var got = j && (j.lessonIds || (j.result && j.result.lessonIds));
+            if (got && got.length) ids = got;
+          } catch (e) { /* get-data 异常 → 空数组兜底 */ }
+          // 4) POST schedule-table/datum — lessonIds 为真课时数组; 纯数字学号按 int 提交
+          return fetch(PREFIX + '/ws/schedule-table/datum', {
+            method:'POST',
+            credentials:'include',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              lessonIds: ids,
+              studentId: /^\d+$/.test(sid) ? Number(sid) : sid,
+              weekIndex: ''
+            })
+          }).then(function(r){
+            if (!r.ok) throw new Error('POST schedule-table/datum 失败 HTTP ' + r.status + ' (lessonIds:' + ids.length + ')');
+            return r.text();
+          });
+        });
       });
     })
     .then(function(txt){
