@@ -41,8 +41,14 @@
             android:textStyle="bold"
             android:textSize="13sp" />
 
-        <!-- v6 (2026-09-14): prev/next 翻页按钮已删 — 用户定稿「日期左 + 居中↻按钮」。
-             spacer(weight=1) 对称夹 ↻ 按钮居中; title wrap_content 靠左。 -->
+        <ImageView
+            android:id="@+id/widget_today_nav_prev"
+            android:layout_width="40dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:contentDescription="@string/today_nav_prev_day" />
+
         <LinearLayout
             android:id="@+id/widget_spacer_l"
             android:layout_width="0dp"
@@ -63,5 +69,12 @@
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/widget_today_nav_next"
+            android:layout_width="40dp"
+            android:layout_height="28dp"
+            android:clickable="true"
+            android:contentDescription="@string/today_nav_next_day" />
     </LinearLayout>
 </FrameLayout>

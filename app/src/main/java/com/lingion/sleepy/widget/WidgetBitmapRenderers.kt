@@ -247,9 +247,7 @@ object WidgetBitmapRenderers {
                     else "${data.dateLabel} · $dayName"
         return if (!data.isToday && showBackToToday) {
             TodayHeaderParts(title, resolve(R.string.today_nav_back_to_today), true)
-        } else if (showDate && data.isToday) {
-            // v6: 导航态 (!isToday) 不再重复显示日期 — 日期已在 title 里;
-            // 仅今日态 + showDate 时右侧显示日期 (今日态无"回到今天"按钮, 日期是唯一附加信息)
+        } else if (showDate) {
             TodayHeaderParts(title, data.dateLabel, false)
         } else {
             TodayHeaderParts(title, null, false)
