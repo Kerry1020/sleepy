@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Today nav + FIXED 页脚点击条变体 (设计 §6.5) — 与 widget_today_nav_static 同构,
+     仅多底部 20dp 透明点击条; FIXED 溢出有页脚时用本布局。 -->
+<!-- Today widget static nav container (issue #24).
+     bitmap = renderToday(emptyHeader=true): header zone blank in bitmap,
+     covered by real views: title TextView + two low-contrast triangle buttons
+     + back-to-today TextView (nav state only). View = tap target (40x28dp),
+     fixing the tiny-tap-area complaint. clipToOutline clips the opaque header
+     background to the 20dp rounded corners (radius matches renderer). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_scroll_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_scroll_clip"
+    android:outlineProvider="background"
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@+id/widget_bitmap"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="false"
+        android:contentDescription="@string/widget_week_grid_label" />
+
+    <!-- Header strip 36dp = NAV_HEADER_H_DP renderer constant. Title flush left,
+         prev button hugs title, refresh button centered between buttons via
+         equal-weight spacers (Space lacks @RemoteView, banned).
+         Refresh button = 40x28dp ImageView (same as prev/next), tap = back to today. -->
+    <LinearLayout
+        android:id="@+id/widget_today_header"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <TextView
+            android:id="@+id/widget_today_nav_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/widget_today_nav_prev"
+            android:layout_width="40dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:contentDescription="@string/today_nav_prev_day" />
+
+        <LinearLayout
+            android:id="@+id/widget_spacer_l"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/widget_today_nav_today"
+            android:layout_width="40dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:clickable="true"
+            android:contentDescription="@string/today_nav_back_to_today" />
+
+        <LinearLayout
+            android:id="@+id/widget_spacer_r"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/widget_today_nav_next"
+            android:layout_width="40dp"
+            android:layout_height="28dp"
+            android:clickable="true"
+            android:contentDescription="@string/today_nav_next_day" />
+    </LinearLayout>
+
+    <!-- FIXED 窗口页脚点击条 (设计 §6.5): 底部 20dp 透明条挂编辑页 PI -->
+    <View
+        android:id="@+id/widget_footer_bar"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_gravity="bottom"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:contentDescription="@string/widget_footer_more" />
+</FrameLayout>

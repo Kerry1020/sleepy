@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import com.lingion.sleepy.R
 import com.lingion.sleepy.SleepyApp
 import com.lingion.sleepy.util.DateUtils
 import kotlinx.coroutines.CoroutineScope
@@ -35,13 +36,37 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
         val contentH = WidgetBitmapRenderers.twoDayContentHeightDp(data)
         // SMALL 变体: compact 分支内部还有 150dp 升档闸, 这里直接传 variant
         val variant = variantHint
-        if (contentH <= hDp) {
+        // FIXED 窗口 (设计 §4.2, 出厂默认): 每列独立窗口 — 今天列 TIME_WINDOW,
+        // 明天列 HEAD; 页脚合并为一条 (hiddenAhead 求和)。forceScroll=实验开关 (步骤 4)。
+        val forceScroll = false
+        val wins = if (!forceScroll && data.hasTable &&
+            data.semesterStatus == DateUtils.SemesterStatus.IN_RANGE &&
+            data.days.any { it.courses.isNotEmpty() }
+        ) {
+            computeTwoDayWindows(data, hDp.toFloat(), TodayWidgetReceiver.currentNowMin())
+        } else null
+        val visibleByCol = wins?.map { w -> w.visible.flatMap { it.row.courses } }
+        val footerText = wins?.filter { it.footer }?.takeIf { it.isNotEmpty() }
+            ?.let { context.getString(R.string.widget_footer_more, it.sumOf { w -> w.hiddenAheadCourses }) }
+        val statusByCol = wins?.map { w ->
+            if (w.status == FixedWindowCore.Status.ALL_DONE)
+                context.getString(R.string.widget_status_all_done) else null
+        }
+        if (contentH <= hDp || wins != null) {
             RemoteViewsWidgetHelper.renderAndPush(
                 context, awm, id, TAG,
                 loadData = { data },
                 renderBitmap = { d, w, h ->
-                    WidgetBitmapRenderers.renderTwoDay(context, d, w, h, variant)
-                }
+                    WidgetBitmapRenderers.renderTwoDay(
+                        context, d, w, h, variant,
+                        visibleByCol = visibleByCol,
+                        footerText = footerText, statusByCol = statusByCol
+                    )
+                },
+                layoutRes = if (footerText != null)
+                    com.lingion.sleepy.R.layout.widget_bitmap_footer
+                else com.lingion.sleepy.R.layout.widget_bitmap_container,
+                configureViews = footerConfigureViews(context, id, footerText)
             )
         } else {
             val shell = WidgetBitmapRenderers.renderTwoDay(context, data, wDp.toFloat(), hDp.toFloat(), variant)
@@ -84,6 +109,48 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "TwoDayRV"
+
+        /** 页脚条点击 PI 挂接 (footerText 非空才挂); 与 Today 系同一自救通道 */
+        internal fun footerConfigureViews(
+            context: Context, widgetId: Int, footerText: String?
+        ): ((android.widget.RemoteViews) -> Unit)? {
+            if (footerText == null) return null
+            val pi = TodayWidgetReceiver.footerConfigurePi(context, widgetId)
+            return { v: android.widget.RemoteViews ->
+                v.setOnClickPendingIntent(com.lingion.sleepy.R.id.widget_footer_bar, pi)
+            }
+        }
+
+        /**
+         * TwoDay 每列 FIXED 窗口 (设计 §4.2): availH = hDp − 66 (pad12+标签22+列头20+pad12);
+         * 行高/聚类与 twoDayContentHeightDp·renderTwoDayRegular 逐字节同源
+         * (timeJson 聚类, 单行 44, 堆叠 maxStack×44+(maxStack−1)×3, 行距 8)。
+         * 今天列 TIME_WINDOW(nowMin), 明天列 HEAD。
+         */
+        internal fun computeTwoDayWindows(
+            data: TwoDayData,
+            hDp: Float,
+            nowMin: Int?
+        ): List<FixedWindowCore.WindowResult> = data.days.map { day ->
+            val availH = hDp - 66f
+            val rows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
+            val entries = FixedWindowCore.entriesOf(rows, day.timeJson) { row ->
+                if (row.laneCount == 1) 44f
+                else {
+                    val maxStack = row.courses.groupBy { row.laneOf[it.id] }.values
+                        .maxOf { it.size }.coerceAtLeast(1)
+                    maxStack * 44f + (maxStack - 1) * 3f
+                }
+            }
+            FixedWindowCore.window(
+                entries = entries,
+                availH = availH,
+                mode = if (day.isToday && nowMin != null) FixedWindowCore.Mode.TIME_WINDOW
+                else FixedWindowCore.Mode.HEAD,
+                nowMin = if (day.isToday) nowMin else null,
+                gapDp = 8f
+            )
+        }
 
         /**
          * 同步版数据加载 — 今天 + 明天课程。
