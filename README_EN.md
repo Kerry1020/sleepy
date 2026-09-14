@@ -18,10 +18,11 @@
   <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square" alt="Compose">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/minSDK-26_(Android_8.0)-green?style=flat-square" alt="Min SDK">
+  <img src="https://img.shields.io/badge/QQ%20group-1063407652-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ group">
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">All versions</a> · <a href="docs/adapt-kit/README.md">Add your university</a>
+  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">All versions</a> · <a href="docs/adapt-kit/README.md">Add your university</a> · <a href="#community">💬 Community</a>
 </p>
 
 ---
@@ -467,6 +468,14 @@ adb install app/build/outputs/apk/debug/app-x86_64-debug.apk
 > ABI splits: arm64-v8a (mainstream devices), armeabi-v7a (32-bit legacy), x86_64 (emulators). Installed automatically per device.
 
 ---
+
+## Community
+
+Bug reports and new-school adaptation requests belong in [Issues](https://github.com/lingion/sleepy/issues). To chat, suggest features, or hear about new releases first, join the QQ group:
+
+**QQ group: `1063407652`** (search the number in QQ and request to join)
+
+Prefer to stay on GitHub? [Discussions](https://github.com/lingion/sleepy/discussions) get the same attention.
 
 ## Documentation
 

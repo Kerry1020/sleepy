@@ -20,7 +20,10 @@
 **不需要。** 不收邮箱、不收手机号、不收学号、不收任何个人信息。打开应用就能用。
 
 ### 谁在维护？
-Lingion，哈尔滨工程大学学生。GitHub Issues 是唯一的沟通渠道。不接受邮件联系，不在群里答疑。
+Lingion，哈尔滨工程大学学生。
+
+### 遇到问题去哪反馈？
+Bug 和新学校适配开 [GitHub Issue](https://github.com/lingion/sleepy/issues)；想讨论、提建议可以去 [Discussions](https://github.com/lingion/sleepy/discussions)，或者加 QQ 交流群 **`1063407652`**（QQ 搜索群号加入），日常交流和版本更新通知都在群里。
 
 ## 安装与运行
 

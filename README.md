@@ -18,10 +18,11 @@
   <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square" alt="Compose">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/minSDK-26_(Android_8.0)-green?style=flat-square" alt="Min SDK">
+  <img src="https://img.shields.io/badge/QQ群-1063407652-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群">
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki 手册</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">全部版本</a> · <a href="docs/adapt-kit/README.md">让你的学校支持教务直连</a>
+  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki 手册</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">全部版本</a> · <a href="docs/adapt-kit/README.md">让你的学校支持教务直连</a> · <a href="#社区">💬 社区</a>
 </p>
 
 ---
@@ -478,6 +479,14 @@ adb install app/build/outputs/apk/debug/app-x86_64-debug.apk
 > ABI 分包：arm64-v8a（真机主流）、armeabi-v7a（32 位备机）、x86_64（模拟器）。自动匹配设备架构。
 
 ---
+
+## 社区
+
+Bug 反馈和新学校适配走 [Issues](https://github.com/lingion/sleepy/issues);想聊天、提建议、第一时间知道新版本,可以加 QQ 交流群:
+
+**QQ 群:`1063407652`**(QQ 搜索群号 → 申请加入)
+
+不方便加群也没关系,[Discussions](https://github.com/lingion/sleepy/discussions) 里同样会认真回复。
 
 ## Documentation
 
