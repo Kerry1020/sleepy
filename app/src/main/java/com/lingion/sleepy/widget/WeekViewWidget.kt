@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import com.lingion.sleepy.R
 import com.lingion.sleepy.SleepyApp
 import com.lingion.sleepy.util.DateUtils
 import kotlinx.coroutines.CoroutineScope
@@ -34,12 +35,50 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
         // issue#31 荣耀 4×5: 内容超出容器 → pushScrollable (WeekList v1.0.36 同构),
         // 条带全展开长图不裁 5 门; 旧实现无闸 = 永远静态裁切 (显示不完全 + 不能滚)。
         val contentH = WidgetBitmapRenderers.weekViewContentHeightDp(context, data, wDp.toFloat())
-        if (contentH <= hDp) {
+        // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; 行高与
+        // weekViewContentHeightDp 逐字节同源 (wrapMax2Lines 行数 × fontMetrics 行高 + 3dp)。
+        // compact 档 (SMALL<150dp) 自有列选取, 不叠窗口。
+        val forceScroll = false
+        val compactFace = variant == WidgetVariant.SMALL && wDp < 150
+        val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
+        val shownDays = if (visibleDays.isEmpty()) data.days
+            else data.days.filter { it.dayOfWeek in visibleDays }.sortedBy { it.dayOfWeek }
+        val statusH = if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) 16f else 0f
+        val wins = if (!forceScroll && !compactFace && data.hasTable && shownDays.isNotEmpty() &&
+            data.days.any { it.courses.isNotEmpty() }
+        ) {
+            val density = context.resources.displayMetrics.density
+            val paint = android.graphics.Paint().apply {
+                textSize = 9f * density
+                typeface = android.graphics.Typeface.create(
+                    android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL
+                )
+            }
+            val lineH = (paint.fontMetrics.descent - paint.fontMetrics.ascent) / density
+            val colW = (wDp - 12f - 4f * (shownDays.size - 1)) / shownDays.size
+            val maxTextWidth = (colW - 8f) * density
+            val useAlias = com.lingion.sleepy.util.AppPrefs.isWidgetUseAlias(context)
+            computeWeekViewWindows(shownDays, hDp.toFloat(), statusH, lineH) { c ->
+                WidgetBitmapRenderers.wrapMax2Lines(
+                    com.lingion.sleepy.util.CourseDisplayUtil.displayName(c, useAlias),
+                    paint, maxTextWidth
+                ).size * lineH + 3f
+            }
+        } else null
+        val visibleByCol = wins?.map { w -> w.visible.flatMap { it.row.courses } }
+        val footerByCol = wins?.map { w ->
+            if (w.footer) context.getString(R.string.widget_footer_more_short, w.hiddenAheadCourses)
+            else null
+        }
+        if (contentH <= hDp || wins != null) {
             RemoteViewsWidgetHelper.renderAndPush(
                 context, awm, id, TAG,
                 loadData = { data },
                 renderBitmap = { d, w, h ->
-                    WidgetBitmapRenderers.renderWeekView(context, d, w, h, variant)
+                    WidgetBitmapRenderers.renderWeekView(
+                        context, d, w, h, variant,
+                        visibleByCol = visibleByCol, footerByCol = footerByCol
+                    )
                 }
             )
         } else {
@@ -84,6 +123,33 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "WeekViewRV"
+
+        /**
+         * WeekView 逐列 FIXED 窗口 (设计 §4.3): HEAD 模式;
+         * availH = hDp − 56 − statusH (外pad6×2 + 标题12+14 + chip14+4 + 卡底6);
+         * heightOf 由调用方按渲染同源测量 (行数×lineH+3dp 尾 gap), 页脚 = lineH+3。
+         */
+        internal fun computeWeekViewWindows(
+            shownDays: List<DayData>,
+            hDp: Float,
+            statusH: Float,
+            lineH: Float,
+            heightOf: (com.lingion.sleepy.data.entity.CourseEntity) -> Float
+        ): List<FixedWindowCore.WindowResult> = shownDays.map { day ->
+            val availH = hDp - 56f - statusH
+            val entries = day.courses.map { c ->
+                FixedWindowCore.WindowEntry(
+                    com.lingion.sleepy.util.ConflictLayoutEngine.WeekLaneRow(
+                        listOf(c), mapOf(c.id to 0), 1
+                    ),
+                    heightOf(c), null, null
+                )
+            }
+            FixedWindowCore.window(
+                entries, availH, FixedWindowCore.Mode.HEAD, null,
+                gapDp = 0f, footerH = lineH + 3f
+            )
+        }
 
         /**
          * 同步版数据加载 — 与 WeekListWidget.loadDataSync 完全一致。

@@ -333,6 +333,7 @@
     <string name="today_rest">休み / 自習 でもOK</string>
     <string name="widget_footer_more">あと %1$d コマ</string>
     <string name="widget_status_all_done">本日の授業は終了しました</string>
+    <string name="widget_footer_more_short">+%1$d</string>
 
     <string name="ok">OK</string>
     <string name="cancel">キャンセル</string>

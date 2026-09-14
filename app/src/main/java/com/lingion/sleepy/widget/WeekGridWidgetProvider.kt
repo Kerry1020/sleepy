@@ -118,8 +118,10 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             wDp = optMinW.takeIf { it > 0 } ?: 360
             hDp = optMaxH.takeIf { it > 0 } ?: 600
         }
-        val w = (wDp * density).toInt().coerceAtLeast((180 * density).toInt())
-        val h = (hDp * density).toInt().coerceAtLeast((250 * density).toInt())
+        // §4.4: 位图地板 (180×250dp) 已删 — 按容器真实尺寸绘制, fitXY 1:1 无压扁无留白;
+        // 极小尺寸的可读性由 renderBitmap 降级阶梯 (时间标签→色带) 兜底, 不再靠锁尺寸。
+        val w = (wDp * density).toInt().coerceAtLeast(1)
+        val h = (hDp * density).toInt().coerceAtLeast(1)
         Log.d(TAG, "renderWidget: opts MAX=${optMaxW}x${optMaxH}dp MIN=${optMinW}x${optMinH}dp " +
             "SIZES_wDp=${wDp}x${hDp}dp → bitmap=${w}x${h}px ratio=%.2f (density=$density)".format(w.toFloat()/h))
 
@@ -309,6 +311,40 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             // ── Body ──
             y = (outerPad + headH).toFloat()
             val bodyTop = y
+
+            // §4.4 降级阶梯末档: slotH 小到文字行排不下 (单节卡高 <9dp) → 色带模式:
+            // 日头保留, 主体只画课程色条 (冲突课按 lane 分宽), 无任何文字。任意高度非空白。
+            if (slotH < dp(9f)) {
+                for ((idx, dow) in sortedDays.withIndex()) {
+                    val colX = x + timeW + gapW + idx * (dayW + gapW)
+                    val dayData = data.days.firstOrNull { it.dayOfWeek == dow } ?: continue
+                    if (dow == todayDow) {
+                        p.color = bgToday
+                        p.alpha = 40
+                        c.drawRect(RectF(colX, bodyTop, colX + dayW, bodyTop + bodyH), p)
+                        p.alpha = 255
+                    }
+                    for (laneRect in com.lingion.sleepy.util.ConflictLayoutEngine
+                            .gridDayLanes(dayData.courses, dayData.timeJson)) {
+                        val course = laneRect.course
+                        val startIdx = (course.startNode - 1).coerceAtLeast(0)
+                        val step = course.step.coerceAtLeast(1).coerceAtMost(maxNode - startIdx)
+                        val top = bodyTop + gapH + startIdx * (slotH + gapH)
+                        val barH = (slotH * step + gapH * (step - 1)).coerceAtLeast(1f)
+                        val laneX = colX + dayW * laneRect.laneStartFraction
+                        val laneW = dayW * laneRect.laneWidthFraction
+                        p.color = CourseColorUtil.pickCourseColorIntWithGroupRows(
+                            course, allCourses.filter { it.groupId == course.groupId },
+                            isDark, gridLine, colorless
+                        )
+                        p.alpha = 200
+                        val r = minOf(dp(4f).toFloat(), barH / 2f)
+                        c.drawRoundRect(RectF(laneX, top, laneX + laneW, top + barH), r, r, p)
+                        p.alpha = 255
+                    }
+                }
+                return bmp
+            }
 
             // time column labels
             p.textAlign = Paint.Align.CENTER
