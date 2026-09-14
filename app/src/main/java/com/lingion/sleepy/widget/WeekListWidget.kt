@@ -38,7 +38,7 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
         val variant = variantHint
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; compact 档
         // (SMALL<150dp) 走纯文本自有截断, 不叠窗口 (索引口径不同, 保持旧行为)。
-        val forceScroll = false
+        val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
         val shownDays = if (visibleDays.isEmpty()) data.days

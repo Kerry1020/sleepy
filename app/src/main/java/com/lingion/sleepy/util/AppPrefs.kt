@@ -72,6 +72,7 @@ object AppPrefs {
     const val KEY_WEEK_USE_ALIAS = "week_use_alias"     // bool default false — 周视图显示别名
     const val KEY_GRID_USE_ALIAS = "grid_use_alias"     // bool default false — 网格视图显示别名
     const val KEY_WIDGET_USE_ALIAS = "widget_use_alias" // bool default false — 全部小组件显示别名
+    const val KEY_WIDGET_SCROLL_ENABLED = "widget_scroll_enabled" // bool default false — 强制滚动(实验), 默认 FIXED 固定窗口
     const val KEY_UPDATE_CHECK_ENABLED = "update_check_enabled" // bool default true — 启动检查 GitHub releases latest
     const val KEY_HIGH_REFRESH = "high_refresh_rate" // bool default true — 窗口 preferredDisplayModeId 钉屏幕最高刷率(流畅优先); 关=跟随系统省电调度
     const val KEY_NAV_DOCK = "nav_dock" // bool default false — 底栏形态: false=贴底(通栏), true=悬浮药丸(Dock, 底边留距)
@@ -532,6 +533,16 @@ object AppPrefs {
     fun setWidgetUseAlias(ctx: Context, v: Boolean) {
         sp(ctx).edit { putBoolean(KEY_WIDGET_USE_ALIAS, v) }
         _changeBus.tryEmit(KEY_WIDGET_USE_ALIAS)
+    }
+
+    // 强制滚动(实验) — 设计 §6: 出厂默认 false = FIXED 固定窗口 (全厂商可用);
+    // 开启后走旧滚动条带, 部分厂商 ROM 可能空白/卡顿, 编辑页开关带确认弹窗。
+    fun isWidgetScrollEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_WIDGET_SCROLL_ENABLED, false)
+
+    fun setWidgetScrollEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit { putBoolean(KEY_WIDGET_SCROLL_ENABLED, v) }
+        _changeBus.tryEmit(KEY_WIDGET_SCROLL_ENABLED)
     }
 
     // ===== 节假日灰显 =====

@@ -38,7 +38,7 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; 行高与
         // weekViewContentHeightDp 逐字节同源 (wrapMax2Lines 行数 × fontMetrics 行高 + 3dp)。
         // compact 档 (SMALL<150dp) 自有列选取, 不叠窗口。
-        val forceScroll = false
+        val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
         val shownDays = if (visibleDays.isEmpty()) data.days
