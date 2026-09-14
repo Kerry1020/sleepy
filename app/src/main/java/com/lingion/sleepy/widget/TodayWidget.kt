@@ -411,7 +411,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             variant: WidgetVariant, data: WidgetData,
             receiverClass: Class<*>? = null,
             pushGen: Long = 0L,
-            forceScroll: Boolean = false
+            forceScroll: Boolean = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         ) {
             val navEnabled = receiverClass != null &&
                 TodayWidgetReceiver::class.java.isAssignableFrom(receiverClass)
