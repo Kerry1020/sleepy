@@ -6,6 +6,9 @@ contact_links:
   - name: 适配教程 / Adaptation kit
     url: https://github.com/lingion/sleepy/blob/main/docs/adapt-kit/README.md
     about: 想让你学校支持教务直连? 先读这个, 跑一份 sleepy-adapt.zip 再开 issue。Adapter kit — collect your school's JW site before filing a school-support request.
+  - name: QQ 交流群 / QQ Group
+    url: https://github.com/lingion/sleepy#社区
+    about: 日常交流、提建议、追新版本,群号 1063407652(QQ 搜索群号加入)。Chat with users and the author — search the number 1063407652 in QQ.
   - name: Email the author
     url: mailto:lingion@hrbeu.edu.cn
     about: Use this for private feedback, security reports, or anything you don't want to publish publicly.
