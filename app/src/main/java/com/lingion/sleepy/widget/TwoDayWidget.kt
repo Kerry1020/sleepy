@@ -30,6 +30,8 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
     open val variantHint: WidgetVariant = WidgetVariant.REGULAR
 
     private fun push(context: Context, awm: AppWidgetManager, id: Int) {
+        // 世代闸 (设计 §9.4, 与 Today 同构): resize 连发时旧渲染结果不得覆盖新内容
+        val gen = WidgetResizeCore.bump(id)
         val data = loadDataSync(context, id)
         val opts = awm.getAppWidgetOptions(id)
         val (wDp, hDp) = RemoteViewsWidgetHelper.computeSizeDp(opts)
@@ -66,7 +68,8 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
                 layoutRes = if (footerText != null)
                     com.lingion.sleepy.R.layout.widget_bitmap_footer
                 else com.lingion.sleepy.R.layout.widget_bitmap_container,
-                configureViews = footerConfigureViews(context, id, footerText)
+                configureViews = footerConfigureViews(context, id, footerText),
+                pushGen = gen
             )
         } else {
             val shell = WidgetBitmapRenderers.renderTwoDay(context, data, wDp.toFloat(), hDp.toFloat(), variant)
@@ -74,7 +77,8 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
                 context, awm, id, TAG,
                 layoutRes = com.lingion.sleepy.R.layout.widget_scroll_twoday,
                 shellBitmap = shell,
-                scopeExtra = ScrollStripService.StripFactory.SCOPE_TWODAY
+                scopeExtra = ScrollStripService.StripFactory.SCOPE_TWODAY,
+                pushGen = gen
             )
         }
     }

@@ -261,50 +261,6 @@ object WidgetBitmapRenderers {
         }
     }
 
-    /**
-     * Today 紧凑档 — 日期小字(顶) + 状态/首课程名(居中), 纯文本无课程胶囊。
-     * 布局常量: compact 档不参与 todayContentHeightDp 滚动条带估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderTodayCompact(context: Context, data: WidgetData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = todayCompactTexts(ctx, data)
-
-        // 日期行(顶部小字)
-        p.color = s.onSurfaceVariant
-        p.textSize = 11f * density
-        p.typeface = Typeface.DEFAULT
-        val dateStr = "${data.date.monthValue}/${data.date.dayOfMonth}"
-        canvas.drawText(dateStr, pad, pad + 11f * density, p)
-
-        // 状态/首课程名 — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
-    }
-
     /** 按可用宽度截断文本(字符级贪心, 与 [[sleepy-vert-text-overflow-fix]] 同思路) */
     private fun ellipsize(p: Paint, text: String, maxW: Float): String {
         if (p.measureText(text) <= maxW) return text
@@ -647,50 +603,6 @@ object WidgetBitmapRenderers {
     }
 
     /**
-     * TwoDay 紧凑档 — 日期小字(顶) + 状态/今日首课名(居中), 纯文本无两栏课程胶囊。
-     * 布局常量: compact 档不参与 twoDayContentHeightDp 滚动条带估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderTwoDayCompact(context: Context, data: TwoDayData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = twoDayCompactTexts(ctx, data)
-
-        // 日期行(顶部小字) — 今日日期
-        p.color = s.onSurfaceVariant
-        p.textSize = 11f * density
-        p.typeface = Typeface.DEFAULT
-        val dateStr = data.days.firstOrNull()?.let { "${it.date.monthValue}/${it.date.dayOfMonth}" } ?: ""
-        canvas.drawText(dateStr, pad, pad + 11f * density, p)
-
-        // 状态/今日首课名 — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
-    }
-
-    /**
      * TwoDay 内容全展开高度(dp) — 可滚动条带渲染用。常量镜像 renderTwoDay。
      * v7.10.11: 冲突分栏行高按最高栏堆叠数算(与 renderTwoDayRegular 分栏镜像)。
      */
@@ -751,7 +663,10 @@ object WidgetBitmapRenderers {
      *   [状态行 16] + 列内: 标题 12+14 + chip(有课时) 14+4 + 课程行 (行高 + 3dp 间隔)
      * 课程行高 = fontMetrics(9sp) — 与渲染同源, 无常量漂移。外层 pad 6×2。
      */
-    fun weekViewContentHeightDp(context: Context, data: WeekData, wDp: Float): Float {
+    fun weekViewContentHeightDp(
+        context: Context, data: WeekData, wDp: Float,
+        maxCoursesPerDay: Int = Int.MAX_VALUE
+    ): Float {
         val outerPad = 6f
         if (!data.hasTable) return outerPad * 2 + 20f
         val visibleDays = AppPrefs.getVisibleDays(context)
@@ -779,7 +694,9 @@ object WidgetBitmapRenderers {
                 // 课程块: 行数与渲染器 wrapMax2Lines 同式 (别名口径也同源), 
                 // 行 = 1..2 行; 课程间 3dp 间隔 (含尾课收尾 3dp, 与渲染 idx==last 分支一致)
                 val useAlias = AppPrefs.isWidgetUseAlias(context)
-                day.courses.forEachIndexed { idx, course ->
+                // §9.5 口径统一: 静态脸渲染 take(maxCoursesPerDay), 闸门按同口径量;
+                // 条带(全展开)保持默认 Int.MAX_VALUE 全量口径
+                day.courses.take(maxCoursesPerDay).forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     val lines = wrapMax2Lines(name, p, maxTextWidth * density)
                     cy += lines.size * lineH

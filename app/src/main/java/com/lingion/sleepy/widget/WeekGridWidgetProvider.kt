@@ -95,34 +95,15 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
         // 正解 (API31+): OPTION_APPWIDGET_SIZES 返回当前真实 SizeF(dp 列表), 取最大那个 = 容器真实尺寸,
         //   bitmap 宽高比 == 容器宽高比 → 无拉伸无黑边。
         // 兼容 (API<31 回退): MIN_W × MAX_H 近似默认窄高尺寸。
-        val optMaxW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
-        val optMaxH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
-        val optMinW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-        val optMinH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-        var wDp = 0
-        var hDp = 0
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            // 类型化重载 getParcelableArrayList(key, Class) 是 API 33 新增,
-            //   API 31/32 调用会 NoSuchMethodError → 守卫必须用 TIRAMISU 而非 S
-            val sizes = opts.getParcelableArrayList(
-                AppWidgetManager.OPTION_APPWIDGET_SIZES, android.util.SizeF::class.java)
-            sizes?.maxByOrNull { it.width * it.height }?.let { s -> wDp = s.width.toInt(); hDp = s.height.toInt() }
-        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            // API 31/32: OPTION_APPWIDGET_SIZES 已存在但只有无类型重载(开发期过时警告, 运行时安全)
-            @Suppress("DEPRECATION", "UncheckedCast")
-            val legacy = opts.getParcelableArrayList<android.util.SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-            legacy?.maxByOrNull { it.width * it.height }?.let { s -> wDp = s.width.toInt(); hDp = s.height.toInt() }
-        }
-        if (wDp <= 0 || hDp <= 0) {
-            // 回退: MIN_W (最窄) × MAX_H (最高) ≈ 默认放置后的窄高容器
-            wDp = optMinW.takeIf { it > 0 } ?: 360
-            hDp = optMaxH.takeIf { it > 0 } ?: 600
-        }
+        // §9.3: 尺寸解析统一走 computeSizeDp (WidgetSizeCore 单一口径: API33 类型化/
+        // API31-32 无类型/回退 fallbackSizeDp), 不再内联镜像一份 max-area 逻辑。
+        val (wDp, hDp) = RemoteViewsWidgetHelper.computeSizeDp(opts)
         // §4.4: 位图地板 (180×250dp) 已删 — 按容器真实尺寸绘制, fitXY 1:1 无压扁无留白;
         // 极小尺寸的可读性由 renderBitmap 降级阶梯 (时间标签→色带) 兜底, 不再靠锁尺寸。
         val w = (wDp * density).toInt().coerceAtLeast(1)
         val h = (hDp * density).toInt().coerceAtLeast(1)
-        Log.d(TAG, "renderWidget: opts MAX=${optMaxW}x${optMaxH}dp MIN=${optMinW}x${optMinH}dp " +
+        Log.d(TAG, "renderWidget: opts MIN=${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)}" +
+            "x${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)}dp " +
             "SIZES_wDp=${wDp}x${hDp}dp → bitmap=${w}x${h}px ratio=%.2f (density=$density)".format(w.toFloat()/h))
 
         // SMALL 变体 + 容器 <150dp → 最小档: 不再"折叠成单列的网格脸"(用户反馈: 2×2 比例奇怪),

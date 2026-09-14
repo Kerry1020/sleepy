@@ -30,16 +30,23 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
     open val variantHint: WidgetVariant = WidgetVariant.REGULAR
 
     private fun push(context: Context, awm: AppWidgetManager, id: Int) {
+        // 世代闸 (设计 §9.4, 与 Today 同构): resize 连发时旧渲染结果不得覆盖新内容
+        val gen = WidgetResizeCore.bump(id)
         val data = loadDataSync(context, id)
         val opts = awm.getAppWidgetOptions(id)
         val (wDp, hDp) = RemoteViewsWidgetHelper.computeSizeDp(opts)
-        val contentH = WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         // SMALL 变体: compact 分支内部还有 150dp 升档闸, 这里直接传 variant
         val variant = variantHint
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; compact 档
         // (SMALL<150dp) 走纯文本自有截断, 不叠窗口 (索引口径不同, 保持旧行为)。
         val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
+        // 闸门口径 (§9.1): compact 脸 = ≤2 行 ×20dp 居中文本, 按实际变体量;
+        // forceScroll 比条带全量 (regular 口径 = 条带口径, WeekList 无 5 门封顶)
+        val contentH = if (!forceScroll && compactFace)
+            WidgetBitmapRenderers.weekListCompactTexts(context, LocalDate.now(), data)
+                .take(2).size * 20f
+        else WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
         val shownDays = if (visibleDays.isEmpty()) data.days
             else data.days.filter { it.dayOfWeek in visibleDays }.sortedBy { it.dayOfWeek }
@@ -62,7 +69,8 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
                         context, d, w, h, variant,
                         visibleByCol = visibleByCol, footerByCol = footerByCol
                     )
-                }
+                },
+                pushGen = gen
             )
         } else {
             // 超出 — 可滚动: 壳图 = 原渲染器按容器尺寸画(圆角背景+首屏)
@@ -72,7 +80,8 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
                 context, awm, id, TAG,
                 layoutRes = com.lingion.sleepy.R.layout.widget_scroll_weeklist,
                 shellBitmap = shell,
-                scopeExtra = ScrollStripService.StripFactory.SCOPE_WEEKLIST
+                scopeExtra = ScrollStripService.StripFactory.SCOPE_WEEKLIST,
+                pushGen = gen
             )
         }
     }

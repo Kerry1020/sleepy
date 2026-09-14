@@ -92,7 +92,7 @@ class TodayOverflowScrollParityTest {
         val src = widgetSource("WidgetBitmapRenderers.kt").readText()
         val body = src.substringAfter("fun renderTodayRegular(")
             .substringAfter("): Bitmap")
-            .substringBefore("private fun renderTodayCompact")
+            .substringBefore("fun renderNavTriangle")
         assertFalse(
             "禁 pageVisiblePx chrome 扣减窗 (v9.2 混搭口径根因, v11 整体退场)",
             body.contains("pageVisiblePx")
