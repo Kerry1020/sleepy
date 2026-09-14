@@ -151,7 +151,8 @@ class FixedWindowWeekTest {
         val s = src("WeekGridWidgetProvider.kt")
         assertFalse("250dp 位图地板未删", s.contains("250 * density"))
         assertFalse("180dp 位图地板未删", s.contains("180 * density"))
-        assertTrue("色带降级档缺失", s.contains("slotH < dp(9f)"))
+        assertTrue("色带降级档缺失 (已提取为纯函数)", s.contains("if (weekGridColorBand(slotH, density))"))
+        assertTrue("色带阈值纯函数缺失", s.contains("slotHPx < (9f * density).roundToInt()"))
         assertTrue("色带未走冲突分栏", s.contains("gridDayLanes(dayData.courses, dayData.timeJson)"))
     }
 }

@@ -137,6 +137,23 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "WeekGridV19"
 
+        /**
+         * §4.4 降级阶梯几何 — bodyH(px)/slotH(px) 推导 (渲染器与契约测试单一事实来源)。
+         * 与旧内联算式逐字节同式: outerPad 6dp×2 + headH 56dp, bodyH 地板 20dp,
+         * 节间隙 1.5dp×(n+1), slotH 地板 3dp (整除口径保持 Int / Int)。
+         */
+        internal fun weekGridBodyGeomPx(hPx: Int, density: Float, maxNode: Int): Pair<Int, Float> {
+            fun dp(v: Float) = (v * density).roundToInt()
+            val bodyH = (hPx - dp(6f) * 2 - dp(56f)).coerceAtLeast(dp(20f))
+            val totalGapH = dp(1.5f) * (maxNode + 1)
+            val slotH = ((bodyH - totalGapH) / maxNode).toFloat().coerceAtLeast(dp(3f).toFloat())
+            return bodyH to slotH
+        }
+
+        /** §4.4 降级阶梯末档: 单节 slotH < 9dp → 文字行排不下, 切色带模式 (无文字非空白) */
+        internal fun weekGridColorBand(slotHPx: Float, density: Float): Boolean =
+            slotHPx < (9f * density).roundToInt()
+
         fun renderBitmap(context: Context, data: WeekData, wPx: Int, hPx: Int): Bitmap {
             val density = context.resources.displayMetrics.density
             val isDark = data.isDark
@@ -187,12 +204,11 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             val gapW = dp(2.5f)
 
             val bodyW = wPx - outerPad * 2
-            val bodyH = (hPx - outerPad * 2 - headH).coerceAtLeast(dp(20f))
+            // §4.4 降级阶梯几何单一事实来源 (与 weekGridBodyGeomPx 契约测试同源)
+            val (bodyH, slotH) = weekGridBodyGeomPx(hPx, density, maxNode)
             val totalGapW = gapW * (dayCount + 1)
             val dayW = ((bodyW - timeW - totalGapW) / dayCount)
                 .toFloat().coerceAtLeast(dp(20f).toFloat())  // 下限: 防 launcher 返极小宽度致负数
-            val totalGapH = gapH * (maxNode + 1)
-            val slotH = ((bodyH - totalGapH) / maxNode).toFloat().coerceAtLeast(dp(3f).toFloat())
 
             Log.d(TAG, "w=${wPx}x${hPx} maxNode=$maxNode dayCount=$dayCount " +
                 "slotH=${slotH}px dayW=${dayW}px headH=${headH}px")
@@ -295,7 +311,7 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
 
             // §4.4 降级阶梯末档: slotH 小到文字行排不下 (单节卡高 <9dp) → 色带模式:
             // 日头保留, 主体只画课程色条 (冲突课按 lane 分宽), 无任何文字。任意高度非空白。
-            if (slotH < dp(9f)) {
+            if (weekGridColorBand(slotH, density)) {
                 for ((idx, dow) in sortedDays.withIndex()) {
                     val colX = x + timeW + gapW + idx * (dayW + gapW)
                     val dayData = data.days.firstOrNull { it.dayOfWeek == dow } ?: continue
