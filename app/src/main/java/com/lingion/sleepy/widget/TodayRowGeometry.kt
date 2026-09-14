@@ -17,19 +17,19 @@ import com.lingion.sleepy.util.ConflictLayoutEngine
 object TodayRowGeometry {
 
     /** 单课胶囊高 — renderTodayRegular 同款 (改这边必同步那边, 测试锁死)。 */
-    const val ROW_H_DP = 38f
+    const val ROW_H_DP = 36f
 
-    /** 行间距 — 课程胶囊间距 (用户反馈"太紧凑"后放大值)。 */
-    const val ROW_GAP_DP = 10f
+    /** 行间距 — 2026-09-14c 密度上调 (38/10→36/7): 同屏多装课, 用户要求能显示几节装几节。 */
+    const val ROW_GAP_DP = 7f
 
     /** 同栏堆叠课间距。 */
     const val STACK_GAP_DP = 3f
 
-    /** 顶 pad — 位图顶部内边距。 */
-    const val PAD_TOP_DP = 14f
+    /** 顶 pad — 位图顶部内边距 (2026-09-14c: 14→12 密度上调)。 */
+    const val PAD_TOP_DP = 12f
 
-    /** 标题行前进量 (headerSpace=false 时头部空档)。 */
-    const val HEADER_ADVANCE_DP = 24f
+    /** 标题行前进量 (headerSpace=false 时头部空档; 2026-09-14c: 24→22)。 */
+    const val HEADER_ADVANCE_DP = 22f
 
     /** 底 pad — 内容区底部内边距。 */
     const val PAD_BOTTOM_DP = 14f

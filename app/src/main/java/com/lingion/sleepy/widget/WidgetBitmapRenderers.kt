@@ -299,7 +299,7 @@ object WidgetBitmapRenderers {
         canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
             20f * density, 20f * density, p)
 
-        val pad = 14f * density
+        val pad = 12f * density
         var y = pad
 
         // 标题行 — emptyHeader=true 时整体不画: 今日导航版顶栏用真实 RemoteViews 视图
@@ -343,7 +343,7 @@ object WidgetBitmapRenderers {
 
         // v6 headerSpace: 条带长图不要头部空档 (顶栏在布局里是上方独立行) → 24dp 前进量整段跳过。
         // 各状态行 (无课表/学期外/无课/课程列表) 都在 y+=24 之后定位 → 只需跳过这次前进。
-        if (!headerSpace) y += 24f * density
+        if (!headerSpace) y += 22f * density
 
         if (!data.hasTable) {
             p.color = s.onSurface
@@ -391,8 +391,8 @@ object WidgetBitmapRenderers {
         // v11 撤回 v10 逐行子项 (OPPO extent 冻结/叠影/TopBar 覆盖三症状同根):
         // 渲染器回归 v9.1 — 一次画完整展开长图, 调用方保证 h=全展开高。
         // v8: 行几何单一真值 — span 起点随 headerSpace 参数化。
-        val rowH = 38f * density
-        val rowGap = 10f * density  // 课程胶囊间距放大(用户反馈太紧凑)
+        val rowH = 36f * density
+        val rowGap = 7f * density  // 2026-09-14c 密度上调 — 与 TodayRowGeometry 同源
         val rowW = w - pad * 2
 
         val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(data.courses, data.timeJson)
@@ -619,7 +619,7 @@ object WidgetBitmapRenderers {
      * v7.10.11: 冲突分栏行高按最高栏堆叠数算(与 renderTwoDayRegular 分栏镜像)。
      */
     fun twoDayContentHeightDp(data: TwoDayData): Float {
-        var h = 12f + 22f                           // pad + 顶部标签行
+        var h = 12f                                 // pad (2026-09-14c: 顶部标签行已删)
         if (!data.hasTable || data.days.isEmpty()) return h + 20f
         if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) return h + 22f + 14f  // 状态 + 提示
         // 最高一列决定整体高度; 每列: 列头(20) + 冲突分行课程 / "无课程"一行
@@ -629,11 +629,11 @@ object WidgetBitmapRenderers {
             val rows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
             rows.forEach { row ->
                 if (row.laneCount == 1) {
-                    cy += 44f + 8f
+                    cy += 36f + 6f
                 } else {
                     val maxStack = row.courses.groupBy { row.laneOf[it.id] }.values
                         .maxOf { it.size }.coerceAtLeast(1)
-                    cy += maxStack * 44f + (maxStack - 1) * 3f + 8f
+                    cy += maxStack * 36f + (maxStack - 1) * 3f + 6f
                 }
             }
             cy
@@ -1218,12 +1218,7 @@ object WidgetBitmapRenderers {
         val pad = 12f * density
         var y = pad
 
-        // 顶部标签
-        p.color = s.primary
-        p.textSize = 13f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText(ctx.getString(R.string.widget_twoday_label), pad, y + 13f * density, p)
-        y += 22f * density
+        // 2026-09-14c: 顶部「最近两天」标签行删除 (用户: 是个人都知道) — 省 22dp 给课程行
 
         if (!data.hasTable || data.days.isEmpty()) {
             p.color = s.onSurface
@@ -1293,8 +1288,8 @@ object WidgetBitmapRenderers {
             } else {
                 // 胶囊固定最大高度 44dp, 不再撑满整个列
                 // v7.10.11: 冲突分栏 — 同引擎, 冲突课并排半栏(栏间浅细竖线), 同栏堆叠
-                val rowGap = 8f * density
-                val maxRowH = 44f * density
+                val rowGap = 6f * density
+                val maxRowH = 36f * density
                 val stackGap = 3f * density
                 val laneGap = 5f * density
                 val sepColor = (s.onSurface and 0x00FFFFFF) or 0x4D000000

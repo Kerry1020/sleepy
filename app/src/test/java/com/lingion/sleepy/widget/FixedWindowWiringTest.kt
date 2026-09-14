@@ -13,7 +13,7 @@ import java.time.LocalDate
  *
  * 锁死两件事:
  * 1. computeTodayWindow / computeTwoDayWindows 的容量口径与渲染逐字节同源
- *    (Today availH=hDp−52 行38距10; TwoDay availH=hDp−66 行44距8 堆叠3);
+ *    (Today availH=hDp−70 行36距7; TwoDay availH=hDp−44 行36距6 堆叠3);
  * 2. push 源码接线不漂移 (forceScroll 参数 / 静态分支放行窗口 / 页脚布局+PI)。
  */
 class FixedWindowWiringTest {
@@ -51,11 +51,11 @@ class FixedWindowWiringTest {
         date = LocalDate.now(), courses = courses, timeJson = "", hasTable = true
     )
 
-    // ---- Today 系容量口径 (availH = hDp − 38 − 底部条36 = hDp − 74, 行 38 距 10) ----
+    // ---- Today 系容量口径 (availH = hDp − 34 − 底部条36 = hDp − 70, 行 36 距 7) ----
 
     @Test
     fun `today S tier shows one row plus footer when overflowing`() {
-        // hDp=110 → availH=36: forceFirst 保 1 行, 截断点亮胶囊 (填满档 footer=true)
+        // hDp=110 → availH=40: 一行 36 装得下, 两行 79 装不下 → 1 行 + 胶囊 (填满档 footer=true)
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 110f, h("07:00")
         )
@@ -67,7 +67,7 @@ class FixedWindowWiringTest {
 
     @Test
     fun `today M tier fits two rows plus footer`() {
-        // hDp=160 → availH=86: 两行 86 恰好装得下, 三行 134 装不下 → 2 行 + 胶囊
+        // hDp=160 → availH=90: 两行 79 装得下, 三行 122 装不下 → 2 行 + 胶囊
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 160f, h("07:00")
         )
@@ -116,7 +116,7 @@ class FixedWindowWiringTest {
         assertEquals(3L, w.visible.first().row.courses.first().id)
     }
 
-    // ---- TwoDay 系容量口径 (availH = hDp − 66, 行 44 距 8) ----
+    // ---- TwoDay 系容量口径 (availH = hDp − 44, 行 36 距 6) ----
 
     private fun twoDayData(todayN: Int, tomorrowN: Int) = TwoDayData(
         days = listOf(
@@ -128,15 +128,16 @@ class FixedWindowWiringTest {
 
     @Test
     fun `twoday per-column windows with merged footer budget`() {
-        // hDp=160 → availH=94: 一行 44 装得下, 两行 96 装不下 → 每列 1 行 + 页脚
+        // hDp=160 → availH=116: 两行 78 装得下, 三行 120 装不下 → 每列 2 行 + 页脚
+        // (2026-09-14c 密度上调: 删标签行 + 行 44→36 距 8→6 → 同屏多装一行)
         val wins = TwoDayWidgetReceiver.computeTwoDayWindows(
             twoDayData(4, 3), 160f, h("07:00")
         )
         assertEquals(2, wins.size)
-        assertEquals(1, wins[0].visible.size)
+        assertEquals(2, wins[0].visible.size)
         assertTrue(wins[0].footer)
-        assertEquals(3, wins[0].hiddenAheadCourses)
-        assertEquals(2, wins[1].hiddenAheadCourses)
+        assertEquals(2, wins[0].hiddenAheadCourses)
+        assertEquals(1, wins[1].hiddenAheadCourses)
     }
 
     @Test
