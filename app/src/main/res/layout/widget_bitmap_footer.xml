@@ -19,7 +19,9 @@
         android:adjustViewBounds="false"
         android:contentDescription="@string/widget_week_grid_label" />
 
-    <View
+    <!-- ImageView 而非 View: RemoteViews 只允许 @RemoteView 白名单类,
+         android.view.View 不在其列 → launcher 端 InflateException「载入组件出错」 -->
+    <ImageView
         android:id="@+id/widget_footer_bar"
         android:layout_width="match_parent"
         android:layout_height="20dp"
