@@ -400,7 +400,7 @@ object WidgetBitmapRenderers {
         val stackGap = 3f * density
         // FIXED 窗口: 只画窗内课程 (聚类按重叠链分簇, 连续簇子集重聚类 = 原簇序列,
         // 与推送侧窗口同一 weekLaneRows 口径 → 行几何逐像素一致)
-        val spans = TodayRowGeometry.rowSpans(visibleCourses ?: data.courses, headerSpace)
+        val spans = TodayRowGeometry.rowSpans(visibleCourses ?: data.courses, headerSpace, data.timeJson)
         spans.forEach { span ->
             val row = span.row
             val y = span.topDp * density
@@ -459,7 +459,7 @@ object WidgetBitmapRenderers {
             return TodayRowGeometry.contentTopDp(headerSpace) + 22f + 14f
         if (data.courses.isEmpty()) return TodayRowGeometry.contentTopDp(headerSpace) + 22f + 14f
         // v8: 行几何单一真值 — 与 renderTodayRegular 同调 TodayRowGeometry (镜像失配根除)
-        return TodayRowGeometry.contentHeightDp(data.courses, headerSpace)
+        return TodayRowGeometry.contentHeightDp(data.courses, headerSpace, data.timeJson)
     }
 
     // ── 今日导航顶栏按钮 (issue #24: 低对比圆角矩形 + 三角形图标) ──

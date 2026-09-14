@@ -57,11 +57,19 @@ object TodayRowGeometry {
      * 全部渲染行的纵向 span, 顺序 = 渲染顺序 (weekLaneRows 行序)。
      * 冲突行高 = 最高栏堆叠数 × ROW_H + (堆叠数−1) × STACK_GAP —
      * 与分栏渲染 (drawCourse 逐栏堆叠) 同一公式, 一处定义。
+     *
+     * timeJson (issue #37): 传课时聚簇走分钟域 — 非标准时间课 (如 9:45 下课)
+     * 不再因节点占位区间相同被误判冲突; 与渲染端 weekLaneRows(data.courses,
+     * data.timeJson) 同域, 行 span 与实画行一一对应。
      */
-    fun rowSpans(courses: List<CourseEntity>, headerSpace: Boolean): List<RowSpan> {
+    fun rowSpans(
+        courses: List<CourseEntity>,
+        headerSpace: Boolean,
+        timeJson: String? = null
+    ): List<RowSpan> {
         val spans = ArrayList<RowSpan>()
         var y = contentTopDp(headerSpace)
-        ConflictLayoutEngine.weekLaneRows(courses).forEachIndexed { idx, row ->
+        ConflictLayoutEngine.weekLaneRows(courses, timeJson).forEachIndexed { idx, row ->
             val h = rowHeightDp(row)
             spans += RowSpan(idx, row, y, y + h)
             y += h + ROW_GAP_DP
@@ -82,8 +90,12 @@ object TodayRowGeometry {
      * 内容全展开高度 (dp) — 末行底 + 底 pad。
      * 空列表 = 起点 + 底 pad (与渲染的空态分支自洽, 调用方负责空态语义行)。
      */
-    fun contentHeightDp(courses: List<CourseEntity>, headerSpace: Boolean): Float =
-        rowSpans(courses, headerSpace).lastOrNull()?.let { it.bottomDp + PAD_BOTTOM_DP }
+    fun contentHeightDp(
+        courses: List<CourseEntity>,
+        headerSpace: Boolean,
+        timeJson: String? = null
+    ): Float =
+        rowSpans(courses, headerSpace, timeJson).lastOrNull()?.let { it.bottomDp + PAD_BOTTOM_DP }
             ?: contentTopDp(headerSpace) + PAD_BOTTOM_DP
 
     /**

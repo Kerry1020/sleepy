@@ -353,4 +353,52 @@ class TodayOverflowGeometryTest {
         assertTrue("双日窗口行距 6", two.contains("gapDp = 6f"))
         assertTrue("双日窗口 availH 预算 = pad12+列头20+pad12 = 44", two.contains("hDp - 44f"))
     }
+
+    // ---- issue #37: 非标准时间课在小组件误判冲突 — timeJson 必须贯穿 Today 管线 ----
+
+    private val tj37 = """[{"node":1,"start":"08:00","end":"08:45"},{"node":2,"start":"08:55","end":"09:40"},{"node":3,"start":"09:50","end":"10:35"}]"""
+
+    private fun ownCourse(id: Long, st: String, en: String) =
+        com.lingion.sleepy.data.entity.CourseEntity(
+            id = id, groupId = "g", tableId = 1L, courseName = "课$id", day = 1,
+            startNode = 1, step = 2, startWeek = 1, endWeek = 16, color = "",
+            ownTime = true, startTime = st, endTime = en, isIrregularTime = true
+        )
+
+    @Test
+    fun `row spans cluster in time domain when timeJson present`() {
+        // 报障场景 (#37): 9:45 下课的非标准课与后续课时间零交集, 不得成冲突行
+        val a = ownCourse(1L, "08:20", "09:45")
+        val b = ownCourse(2L, "16:40", "16:50")
+        val withTime = TodayRowGeometry.rowSpans(listOf(a, b), headerSpace = false, timeJson = tj37)
+        assertEquals("时间域: 零交集 → 两行独立", 2, withTime.size)
+        assertTrue("时间域: 不得出现分栏", withTime.all { it.row.laneCount == 1 })
+        // 对照: 节点域旧路径 (不带 timeJson) = 误报本体, 同占位节点必成假冲突
+        val byNode = TodayRowGeometry.rowSpans(listOf(a, b), headerSpace = false)
+        assertEquals("节点域对照: 同占位节点 → 假冲突 1 行", 1, byNode.size)
+        assertEquals(2, byNode.single().row.laneCount)
+    }
+
+    @Test
+    fun `today pipeline threads timeJson through window geometry and strip`() {
+        assertTrue(
+            "FIXED 窗口未按时间域聚簇",
+            widgetSource("TodayWidget.kt").readText()
+                .contains("weekLaneRows(data.courses, data.timeJson)")
+        )
+        val r = widgetSource("WidgetBitmapRenderers.kt").readText()
+        assertTrue(
+            "渲染行 span 未按时间域聚簇",
+            r.contains("rowSpans(visibleCourses ?: data.courses, headerSpace, data.timeJson)")
+        )
+        assertTrue(
+            "内容高度未按时间域聚簇",
+            r.contains("contentHeightDp(data.courses, headerSpace, data.timeJson)")
+        )
+        assertTrue(
+            "条带行数未按时间域聚簇",
+            widgetSource("ScrollStripService.kt").readText()
+                .contains("rowSpans(d.courses, emptyHeader, d.timeJson)")
+        )
+    }
 }
