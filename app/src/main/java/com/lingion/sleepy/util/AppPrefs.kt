@@ -535,15 +535,10 @@ object AppPrefs {
         _changeBus.tryEmit(KEY_WIDGET_USE_ALIAS)
     }
 
-    // 强制滚动(实验) — 设计 §6: 出厂默认 false = FIXED 固定窗口 (全厂商可用);
-    // 开启后走旧滚动条带, 部分厂商 ROM 可能空白/卡顿, 编辑页开关带确认弹窗。
+    // 强制滚动(实验) — 旧全局一档 (设计 §6)。2026-09-14 起滚动改为 per-widget
+    // (WidgetScrollStore), 本 key 只作「从未显式设置过的实例」的迁移默认, 不再写入。
     fun isWidgetScrollEnabled(ctx: Context): Boolean =
         sp(ctx).getBoolean(KEY_WIDGET_SCROLL_ENABLED, false)
-
-    fun setWidgetScrollEnabled(ctx: Context, v: Boolean) {
-        sp(ctx).edit { putBoolean(KEY_WIDGET_SCROLL_ENABLED, v) }
-        _changeBus.tryEmit(KEY_WIDGET_SCROLL_ENABLED)
-    }
 
     // ===== 节假日灰显 =====
 

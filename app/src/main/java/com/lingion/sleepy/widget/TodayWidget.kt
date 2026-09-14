@@ -79,6 +79,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
         for (id in appWidgetIds) {
             WidgetBindingStore.remove(context, id)
             TodayDateNavStore.remove(context, id)
+            WidgetScrollStore.remove(context, id)
             WidgetResizeCore.remove(id)
         }
     }
@@ -258,7 +259,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             variant: WidgetVariant, data: WidgetData,
             receiverClass: Class<*>? = null,
             pushGen: Long = 0L,
-            forceScroll: Boolean = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
+            forceScroll: Boolean = WidgetScrollStore.isScrollEnabled(context, id)
         ) {
             val navEnabled = receiverClass != null &&
                 TodayWidgetReceiver::class.java.isAssignableFrom(receiverClass)

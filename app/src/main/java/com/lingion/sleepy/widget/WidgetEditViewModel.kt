@@ -27,7 +27,7 @@ data class WidgetEditUiState(
     val useAlias: Boolean = false,
     /** 设计 §6: 本实例 receiver simpleName (getAppWidgetInfo().configure 解析); null=未知 */
     val receiverSimpleName: String? = null,
-    /** 强制滚动(实验) — 全局一档, 默认 false = FIXED 固定窗口 */
+    /** 强制滚动(实验) — 本实例一档 (2026-09-14: per-widget, 不再全局共享) */
     val scrollEnabled: Boolean = false
 )
 
@@ -73,7 +73,7 @@ class WidgetEditViewModel(
                 availableTables = available,
                 useAlias = AppPrefs.isWidgetUseAlias(ctx),
                 receiverSimpleName = resolveReceiverSimpleName(),
-                scrollEnabled = AppPrefs.isWidgetScrollEnabled(ctx)
+                scrollEnabled = WidgetScrollStore.isScrollEnabled(ctx, widgetId)
             )
         }
     }
@@ -89,11 +89,11 @@ class WidgetEditViewModel(
     }.getOrNull()
 
     /**
-     * 设计 §6: 切换强制滚动(实验)。全局一档(所有小组件共享), 写 AppPrefs 后
-     * reload + 全量重推 (评审 #25: 否则「看着没生效」) — 与 setUseAlias 同管线。
+     * 设计 §6: 切换强制滚动(实验)。本实例一档 (per-widget, 写 WidgetScrollStore),
+     * 写后 reload + 全量重推 (评审 #25: 否则「看着没生效」) — 与 setUseAlias 同管线。
      */
     fun setScrollEnabled(v: Boolean) {
-        AppPrefs.setWidgetScrollEnabled(ctx, v)
+        WidgetScrollStore.setScrollEnabled(ctx, widgetId, v)
         reload()
         viewModelScope.launch {
             runCatching { WidgetUpdater.notifyDataChanged(ctx) }

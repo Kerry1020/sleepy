@@ -170,7 +170,7 @@ class FixedWindowWiringTest {
     @Test
     fun `today push wiring carries window footer and force-scroll gate`() {
         val s = src("TodayWidget.kt")
-        assertTrue("forceScroll 参数缺失", s.contains("forceScroll: Boolean = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)"))
+        assertTrue("forceScroll 参数缺失", s.contains("forceScroll: Boolean = WidgetScrollStore.isScrollEnabled(context, id)"))
         assertTrue("窗口计算未接 push", s.contains("computeTodayWindow(data, hDp.toFloat()"))
         assertTrue("静态分支未放行窗口", s.contains("contentH <= hDp || win != null"))
         assertTrue("底部条布局未接", s.contains("R.layout.widget_today_nav_static"))
