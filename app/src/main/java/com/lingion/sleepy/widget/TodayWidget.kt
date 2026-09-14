@@ -165,6 +165,10 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                     WidgetBitmapRenderers.renderNavCapsule(context, data, "+$hidden")
                 )
                 views.setViewVisibility(R.id.widget_nav_more, android.view.View.VISIBLE)
+            } else {
+                // 无隐藏课必须显式 GONE — 部分 launcher 复用视图树, 不推 GONE
+                // 旧胶囊会残留 (用户实测: 翻到没课的一天仍显示「+3」)
+                views.setViewVisibility(R.id.widget_nav_more, android.view.View.GONE)
             }
             views.setContentDescription(
                 R.id.widget_nav_more,

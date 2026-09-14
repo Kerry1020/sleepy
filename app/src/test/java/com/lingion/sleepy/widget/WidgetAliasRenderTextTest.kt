@@ -132,45 +132,4 @@ class WidgetAliasRenderTextTest {
         hasTable = true
     )
 
-    @Test
-    fun weekList_compact_alias_on_and_blank_fallback() {
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            resolve, dayLabel, useAlias = true, today = LocalDate.of(2026, 9, 2), data = weekData
-        )
-        assertEquals(listOf("周三 高数", "周四 大学英语"), texts)
-    }
-
-    @Test
-    fun weekList_compact_alias_off_keeps_original() {
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            resolve, dayLabel, useAlias = false, today = LocalDate.of(2026, 9, 2), data = weekData
-        )
-        assertEquals(listOf("周三 高等数学", "周四 大学英语"), texts)
-    }
-
-    @Test
-    fun weekList_compact_sunday_anchor_with_alias() {
-        val sundayWeek = weekData.copy(
-            days = listOf(
-                DayData(
-                    date = LocalDate.of(2026, 9, 6),
-                    dayOfWeek = 7,
-                    courses = listOf(testCourse(name = "周日体育", alias = "体育", startNode = 1)),
-                    timeJson = TimeTableUtils.DEFAULT_TIME_JSON
-                ),
-                DayData(
-                    date = LocalDate.of(2026, 9, 7),
-                    dayOfWeek = 1,
-                    courses = listOf(testCourse(name = "周一高数", alias = "高数", startNode = 1)),
-                    timeJson = TimeTableUtils.DEFAULT_TIME_JSON
-                )
-            )
-        )
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            resolve, dayLabel, useAlias = true, today = LocalDate.of(2026, 9, 6), data = sundayWeek
-        )
-        assertEquals(2, texts.size)
-        assertEquals("周日 体育", texts[0])
-        assertEquals("周一 高数", texts[1])
-    }
 }

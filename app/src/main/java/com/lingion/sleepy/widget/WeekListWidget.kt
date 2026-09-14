@@ -38,16 +38,24 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
         // SMALL 变体: compact 分支内部还有 150dp 升档闸, 这里直接传 variant
         val variant = variantHint
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; compact 档
-        // (SMALL<150dp) 走纯文本自有截断, 不叠窗口 (索引口径不同, 保持旧行为)。
+        // (SMALL<150dp) 自有列选取 (今天邻域 ≤3 列), 不叠窗口 (与周视图·小同构)。
         val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
-        // 闸门口径 (§9.1): compact 脸 = ≤2 行 ×20dp 居中文本, 按实际变体量;
-        // forceScroll 比条带全量 (regular 口径 = 条带口径, WeekList 无 5 门封顶)
-        val contentH = if (!forceScroll && compactFace)
-            WidgetBitmapRenderers.weekListCompactTexts(context, LocalDate.now(), data)
-                .take(2).size * 20f
-        else WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
+        // 闸门口径 (§9.1): compact 脸 = 今天邻域 ≤3 列实际列集 (2026-09-14 改版,
+        // 与渲染器 renderWeekListCompact 同口径 — 旧两行纯文本脸已废);
+        // forceScroll 比条带全量 (regular 口径 = 条带口径, WeekList 无 5 门封顶)
+        val contentH = if (!forceScroll && compactFace) {
+            val pool = if (visibleDays.isEmpty()) data.days
+                else data.days.filter { it.dayOfWeek in visibleDays }
+            val dows = WidgetBitmapRenderers.weekViewCompactColumns(
+                data.copy(days = pool), LocalDate.now().dayOfWeek.value
+            )
+            WidgetBitmapRenderers.weekListContentHeightDp(
+                context,
+                data.copy(days = data.days.filter { it.dayOfWeek in dows }.sortedBy { it.dayOfWeek })
+            )
+        } else WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         val shownDays = if (visibleDays.isEmpty()) data.days
             else data.days.filter { it.dayOfWeek in visibleDays }.sortedBy { it.dayOfWeek }
         val statusH = if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) 16f else 0f
@@ -74,7 +82,7 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
             )
         } else {
             // 超出 — 可滚动: 壳图 = 原渲染器按容器尺寸画(圆角背景+首屏)
-            // SMALL 档内容只有 1-2 行, 永远装得下; 兜底仍走原 scrollable
+            // compact 脸 3 列课多时也会超 → 同 regular 走 scrollable 条带
             val shell = WidgetBitmapRenderers.renderWeekList(context, data, wDp.toFloat(), hDp.toFloat(), variant)
             RemoteViewsWidgetHelper.pushScrollable(
                 context, awm, id, TAG,
