@@ -56,7 +56,7 @@ class TodayOverflowGeometryTest {
         )
         // 渲染端也必须用同一真值 (v4 硬编码 14+24 起点 = 丢失末行根因)
         val render = src.substringAfter("fun renderTodayRegular(")
-            .substringBefore("private fun renderTodayCompact")
+            .substringBefore("fun renderNavTriangle")
         assertTrue(
             "renderTodayRegular 必须经 TodayRowGeometry 取行 span (禁硬编码 contentTopPx)",
             render.contains("TodayRowGeometry")

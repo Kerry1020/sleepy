@@ -27,6 +27,8 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
     open val variantHint: WidgetVariant = WidgetVariant.REGULAR
 
     private fun push(context: Context, awm: AppWidgetManager, id: Int) {
+        // 世代闸 (设计 §9.4, 与 Today 同构): resize 连发时旧渲染结果不得覆盖新内容
+        val gen = WidgetResizeCore.bump(id)
         // SMALL 变体: compact 分支内部还有 150dp 升档闸, 这里直接传 variant
         val variant = variantHint
         val data = loadDataSync(context, id)
@@ -34,13 +36,32 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
         val (wDp, hDp) = RemoteViewsWidgetHelper.computeSizeDp(opts)
         // issue#31 荣耀 4×5: 内容超出容器 → pushScrollable (WeekList v1.0.36 同构),
         // 条带全展开长图不裁 5 门; 旧实现无闸 = 永远静态裁切 (显示不完全 + 不能滚)。
-        val contentH = WidgetBitmapRenderers.weekViewContentHeightDp(context, data, wDp.toFloat())
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; 行高与
         // weekViewContentHeightDp 逐字节同源 (wrapMax2Lines 行数 × fontMetrics 行高 + 3dp)。
         // compact 档 (SMALL<150dp) 自有列选取, 不叠窗口。
         val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
+        // 闸门口径 (§9.1/§9.5): forceScroll 比条带全量; 静态脸比实际渲染 —
+        // compact 档按今天邻域 ≤3 列, regular 档按 take(5) 封顶 (与渲染器同口径)
+        val contentH = if (forceScroll) {
+            WidgetBitmapRenderers.weekViewContentHeightDp(context, data, wDp.toFloat())
+        } else if (compactFace) {
+            val pool = if (visibleDays.isEmpty()) data.days
+                else data.days.filter { it.dayOfWeek in visibleDays }
+            val dows = WidgetBitmapRenderers.weekViewCompactColumns(
+                data.copy(days = pool), LocalDate.now().dayOfWeek.value
+            )
+            WidgetBitmapRenderers.weekViewContentHeightDp(
+                context,
+                data.copy(days = data.days.filter { it.dayOfWeek in dows }.sortedBy { it.dayOfWeek }),
+                wDp.toFloat(), maxCoursesPerDay = 5
+            )
+        } else {
+            WidgetBitmapRenderers.weekViewContentHeightDp(
+                context, data, wDp.toFloat(), maxCoursesPerDay = 5
+            )
+        }
         val shownDays = if (visibleDays.isEmpty()) data.days
             else data.days.filter { it.dayOfWeek in visibleDays }.sortedBy { it.dayOfWeek }
         val statusH = if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) 16f else 0f
@@ -79,7 +100,8 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
                         context, d, w, h, variant,
                         visibleByCol = visibleByCol, footerByCol = footerByCol
                     )
-                }
+                },
+                pushGen = gen
             )
         } else {
             // 超出 — 可滚动: 壳图 = 原渲染器按容器尺寸画 (首屏), 条带 = 全展开长图
@@ -88,7 +110,8 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
                 context, awm, id, TAG,
                 layoutRes = com.lingion.sleepy.R.layout.widget_scroll_weeklist,
                 shellBitmap = shell,
-                scopeExtra = ScrollStripService.StripFactory.SCOPE_WEEKVIEW
+                scopeExtra = ScrollStripService.StripFactory.SCOPE_WEEKVIEW,
+                pushGen = gen
             )
         }
     }
