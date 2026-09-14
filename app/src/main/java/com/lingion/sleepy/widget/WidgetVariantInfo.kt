@@ -26,5 +26,8 @@ val ALL_WIDGET_VARIANTS: List<WidgetVariantInfo> = listOf(
     WidgetVariantInfo(WeekViewWidgetReceiver::class.java,     R.string.widget_week_view_label),
     WidgetVariantInfo(WeekViewSmallWidgetReceiver::class.java, R.string.widget_week_view_small_label),
     WidgetVariantInfo(TwoDayWidgetReceiver::class.java,       R.string.widget_twoday_label),
-    WidgetVariantInfo(TwoDaySmallWidgetReceiver::class.java,  R.string.widget_twoday_small_label)
+    WidgetVariantInfo(TwoDaySmallWidgetReceiver::class.java,  R.string.widget_twoday_small_label),
+    WidgetVariantInfo(TodayWideWidgetReceiver::class.java,    R.string.widget_today_wide_label),
+    WidgetVariantInfo(TwoDayWideWidgetReceiver::class.java,   R.string.widget_twoday_wide_label),
+    WidgetVariantInfo(WeekListWideWidgetReceiver::class.java, R.string.widget_week_list_wide_label)
 )

@@ -119,9 +119,77 @@ class WidgetInfoXmlContractTest {
         }
     }
 
-    /** 全部 10 个 info XML 都在; 防止新变体漏建 xml */
+    /** 全部 13 个 info XML 都在; 防止新变体漏建 xml */
     @Test
     fun `info xml count matches ALL_WIDGET_VARIANTS`() {
         assertEquals(ALL_WIDGET_VARIANTS.size, infoXmls.size)
+    }
+
+    // ---- 设计 §7/§13.3: 三档放置值精确 + minResize 全 40×40 + resizeMode ----
+
+    /** receiver 短类名 → info XML 资源键 (manifest 单一事实来源) */
+    private val keyByReceiver: Map<String, String> by lazy {
+        manifestReceivers.mapKeys { it.key.substringAfterLast('.') }
+    }
+
+    private val tierByReceiver = mapOf(
+        // S 档 110×110 targetCell 2×2
+        "TodaySmallWidgetReceiver" to Triple("110dp", "110dp", "2x2"),
+        "TwoDaySmallWidgetReceiver" to Triple("110dp", "110dp", "2x2"),
+        "WeekListSmallWidgetReceiver" to Triple("110dp", "110dp", "2x2"),
+        "WeekViewSmallWidgetReceiver" to Triple("110dp", "110dp", "2x2"),
+        "WeekGridSmallWidgetProvider" to Triple("110dp", "110dp", "2x2"),
+        // M 档 300×160 targetCell 4×2
+        "TodayWideWidgetReceiver" to Triple("300dp", "160dp", "4x2"),
+        "TwoDayWideWidgetReceiver" to Triple("300dp", "160dp", "4x2"),
+        "WeekListWideWidgetReceiver" to Triple("300dp", "160dp", "4x2"),
+        // L 档 300×250 targetCell 4×4
+        "TodayWidgetReceiver" to Triple("300dp", "250dp", "4x4"),
+        "TwoDayWidgetReceiver" to Triple("300dp", "250dp", "4x4"),
+        "WeekListWidgetReceiver" to Triple("300dp", "250dp", "4x4"),
+        "WeekViewWidgetReceiver" to Triple("300dp", "250dp", "4x4"),
+        "WeekGridWidgetProvider" to Triple("300dp", "250dp", "4x4")
+    )
+
+    @Test
+    fun `every receiver has a tier entry and vice versa`() {
+        assertEquals(tierByReceiver.keys, keyByReceiver.keys)
+    }
+
+    @Test
+    fun `placement sizes match the three tiers exactly`() {
+        tierByReceiver.forEach { (receiver, tier) ->
+            val (minW, minH, cell) = tier
+            val (cellW, cellH) = cell.split('x')
+            val root = infoXmls.getValue(keyByReceiver.getValue(receiver))
+            assertEquals("$receiver minWidth", minW, root.getAttribute("android:minWidth"))
+            assertEquals("$receiver minHeight", minH, root.getAttribute("android:minHeight"))
+            assertEquals("$receiver targetCellWidth", cellW, root.getAttribute("android:targetCellWidth"))
+            assertEquals("$receiver targetCellHeight", cellH, root.getAttribute("android:targetCellHeight"))
+        }
+    }
+
+    @Test
+    fun `all 13 variants unlock resize both ends with minResize 40x40`() {
+        // 用户 2026-09-14 硬要求: 拖拽两端全开放 — minResize 统一 40×40, 不锁纵向
+        infoXmls.forEach { (name, root) ->
+            assertEquals("$name minResizeWidth", "40dp", root.getAttribute("android:minResizeWidth"))
+            assertEquals("$name minResizeHeight", "40dp", root.getAttribute("android:minResizeHeight"))
+            assertEquals("$name resizeMode", "horizontal|vertical", root.getAttribute("android:resizeMode"))
+        }
+    }
+
+    @Test
+    fun `M tier previews exist in both drawable dirs with wide aspect`() {
+        // 评审 #20: 预览图 drawable 与 drawable-nodpi 两处都要有, M 档 2.7:1
+        val base = sequenceOf(
+            File("app/src/main/res"), File("src/main/res"), File("../app/src/main/res")
+        ).first { File(it, "drawable").isDirectory }
+        for (fam in listOf("today", "twoday", "weeklist")) {
+            for (d in listOf("drawable", "drawable-nodpi")) {
+                val f = File(base, "$d/widget_preview_${fam}_wide.png")
+                assertTrue("missing ${f.path}", f.isFile && f.length() > 0)
+            }
+        }
     }
 }
