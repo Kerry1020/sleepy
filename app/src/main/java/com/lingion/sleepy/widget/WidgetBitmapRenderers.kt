@@ -190,8 +190,14 @@ object WidgetBitmapRenderers {
         variant: WidgetVariant = WidgetVariant.REGULAR,
         emptyHeader: Boolean = false,
         headerSpace: Boolean = false,
-        showBackToToday: Boolean = true
-    ): Bitmap = renderTodayRegular(context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday)
+        showBackToToday: Boolean = true,
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
+        footerText: String? = null,
+        statusText: String? = null
+    ): Bitmap = renderTodayRegular(
+        context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday,
+        visibleCourses, footerText, statusText
+    )
 
     /**
      * Today 状态内容判定 (纯 JVM 可测) — 无课表 / 学期外 / 无课。
@@ -314,7 +320,10 @@ object WidgetBitmapRenderers {
         context: Context, data: WidgetData, wDp: Float, hDp: Float,
         emptyHeader: Boolean,
         headerSpace: Boolean,
-        showBackToToday: Boolean = true
+        showBackToToday: Boolean = true,
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
+        footerText: String? = null,
+        statusText: String? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
@@ -420,6 +429,15 @@ object WidgetBitmapRenderers {
             return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
         }
 
+        // FIXED 窗口 ALL_DONE (设计 §3.0 公共闸): 状态行替代课程行, 无页脚
+        if (statusText != null) {
+            p.color = s.onSurface
+            p.textSize = 16f * density
+            p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            canvas.drawText(statusText, pad, y + 16f * density, p)
+            return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
+        }
+
         // 课程列表（全部渲染，不再截断）
         // v7.10.11: 冲突分栏 — 与 App 今日页/周视图同一引擎(weekLaneRows),
         // 冲突区域一行内并排(栏间浅细竖线), 同栏课纵向堆叠, 无冲突课整宽。
@@ -434,7 +452,9 @@ object WidgetBitmapRenderers {
         val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(data.courses, data.timeJson)
         val sepColor = (s.onSurface and 0x00FFFFFF) or 0x4D000000  // 30% 黑(浅色主题下=浅灰细线)
         val stackGap = 3f * density
-        val spans = TodayRowGeometry.rowSpans(data.courses, headerSpace)
+        // FIXED 窗口: 只画窗内课程 (聚类按重叠链分簇, 连续簇子集重聚类 = 原簇序列,
+        // 与推送侧窗口同一 weekLaneRows 口径 → 行几何逐像素一致)
+        val spans = TodayRowGeometry.rowSpans(visibleCourses ?: data.courses, headerSpace)
         spans.forEach { span ->
             val row = span.row
             val y = span.topDp * density
@@ -470,6 +490,15 @@ object WidgetBitmapRenderers {
                     }
                 }
             }
+        }
+
+        // FIXED 窗口页脚 (设计 §3.2-8): 底部 20dp 区, 11sp 次要色; 推送侧窗口已按
+        // availH−20 预算, 行不会画进页脚区
+        if (footerText != null) {
+            p.color = s.onSurfaceVariant
+            p.textSize = 11f * density
+            p.typeface = Typeface.DEFAULT
+            canvas.drawText(footerText, pad, h - 14f * density, p)
         }
 
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
@@ -1252,15 +1281,23 @@ object WidgetBitmapRenderers {
      */
     fun renderTwoDay(
         context: Context, data: TwoDayData, wDp: Float, hDp: Float,
-        variant: WidgetVariant = WidgetVariant.REGULAR
+        variant: WidgetVariant = WidgetVariant.REGULAR,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerText: String? = null,
+        statusByCol: List<String?>? = null
     ): Bitmap {
-        return renderTwoDayRegular(context, data, wDp, hDp)
+        return renderTwoDayRegular(context, data, wDp, hDp, visibleByCol, footerText, statusByCol)
     }
 
     /**
      * TwoDay 全量排版 — 原 renderTwoDay 函数体原样改名迁入(REGULAR 档逐字节不变保证)
      */
-    private fun renderTwoDayRegular(context: Context, data: TwoDayData, wDp: Float, hDp: Float): Bitmap {
+    private fun renderTwoDayRegular(
+        context: Context, data: TwoDayData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerText: String?,
+        statusByCol: List<String?>?
+    ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
         val h = (hDp * density).toInt()
@@ -1325,6 +1362,9 @@ object WidgetBitmapRenderers {
 
         data.days.forEachIndexed { colIdx, day ->
             val colX = pad + colIdx * (colW + colGap)
+            // FIXED 窗口 (设计 §4.2): 今天列 TIME_WINDOW / 明天列 HEAD, 推送侧算好传入
+            val colCourses = visibleByCol?.getOrNull(colIdx) ?: day.courses
+            val colStatus = statusByCol?.getOrNull(colIdx)
 
             // 列标题
             p.color = s.primary
@@ -1348,7 +1388,12 @@ object WidgetBitmapRenderers {
 
             var cy = listTop + 20f * density
 
-            if (day.courses.isEmpty()) {
+            if (colStatus != null) {
+                // FIXED 窗口 ALL_DONE: 列内状态行替代课程 (今天列专属)
+                p.color = s.onSurfaceVariant
+                p.textSize = 11f * density
+                canvas.drawText(colStatus, colX, cy + 11f * density, p)
+            } else if (colCourses.isEmpty()) {
                 p.color = s.onSurfaceVariant
                 p.textSize = 11f * density
                 canvas.drawText(ctx.getString(R.string.no_course), colX, cy + 11f * density, p)
@@ -1360,7 +1405,7 @@ object WidgetBitmapRenderers {
                 val stackGap = 3f * density
                 val laneGap = 5f * density
                 val sepColor = (s.onSurface and 0x00FFFFFF) or 0x4D000000
-                val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
+                val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(colCourses, day.timeJson)
                 laneRows.forEach { row ->
                     if (row.laneCount == 1) {
                         drawCourse(canvas, p, row.courses[0], day.timeJson, colX, cy, colW, maxRowH, s, density,
@@ -1405,6 +1450,15 @@ object WidgetBitmapRenderers {
                 p.color = (s.onSurfaceVariant and 0x00FFFFFF) or 0x20000000
                 canvas.drawRect(sepX - 0.5f * density, listTop, sepX + 0.5f * density, listBottom, p)
             }
+        }
+
+        // FIXED 窗口合并页脚 (设计 §4.2): 底部居中 20dp 区
+        if (footerText != null) {
+            p.color = s.onSurfaceVariant
+            p.textSize = 11f * density
+            p.typeface = Typeface.DEFAULT
+            val fw = p.measureText(footerText)
+            canvas.drawText(footerText, (w - fw) / 2f, h - 12f * density, p)
         }
 
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }

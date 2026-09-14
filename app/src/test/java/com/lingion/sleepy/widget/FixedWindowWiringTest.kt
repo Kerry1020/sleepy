@@ -1,0 +1,190 @@
+package com.lingion.sleepy.widget
+
+import com.lingion.sleepy.data.entity.CourseEntity
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.File
+import java.time.LocalDate
+
+/**
+ * 步骤 2 契约测试: FIXED 窗口 push 层接线 (设计 §4.1/§4.2)。
+ *
+ * 锁死两件事:
+ * 1. computeTodayWindow / computeTwoDayWindows 的容量口径与渲染逐字节同源
+ *    (Today availH=hDp−52 行38距10; TwoDay availH=hDp−66 行44距8 堆叠3);
+ * 2. push 源码接线不漂移 (forceScroll 参数 / 静态分支放行窗口 / 页脚布局+PI)。
+ */
+class FixedWindowWiringTest {
+
+    private fun course(
+        id: Long,
+        day: Int = 1,
+        startNode: Int = 1,
+        step: Int = 1,
+        start: String,
+        end: String
+    ) = CourseEntity(
+        id = id, groupId = "g$id", tableId = 1L, courseName = "课$id",
+        day = day, startNode = startNode, step = step,
+        startWeek = 1, endWeek = 20, color = "blue",
+        ownTime = true, isIrregularTime = true, startTime = start, endTime = end
+    )
+
+    private fun h(m: String): Int {
+        val p = m.split(":")
+        return p[0].toInt() * 60 + p[1].toInt()
+    }
+
+    private fun dayCourses(n: Int, firstStartMin: Int = 8 * 60) = (1..n).map { i ->
+        val s = firstStartMin + (i - 1) * 100
+        val e = s + 100
+        course(
+            id = i.toLong(), startNode = (i - 1) * 2 + 1,
+            start = "%02d:%02d".format(s / 60, s % 60),
+            end = "%02d:%02d".format(e / 60, e % 60)
+        )
+    }
+
+    private fun dataOf(courses: List<CourseEntity>) = WidgetData(
+        date = LocalDate.now(), courses = courses, timeJson = "", hasTable = true
+    )
+
+    // ---- Today 系容量口径 (availH = hDp − 52, 行 38 距 10) ----
+
+    @Test
+    fun `today S tier shows one row plus footer when overflowing`() {
+        // hDp=110 → availH=58: 一行 38 装得下, 两行 86 装不下 → 1 行 + 页脚
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(5)), 110f, h("07:00")
+        )
+        assertEquals(1, w.visible.size)
+        assertTrue(w.footer)
+        assertEquals(4, w.hiddenAheadCourses)
+        assertEquals(FixedWindowCore.Status.NONE, w.status)
+    }
+
+    @Test
+    fun `today M tier fits two rows plus footer`() {
+        // hDp=160 → availH=108: 两行 86 装得下, 三行 134 装不下; 页脚预算 88 仍容两行
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(5)), 160f, h("07:00")
+        )
+        assertEquals(2, w.visible.size)
+        assertTrue(w.footer)
+        assertEquals(3, w.hiddenAheadCourses)
+    }
+
+    @Test
+    fun `today no footer when everything fits`() {
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(2)), 160f, h("07:00")
+        )
+        assertEquals(2, w.visible.size)
+        assertFalse(w.footer)
+        assertEquals(0, w.hiddenAheadCourses)
+    }
+
+    @Test
+    fun `today all-done gate fires via compute even when fits`() {
+        // 评审 #4: fits 少课也要 ALL_DONE — 公共闸与溢出无关
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(2)), 160f, h("23:00")
+        )
+        assertEquals(FixedWindowCore.Status.ALL_DONE, w.status)
+        assertTrue(w.visible.isEmpty())
+    }
+
+    @Test
+    fun `today past-day uses head mode without now`() {
+        // 非今天 (导航翻页/预览) → HEAD: 从第一节排, 不锚当前时刻
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(5)), 110f, null
+        )
+        assertEquals(1, w.visible.size)
+        assertEquals(1L, w.visible.first().row.courses.first().id)
+        assertTrue(w.footer)
+    }
+
+    @Test
+    fun `today anchors on in-progress class`() {
+        // 5 节, 第 3 节进行中 → 窗口从第 3 节起
+        val w = TodayWidgetReceiver.computeTodayWindow(
+            dataOf(dayCourses(5)), 160f, h("11:50")
+        )
+        assertEquals(3L, w.visible.first().row.courses.first().id)
+    }
+
+    // ---- TwoDay 系容量口径 (availH = hDp − 66, 行 44 距 8) ----
+
+    private fun twoDayData(todayN: Int, tomorrowN: Int) = TwoDayData(
+        days = listOf(
+            DayData(LocalDate.now(), 1, dayCourses(todayN), ""),
+            DayData(LocalDate.now().plusDays(1), 2, dayCourses(tomorrowN), "")
+        ),
+        hasTable = true
+    )
+
+    @Test
+    fun `twoday per-column windows with merged footer budget`() {
+        // hDp=160 → availH=94: 一行 44 装得下, 两行 96 装不下 → 每列 1 行 + 页脚
+        val wins = TwoDayWidgetReceiver.computeTwoDayWindows(
+            twoDayData(4, 3), 160f, h("07:00")
+        )
+        assertEquals(2, wins.size)
+        assertEquals(1, wins[0].visible.size)
+        assertTrue(wins[0].footer)
+        assertEquals(3, wins[0].hiddenAheadCourses)
+        assertEquals(2, wins[1].hiddenAheadCourses)
+    }
+
+    @Test
+    fun `twoday tomorrow column stays HEAD when today is all done`() {
+        // 今天全下课 → 今天列 ALL_DONE; 明天列 HEAD 从第一节起 (不得被 ALL_DONE 传染)
+        val wins = TwoDayWidgetReceiver.computeTwoDayWindows(
+            twoDayData(2, 5), 160f, h("23:00")
+        )
+        assertEquals(FixedWindowCore.Status.ALL_DONE, wins[0].status)
+        assertEquals(FixedWindowCore.Status.NONE, wins[1].status)
+        assertEquals(1L, wins[1].visible.first().row.courses.first().id)
+    }
+
+    @Test
+    fun `twoday empty column yields empty window not all-done`() {
+        // 明天无课 → 空窗口 (渲染走「无课程」既有分支), 不得谎报已结束
+        val wins = TwoDayWidgetReceiver.computeTwoDayWindows(
+            twoDayData(2, 0), 160f, h("23:00")
+        )
+        assertTrue(wins[1].visible.isEmpty())
+        assertEquals(FixedWindowCore.Status.NONE, wins[1].status)
+        assertFalse(wins[1].footer)
+    }
+
+    // ---- push 层接线源码扫描 (防重构漂移) ----
+
+    private fun src(name: String): String =
+        File("src/main/java/com/lingion/sleepy/widget/$name").readText()
+
+    @Test
+    fun `today push wiring carries window footer and force-scroll gate`() {
+        val s = src("TodayWidget.kt")
+        assertTrue("forceScroll 参数缺失", s.contains("forceScroll: Boolean = false"))
+        assertTrue("窗口计算未接 push", s.contains("computeTodayWindow(data, hDp.toFloat()"))
+        assertTrue("静态分支未放行窗口", s.contains("contentH <= hDp || win != null"))
+        assertTrue("页脚布局未接", s.contains("R.layout.widget_bitmap_footer"))
+        assertTrue("导航静态页脚布局未接", s.contains("R.layout.widget_today_nav_static_footer"))
+        assertTrue("页脚点击 PI 未挂", s.contains("R.id.widget_footer_bar"))
+        assertTrue("页脚自救 PI 缺失", s.contains("footerConfigurePi"))
+    }
+
+    @Test
+    fun `twoday push wiring carries per-column windows and footer`() {
+        val s = src("TwoDayWidget.kt")
+        assertTrue("窗口计算未接 push", s.contains("computeTwoDayWindows(data, hDp.toFloat()"))
+        assertTrue("静态分支未放行窗口", s.contains("contentH <= hDp || wins != null"))
+        assertTrue("渲染未按列传窗口", s.contains("visibleByCol = visibleByCol"))
+        assertTrue("页脚布局未接", s.contains("R.layout.widget_bitmap_footer"))
+        assertTrue("页脚点击 PI 未挂", s.contains("footerConfigureViews"))
+    }
+}

@@ -346,6 +346,8 @@
     <string name="today_nav_back_to_today">Back to today</string>
     <string name="today_no_course">No classes today</string>
     <string name="today_rest">Free day</string>
+    <string name="widget_footer_more">+%1$d more</string>
+    <string name="widget_status_all_done">All classes done today</string>
 
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>

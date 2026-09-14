@@ -8,7 +8,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
+import com.lingion.sleepy.R
 import com.lingion.sleepy.SleepyApp
+import com.lingion.sleepy.util.ConflictLayoutEngine
 import com.lingion.sleepy.util.DateUtils
 import com.lingion.sleepy.util.TimeTableUtils
 import kotlinx.coroutines.CoroutineScope
@@ -408,7 +410,8 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             context: Context, awm: AppWidgetManager, id: Int,
             variant: WidgetVariant, data: WidgetData,
             receiverClass: Class<*>? = null,
-            pushGen: Long = 0L
+            pushGen: Long = 0L,
+            forceScroll: Boolean = false
         ) {
             val navEnabled = receiverClass != null &&
                 TodayWidgetReceiver::class.java.isAssignableFrom(receiverClass)
@@ -417,16 +420,44 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             // 闸门口径: 所有路径统一按带头口径 (headerSpace=false, 与渲染/条带同参) —
             // v9 起 overflow 与静态同一把尺, 不再有 bar 行口径分叉
             val contentH = WidgetBitmapRenderers.todayContentHeightDp(data)
+            // FIXED 窗口 (设计 §4.1, 出厂默认): 溢出不再走滚动, 画「当前时刻起」固定窗;
+            // ALL_DONE 公共闸与是否溢出无关 (评审 #4: fits 少课也要显示已结束状态)。
+            // forceScroll=实验开关 (设计 §6, 步骤 4 接 AppPrefs), 默认 false。
+            val win = if (!forceScroll && data.hasTable &&
+                data.semesterStatus == DateUtils.SemesterStatus.IN_RANGE &&
+                data.courses.isNotEmpty()
+            ) {
+                computeTodayWindow(data, hDp.toFloat(), if (data.isToday) currentNowMin() else null)
+            } else null
+            val winCourses = win?.visible?.flatMap { it.row.courses }
+            val footerText = win?.takeIf { it.footer }
+                ?.let { context.getString(R.string.widget_footer_more, it.hiddenAheadCourses) }
+            val statusText = win?.takeIf { it.status == FixedWindowCore.Status.ALL_DONE }
+                ?.let { context.getString(R.string.widget_status_all_done) }
+            val footerPi = if (footerText != null) footerConfigurePi(context, id) else null
             if (!navEnabled) {
-                // WeekGrid 最小档 — 改动前行为逐字节一致 (无导航, 无按钮条)
-                if (contentH <= hDp) {
+                // WeekGrid 最小档 — 无导航, 无按钮条
+                if (contentH <= hDp || win != null) {
                     RemoteViewsWidgetHelper.renderAndPush(
                         context, awm, id, TAG,
                         loadData = { data },
                         renderBitmap = { d, w, h ->
-                            WidgetBitmapRenderers.renderToday(context, d, w, h, variant)
+                            WidgetBitmapRenderers.renderToday(
+                                context, d, w, h, variant,
+                                visibleCourses = winCourses,
+                                footerText = footerText, statusText = statusText
+                            )
                         },
-                        layoutRes = com.lingion.sleepy.R.layout.widget_bitmap_container,
+                        layoutRes = if (footerText != null)
+                            com.lingion.sleepy.R.layout.widget_bitmap_footer
+                        else com.lingion.sleepy.R.layout.widget_bitmap_container,
+                        configureViews = footerPi?.let { pi ->
+                            { v: android.widget.RemoteViews ->
+                                v.setOnClickPendingIntent(
+                                    com.lingion.sleepy.R.id.widget_footer_bar, pi
+                                )
+                            }
+                        },
                         pushGen = pushGen
                     )
                 } else {
@@ -444,8 +475,9 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                         pushGen = pushGen
                     )
                 }
-            } else if (contentH <= hDp) {
+            } else if (contentH <= hDp || win != null) {
                 // Today 系静态分支 — bitmap(emptyHeader 留白顶栏) + 真实视图顶栏 (issue #24)
+                // FIXED 窗口 (win != null) 也走此分支: 溢出被窗口收敛进 hDp, 不再进滚动
                 // v8.1 口径: 静态档 bitmap 画 24dp 头部空档 (headerSpace=false), 闸门用
                 // contentH(同口径) ≤ hDp — 与渲染逐字节一致
                 // issue#31 荣耀 2×2: 顶栏整体装不下 (HIDE_NAV) — 极端档不再整条 GONE:
@@ -469,20 +501,36 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                             // 有交互语义, 点不了就不该出现 (用户 2026-09-13: 要么能点
                             // 要么不存在)。日期标题无交互语义保留。
                             WidgetBitmapRenderers.renderToday(
-                                context, d, w, h, variant, showBackToToday = false
+                                context, d, w, h, variant, showBackToToday = false,
+                                visibleCourses = winCourses,
+                                footerText = footerText, statusText = statusText
                             )
                         },
-                        layoutRes = com.lingion.sleepy.R.layout.widget_bitmap_container,
+                        layoutRes = if (footerText != null)
+                            com.lingion.sleepy.R.layout.widget_bitmap_footer
+                        else com.lingion.sleepy.R.layout.widget_bitmap_container,
+                        configureViews = footerPi?.let { pi ->
+                            { v: android.widget.RemoteViews ->
+                                v.setOnClickPendingIntent(
+                                    com.lingion.sleepy.R.id.widget_footer_bar, pi
+                                )
+                            }
+                        },
                         pushGen = pushGen
                     )
                     Log.d(TAG, "pushTodayData static-fullface id=$id ${wDp}x${hDp}dp content=$contentH (HIDE_NAV 未翻页 — 无回今天语义, 无按钮)")
                     return
                 }
                 val shell = WidgetBitmapRenderers.renderToday(
-                    context, data, wDp.toFloat(), hDp.toFloat(), variant, emptyHeader = true
+                    context, data, wDp.toFloat(), hDp.toFloat(), variant, emptyHeader = true,
+                    visibleCourses = winCourses,
+                    footerText = footerText, statusText = statusText
                 )
                 val views = android.widget.RemoteViews(
-                    context.packageName, com.lingion.sleepy.R.layout.widget_today_nav_static
+                    context.packageName,
+                    if (footerText != null)
+                        com.lingion.sleepy.R.layout.widget_today_nav_static_footer
+                    else com.lingion.sleepy.R.layout.widget_today_nav_static
                 )
                 views.setImageViewBitmap(com.lingion.sleepy.R.id.widget_bitmap, shell)
                 val tap = PendingIntent.getActivity(
@@ -491,6 +539,12 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 views.setOnClickPendingIntent(com.lingion.sleepy.R.id.widget_bitmap, tap)
+                // 页脚条 (设计 §6.5): 点条 → 配置页 (用户可开强制滚动, 自救通道)
+                footerPi?.let {
+                    views.setOnClickPendingIntent(
+                        com.lingion.sleepy.R.id.widget_footer_bar, it
+                    )
+                }
                 // 真机取证标签: 静态 bitmap 尺寸
                 views.setContentDescription(
                     com.lingion.sleepy.R.id.widget_bitmap,
@@ -529,6 +583,53 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 Log.d(TAG, "pushTodayData scroll id=$id ${wDp}x${hDp}dp content=$contentH shell=${contentH}dp (v9.1+v11 形态, 单 child 整长图)")
             }
         }
+
+        /** 当前时刻 (当日分钟);时钟读取独立成函数便于契约测试注入 */
+        internal fun currentNowMin(): Int =
+            java.time.LocalTime.now().let { it.hour * 60 + it.minute }
+
+        /**
+         * Today 系 FIXED 窗口计算 (设计 §4.1):
+         * availH = hDp − 内容顶 (pad14+头部预留24=38) − 底衬14;行几何与渲染逐字节同源
+         * (TodayRowGeometry.rowSpans = 节点聚类, 与 todayContentHeightDp 同口径)。
+         * nowMin=null (非今天/预览) → HEAD 模式;今天 → TIME_WINDOW。
+         */
+        internal fun computeTodayWindow(
+            data: WidgetData,
+            hDp: Float,
+            nowMin: Int?
+        ): FixedWindowCore.WindowResult {
+            val availH = hDp - TodayRowGeometry.contentTopDp(false) - TodayRowGeometry.PAD_BOTTOM_DP
+            val rows = ConflictLayoutEngine.weekLaneRows(data.courses)
+            val entries = FixedWindowCore.entriesOf(rows, data.timeJson) {
+                TodayRowGeometry.rowHeightDp(it)
+            }
+            return FixedWindowCore.window(
+                entries = entries,
+                availH = availH,
+                mode = if (nowMin != null) FixedWindowCore.Mode.TIME_WINDOW
+                else FixedWindowCore.Mode.HEAD,
+                nowMin = nowMin,
+                gapDp = TodayRowGeometry.ROW_GAP_DP
+            )
+        }
+
+        /**
+         * 页脚条点击 → 配置页 (设计 §6.5 自救通道): 带 id 打开已有绑定 = WidgetEditScreen,
+         * 用户在那里开「强制滚动(实验)」。requestCode 独立偏移, 不与点击 PI (RC=widgetId) 撞。
+         */
+        internal fun footerConfigurePi(context: Context, widgetId: Int): PendingIntent =
+            PendingIntent.getActivity(
+                context, widgetId + FOOTER_PI_RC_OFFSET,
+                Intent(context, WidgetConfigureActivity::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+        /** 页脚 PI requestCode 偏移 (点击 PI 用 widgetId, 页脚用 widgetId+此值) */
+        private const val FOOTER_PI_RC_OFFSET = 90000
 
         /**
          * 同步版数据加载 (runBlocking DB 读) — 供 RemoteViews Receiver 使用。
