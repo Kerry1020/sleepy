@@ -192,11 +192,10 @@ object WidgetBitmapRenderers {
         headerSpace: Boolean = false,
         showBackToToday: Boolean = true,
         visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
-        footerText: String? = null,
         statusText: String? = null
     ): Bitmap = renderTodayRegular(
         context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday,
-        visibleCourses, footerText, statusText
+        visibleCourses, statusText
     )
 
     /**
@@ -278,7 +277,6 @@ object WidgetBitmapRenderers {
         headerSpace: Boolean,
         showBackToToday: Boolean = true,
         visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
-        footerText: String? = null,
         statusText: String? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
@@ -448,14 +446,8 @@ object WidgetBitmapRenderers {
             }
         }
 
-        // FIXED 窗口页脚 (设计 §3.2-8): 底部 20dp 区, 11sp 次要色; 推送侧窗口已按
-        // availH−20 预算, 行不会画进页脚区
-        if (footerText != null) {
-            p.color = s.onSurfaceVariant
-            p.textSize = 11f * density
-            p.typeface = Typeface.DEFAULT
-            canvas.drawText(footerText, pad, h - 14f * density, p)
-        }
+        // 隐藏课提示不再画进位图 (2026-09-15 底部导航条定稿): 「+N」胶囊是底部条真实
+        // 视图 (renderNavCapsule + PendingIntent), 位图底部区域留给导航条, 无文字页脚。
 
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
     }
@@ -561,6 +553,34 @@ object WidgetBitmapRenderers {
         }
         p.style = Paint.Style.FILL
         c.drawPath(path, p)
+        return bmp
+    }
+
+    /** 底部条「+N」胶囊视图高 (宽随文本自适应, 最小 30dp)。 */
+    const val NAV_CAPSULE_H_DP = 20f
+    const val NAV_CAPSULE_MIN_W_DP = 30f
+
+    /**
+     * 底部条「+N」胶囊 — 隐藏课提示 + 配置页自救入口 (2026-09-15 底部导航条定稿,
+     * 替代旧「还有 N 节未上」文字页脚)。与三角按钮同配色 (surfaceVariant 底 +
+     * onSurfaceVariant 字), 全圆角胶囊形; 宽 = 文本测量 + 左右 8dp, 下限 30dp。
+     */
+    fun renderNavCapsule(context: Context, data: WidgetData, text: String): Bitmap {
+        val density = context.resources.displayMetrics.density
+        val s = scheme(context, data.themeKey, data.isDark)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 11f * density
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        val w = (NAV_CAPSULE_MIN_W_DP.coerceAtLeast(p.measureText(text) / density + 16f) * density).toInt()
+        val h = (NAV_CAPSULE_H_DP * density).toInt()
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        p.color = s.surfaceVariant
+        c.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()), h / 2f, h / 2f, p)
+        p.color = s.onSurfaceVariant
+        val fm = p.fontMetrics
+        c.drawText(text, (w - p.measureText(text)) / 2f, h / 2f - (fm.ascent + fm.descent) / 2f, p)
         return bmp
     }
 

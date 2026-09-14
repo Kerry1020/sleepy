@@ -85,7 +85,8 @@ class WidgetDegradationLadderTest {
         for (hDp in floatArrayOf(40f, 80f)) {
             val w = TodayWidgetReceiver.computeTodayWindow(todayData(5), hDp, h("07:00"))
             assertEquals("极小高度 forceFirst 保 1 锚行", 1, w.visible.size)
-            assertFalse("负/小 availH 不得纯页脚", w.footer)
+            // 底部条定稿: 填满档 (footerH=0) 截断即点亮「+N」胶囊 → footer=true
+            assertTrue("截断须点亮胶囊", w.footer)
             assertEquals(4, w.hiddenAheadCourses)
         }
         val big = TodayWidgetReceiver.computeTodayWindow(todayData(5), 600f, h("07:00"))

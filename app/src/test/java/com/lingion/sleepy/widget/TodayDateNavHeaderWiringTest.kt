@@ -5,12 +5,13 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
-import java.time.LocalDate
 
 /**
- * issue #24 顶栏导航定稿 (真实视图顶栏 + 三角按钮 + 恒显日期) 守卫。
- * 涵盖 StackView 机制全清除、ScrollStripService emptyHeader 透传、
- * 渲染器低对比三角按钮、nav 布局 36dp 顶栏尺寸契约。
+ * issue #24 导航定稿守卫 (2026-09-15 底部条改版后)。
+ * 顶栏控件条已整体退场 → 日期标题画进位图, 翻页/回今天/「+N」胶囊进底部 36dp 条
+ * (宽度/填满契约见 BottomBarFitTest)。本文件守: StackView 机制全清除、
+ * ScrollStripService emptyHeader 透传、渲染器低对比图标风格、computeSizeDp 方向、
+ * configure activity 任务栈。
  */
 class TodayDateNavHeaderWiringTest {
 
@@ -45,12 +46,17 @@ class TodayDateNavHeaderWiringTest {
     }
 
     @Test
-    fun `navTitle always shows the date in both states`() {
-        val today = WidgetData(date = LocalDate.of(2026, 9, 9), courses = emptyList(),
-            timeJson = "", hasTable = false, isToday = true)
-        assertEquals("9/9 · 周三", TodayWidgetReceiver.navTitle(today, "周三"))
-        val nav = today.copy(date = LocalDate.of(2026, 9, 12), isToday = false)
-        assertEquals("9/12 · 周六", TodayWidgetReceiver.navTitle(nav, "周六"))
+    fun `static shell draws date title inside bitmap`() {
+        // 底部条定稿 (2026-09-15): 顶栏控件条已删, 日期+星期由位图头部绘制,
+        // 静态壳图必须带标题 (emptyHeader 已移除; showBackToToday=false — 回今天在底部条上)
+        val src = widgetSource("TodayWidget.kt").readText()
+        val staticCall = src.substringAfter("Today 系静态分支")
+            .substringBefore("val views = android.widget.RemoteViews(")
+        assertTrue("静态壳图必须画头部 (emptyHeader 实参已移除)", !staticCall.contains("emptyHeader ="))
+        assertTrue("静态壳图回今天钮必须关 (底部条承担)", staticCall.contains("showBackToToday = false"))
+        assertTrue("标题数据源仍是日期 (今日→「今天 · 周X」/ 导航态→日期)",
+            widgetSource("WidgetBitmapRenderers.kt").readText()
+                .contains("val title = if (data.isToday)"))
     }
 
     @Test
@@ -77,44 +83,26 @@ class TodayDateNavHeaderWiringTest {
     @Test
     fun `buttonless faces never draw the back-to-today text`() {
         // 用户定稿 (2026-09-13): 「回到今天」有交互语义 — 要么能点要么不存在。
-        // HIDE_NAV fullface (未翻页) / Today overflow 壳图 / SCOPE_TODAY 条带均无按钮,
-        // bitmap 里的「回到今天」文字点不了 → 一律不画 (日期标题无交互语义保留)。
+        // 静态壳图 (回今天在底部条, 真实可点) 与条带 (整屏长图会每屏重复) 一律不画。
         val rdr = widgetSource("WidgetBitmapRenderers.kt").readText()
         assertTrue("todayHeaderParts 须有 showBackToToday 守卫",
             rdr.contains("showBackToToday"))
         assertTrue("守卫须挂在导航态分支 (!isToday && showBackToToday)",
             rdr.contains("!data.isToday && showBackToToday"))
         val today = widgetSource("TodayWidget.kt").readText()
-        val fullface = today.substringAfter("tierForGate == NavTier.HIDE_NAV")
-            .substringBefore("layoutRes")
-        assertTrue("HIDE_NAV fullface 须传 showBackToToday = false",
-            fullface.contains("showBackToToday = false"))
-        // 极端档 (HIDE_NAV) 翻到别天 → 回今天按钮显示 (真实可点) — 用户 2026-09-13 定稿:
-        // fullface 闸门须带 isToday 守卫 (未翻页才走 fullface, 翻到别天走按钮)
-        assertTrue("fullface 闸门须带 data.isToday 守卫",
-            today.substringAfter("tierForGate == NavTier.HIDE_NAV &&")
-                .substringBefore("RemoteViewsWidgetHelper.renderAndPush")
-                .contains("data.isToday"))
-        val navExtreme = today.substringAfter("if (tier == NavTier.HIDE_NAV) {")
-            .substringBefore("views.setViewVisibility(\n                com.lingion.sleepy.R.id.widget_today_header, android.view.View.VISIBLE")
-        assertTrue("极端档翻到别天须显示回今天按钮 (renderNavRefresh)",
-            today.substringAfter("极端档主形态")
-                .substringBefore("views.setContentDescription(\n                    com.lingion.sleepy.R.id.widget_today_header")
-                .contains("renderNavRefresh"))
-        val overflowCall = today.substringAfter("Today 系 overflow v9")
+        val staticShell = today.substringAfter("Today 系静态分支")
+            .substringBefore("val views = android.widget.RemoteViews(")
+        assertTrue("静态壳图须传 showBackToToday = false",
+            staticShell.contains("showBackToToday = false"))
+        val scrollBranch = today.substringAfter("var scrollData")
             .substringBefore("Log.d(TAG, \"pushTodayData scroll")
-        assertTrue("Today overflow 壳图须传 showBackToToday = false",
-            overflowCall.contains("showBackToToday = false"))
+        assertTrue("overflow 条带调用不带 showBackToToday = true (缺省 false)",
+            !scrollBranch.contains("showBackToToday = true"))
         val svc = widgetSource("ScrollStripService.kt").readText()
         val strip = svc.substringAfter("SCOPE_TODAY -> {")
             .substringBefore("SCOPE_TWODAY -> {")
         assertTrue("SCOPE_TODAY 条带须传 showBackToToday = false",
             strip.contains("showBackToToday = false"))
-        // 有按钮的面 (static-nav 壳图) 缺省 true — 调用处不传, 零改动契约
-        val staticShell = today.substringAfter("emptyHeader = true")
-            .substringBefore("configureTodayNav(")
-        assertFalse("static-nav 壳图不带 showBackToToday (缺省 true)",
-            staticShell.contains("showBackToToday"))
     }
 
     @Test
@@ -123,7 +111,7 @@ class TodayDateNavHeaderWiringTest {
         assertTrue("服务端须读 EXTRA_EMPTY_HEADER",
             svc.contains("EXTRA_EMPTY_HEADER") && svc.contains("getBooleanExtra"))
         // v11: 条带 = 整张长图 (v9.1 形态回归), emptyHeader 透传给渲染器 — 条带头部随
-        // 内容滚, 滚动位 0 与壳图逐像素一致 (头部空档让位给真实视图顶栏)。
+        // 内容滚, 滚动位 0 与壳图逐像素一致。
         assertTrue("SCOPE_TODAY 条带须透传 emptyHeader 给渲染器",
             svc.contains("emptyHeader = emptyHeader"))
         val helper = widgetSource("RemoteViewsWidgetHelper.kt").readText()
@@ -132,78 +120,6 @@ class TodayDateNavHeaderWiringTest {
         // WeekGrid 最小档 overflow 条带仍带头 - 缺省 false = 既有调用方零改动契约
         assertTrue("缺省必须 false",
             helper.contains("stripHeaderless: Boolean = false"))
-    }
-
-    @Test
-    fun `nav fit measurement honors font scale`() {
-        // sp 文本跟随系统字体缩放: Paint textSize 必须乘 fontScale,
-        // 否则大字体设备 (fontScale>1 常见) 实测文本比测量宽 → fitsNavTodayFourChar
-        // 漏判 → nav_next 又被挤成第二行巨钮。
-        val src = widgetSource("TodayWidget.kt").readText()
-        val body = src.substringAfter("private fun fitsNavTodayFourChar(\n            context: Context")
-            .ifEmpty { src.substringAfter("context: Context, titleText: String, wDp: Int") }
-        assertTrue("nav fit Android 入口必须读 configuration.fontScale",
-            body.contains("fontScale"))
-        assertTrue("Paint textSize 须 sp*density*fontScale 构造",
-            body.contains("fontScale"))
-    }
-
-    @Test
-    fun `nav header tier degrades inside configureTodayNav`() {
-        // 真机根因 (OPPO 148dp 窄档, 2026-09-09): 满标题+两字「今天」固定宽 ≈187dp
-        // > 148dp → LinearLayout 横向溢出, nav_next 被推出可视区。旧判定只到两字档,
-        // 装不下无路可退 → 必须用 navHeaderTier 逐档降级 (去星期 → 隐藏 nav_today)。
-        val src = widgetSource("TodayWidget.kt").readText()
-        val body = src.substringAfter("fun configureTodayNav(")
-            .substringBefore("/** 顶栏标题")
-        assertTrue("configureTodayNav 必须走 navHeaderTier 降级判定",
-            body.contains("navHeaderTier("))
-        assertTrue("SHORT_TITLE 档必须标题去星期 (dateOnlyTitle)",
-            body.contains("dateOnlyTitle"))
-        assertTrue("HIDE_TITLE 档必须隐藏标题 (prev/refresh/next 三钮保留)",
-            body.contains("HIDE_TITLE"))
-        assertTrue("隐藏判定必须保留 isToday 短路 (今日不显回到今天)",
-            body.contains("data.isToday"))
-    }
-
-    @Test
-    fun `nav tier measures localized resources not hardcoded literals`() {
-        // 2×2 刷新按钮定稿: nav_today 是图标按钮, 无文字宽度可量 — 旧
-        // fitsNavTodayFourChar/TWO_CHAR 判定作废删除; tier 标题按实际串测量。
-        val src = widgetSource("TodayWidget.kt").readText()
-        val tierEntry = src.substringAfter("internal fun navHeaderTier(")
-            .substringBefore("private fun navHeaderTier(")
-        assertFalse(
-            "fitsNavTodayFourChar 必须已删 (nav_today 是图标, 无文字宽度可量)",
-            src.contains("fitsNavTodayFourChar")
-        )
-        assertFalse(
-            "navHeaderTier 纯函数禁硬编码「回到今天」字面量",
-            tierEntry.contains("回到今天")
-        )
-        assertFalse(
-            "NavTier 不得残留 TWO_CHAR/HIDE_TODAY (文本判定作废)",
-            src.contains("TWO_CHAR") || src.contains("HIDE_TODAY")
-        )
-        val androidEntry = src.substringAfter("private fun navHeaderTier(\n            context: Context")
-            .ifEmpty { src.substringAfter("context: Context, fullTitle: String, dateOnlyTitle: String") }
-        assertTrue(
-            "navHeaderTier 须按实际串测量标题 (titleMeasure 注入)",
-            tierEntry.contains("titleMeasure")
-        )
-    }
-
-    @Test
-    fun `nav tier decision receives isToday visibility`() {
-        // 2026-09-10: refresh 按钮在 isToday 时必 GONE — tier 判定不得为一颗看不见的
-        // 按钮预算宽度 (窄档上无谓牺牲标题)。判定入参必须带可见性。
-        val src = widgetSource("TodayWidget.kt").readText()
-        val callBody = src.substringAfter("val tier = navHeaderTier(")
-            .substringBefore(")")
-        assertTrue(
-            "configureTodayNav 调 navHeaderTier 必须传 refreshVisible = !data.isToday",
-            callBody.contains("refreshVisible = !data.isToday")
-        )
     }
 
     @Test
@@ -229,28 +145,10 @@ class TodayDateNavHeaderWiringTest {
     }
 
     @Test
-    fun `header text pushed in sp units matching fontScale-aware measurement`() {
-        // 2026-09-10 一致性契约: 渲染 setTextViewTextSize 走 COMPLEX_UNIT_SP (跟随
-        // fontScale), 与测量端 sp*density*fontScale 同口径 — 旧 DIP 推送使渲染
-        // 不随 fontScale, 测量端却乘 fontScale → 大字档位过度降级。
-        val src = widgetSource("TodayWidget.kt").readText()
-        val body = src.substringAfter("fun configureTodayNav(")
-            .substringBefore("/** 顶栏标题")
-        assertFalse(
-            "nav 标题/nav_today 禁 COMPLEX_UNIT_DIP 推送 (与 fontScale 感知测量不一致)",
-            body.contains("COMPLEX_UNIT_DIP")
-        )
-        assertTrue(
-            "nav 文本尺寸须 COMPLEX_UNIT_SP 推送 (与测量同口径)",
-            body.contains("COMPLEX_UNIT_SP")
-        )
-    }
-
-    @Test
     fun `renderer nav triangle is low-contrast and glyph-free`() {
         val src = widgetSource("WidgetBitmapRenderers.kt").readText()
         val body = src.substringAfter("fun renderNavTriangle")
-            .substringBefore("data class TodayNavHeaderColors")
+            .substringBefore("fun renderNavRefresh")
         assertTrue("低对比: surfaceVariant 圆角矩形底", body.contains("surfaceVariant"))
         assertTrue("低对比: onSurfaceVariant 三角图标", body.contains("onSurfaceVariant"))
         assertFalse("按钮禁圆形 (用户要三角形)", body.contains("drawCircle"))
@@ -261,45 +159,23 @@ class TodayDateNavHeaderWiringTest {
 
     @Test
     fun `renderer nav refresh matches triangle style and pushes as image bitmap`() {
-        // 2×2 刷新按钮定稿: renderNavRefresh 与 renderNavTriangle 同风格
-        // (surfaceVariant 圆角底 + onSurfaceVariant 图标), configureTodayNav 须
-        // setImageViewBitmap 推送 (nav_today 是 ImageView, 不再是 TextView)。
+        // 刷新按钮与三角同风格 (surfaceVariant 圆角底 + onSurfaceVariant 图标),
+        // configureTodayBar 须 setImageViewBitmap 推送 (nav_today 是 ImageView)。
         val src = widgetSource("WidgetBitmapRenderers.kt").readText()
         val body = src.substringAfter("fun renderNavRefresh")
-            .substringBefore("data class TodayNavHeaderColors")
+            .substringBefore("NAV_CAPSULE_H_DP")
         assertTrue("低对比: surfaceVariant 圆角矩形底", body.contains("surfaceVariant"))
         assertTrue("低对比: onSurfaceVariant 刷新图标", body.contains("onSurfaceVariant"))
         assertFalse("按钮禁文字 glyph", body.contains("drawText"))
         assertTrue("尺寸须同 NAV_BUTTON 口径",
             body.contains("NAV_BUTTON_W_DP") && body.contains("NAV_BUTTON_H_DP"))
         val today = widgetSource("TodayWidget.kt").readText()
-        val navBody = today.substringAfter("fun configureTodayNav(")
-            .substringBefore("/** 顶栏标题")
-        assertTrue("configureTodayNav 须 setImageViewBitmap 推送刷新按钮",
-            navBody.contains("setImageViewBitmap") &&
-                navBody.contains("renderNavRefresh"))
-        assertFalse("nav_today 不再走 setTextViewText (文字判定作废)",
-            navBody.contains("today_nav_today_short"))
-    }
-
-    @Test
-    fun `nav header layouts declare 36dp strip with spacers and sizes`() {
-        listOf("widget_today_nav_static.xml").forEach { name ->
-            val xml = layoutFile(name).readText()
-            assertTrue("$name 缺顶栏容器 widget_today_header", xml.contains("widget_today_header"))
-            assertTrue("$name 顶栏高须 36dp (NAV_HEADER_H_DP 口径)", xml.contains("36dp"))
-            assertTrue("$name 按钮须 40dp/28dp (NAV_BUTTON_W_DP/NAV_BUTTON_H_DP 口径)",
-                xml.contains("40dp") && xml.contains("28dp"))
-            assertEquals("$name 须两个等重 spacer (Space 无 @RemoteView 禁用)",
-                2, Regex("layout_weight=\"1\"").findAll(xml).count())
-            // 顶栏子视图顺序: title < prev < today < next (用户定稿)
-            val iTitle = xml.indexOf("widget_today_nav_title")
-            val iPrev = xml.indexOf("widget_today_nav_prev")
-            val iToday = xml.indexOf("widget_today_nav_today")
-            val iNext = xml.indexOf("widget_today_nav_next")
-            assertTrue("$name 顶栏顺序须 title<prev<today<next",
-                iTitle < iPrev && iPrev < iToday && iToday < iNext)
-        }
+        val barBody = today.substringAfter("fun configureTodayBar(")
+            .substringBefore("internal fun bottomBarCapsuleFits")
+        assertTrue("configureTodayBar 须 setImageViewBitmap 推送刷新按钮",
+            barBody.contains("setImageViewBitmap") && barBody.contains("renderNavRefresh"))
+        assertFalse("nav_today 不走文字 (文字判定作废)",
+            barBody.contains("today_nav_today_short"))
     }
 
     @Test

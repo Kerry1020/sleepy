@@ -253,7 +253,7 @@ class TodayOverflowGeometryTest {
         )
         assertTrue(
             "v11 overflow 壳图按 contentH 全展开渲染 (v9.1 契约, 与条带同参)",
-            Regex("renderToday\\(\\s*context,\\s*data,\\s*wDp\\.toFloat\\(\\),\\s*contentH,").containsMatchIn(body)
+            Regex("renderToday\\(\\s*context,\\s*\\w*[dD]ata,\\s*wDp\\.toFloat\\(\\),\\s*\\w*[cC]ontentH,").containsMatchIn(body)
         )
         val xml = File(layoutDir(), "widget_today_overflow.xml")
         assertFalse(

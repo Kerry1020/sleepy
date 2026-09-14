@@ -174,14 +174,14 @@ class TodayDateNavWiringTest {
             src.contains("widget_today_nav_static"))
         assertTrue("v4/v5/v6 均禁引用已删的 widget_scroll_today_nav (真实视图覆盖层 = ColorOS 腐坏源)",
             !src.contains("widget_scroll_today_nav"))
-        assertTrue("nav 静态分支必须 emptyHeader=true (bitmap 头部留白)",
-            src.contains("emptyHeader = true"))
+        assertTrue("底部条定稿: 静态壳图带头渲染, 禁 emptyHeader 留白 (顶栏控件条已退场)",
+            !src.contains("emptyHeader = true"))
         assertTrue("v9 overflow 必须竖排滑动 (pushScrollable + TwoDay 同构滚动层, 头部随内容滚)",
             src.contains("pushScrollable") && src.contains("widget_scroll_today"))
         assertTrue("v5 翻页机制必须已删净 (TodayPagerCore 废弃)",
             !src.contains("TodayPagerCore") && !src.contains("ACTION_PREV_PAGE"))
-        assertTrue("pushTodayData 必须调 configureTodayNav",
-            src.contains("configureTodayNav"))
+        assertTrue("pushTodayData 必须调 configureTodayBar",
+            src.contains("configureTodayBar"))
     }
 
     @Test
@@ -207,7 +207,7 @@ class TodayDateNavWiringTest {
                 Regex("<View\\b").containsMatchIn(xml)
             )
             mapOf(
-                "widget_today_nav_title" to "TextView",
+                "widget_nav_more" to "ImageView",
                 "widget_today_nav_today" to "ImageView",
                 "widget_today_nav_prev" to "ImageView",
                 "widget_today_nav_next" to "ImageView",
@@ -286,7 +286,7 @@ class TodayDateNavWiringTest {
             grid.contains("widget_today_nav_static"))
         assertFalse("WeekGrid 不得引用 widget_scroll_today_nav",
             grid.contains("widget_scroll_today_nav"))
-        assertFalse("WeekGrid 不得引用 configureTodayNav",
+        assertFalse("WeekGrid 不得引用 configureTodayNav (旧顶栏已退场)",
             grid.contains("configureTodayNav"))
         // 它的 5 参调用 (receiverClass 缺省 null → 导航关) 保持原样
         assertTrue("WeekGrid 调用点保持 5 参缺省形态",
