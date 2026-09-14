@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Sleepy Horario</string>
     <string name="widget_today_label">Clases de hoy</string>
+    <string name="widget_today_wide_label">Hoy · Mediano</string>
+    <string name="widget_twoday_wide_label">Dos días · Mediano</string>
+    <string name="widget_week_list_wide_label">Lista semanal · Mediano</string>
     <string name="widget_week_list_label">Esta semana (lista)</string>
     <string name="widget_week_grid_label">Esta semana (cuadrícula)</string>
     <string name="widget_twoday_label">Próximos dos días</string>
@@ -331,6 +334,9 @@
     <string name="today_nav_back_to_today">Volver a hoy</string>
     <string name="today_no_course">No hay clases hoy</string>
     <string name="today_rest">Día libre</string>
+    <string name="widget_footer_more">+%1$d más</string>
+    <string name="widget_status_all_done">Clases de hoy terminadas</string>
+    <string name="widget_footer_more_short">+%1$d</string>
 
     <string name="ok">Aceptar</string>
     <string name="cancel">Cancelar</string>
@@ -349,6 +355,12 @@
     <string name="widget_open_sleepy">Abre Sleepy para agregar</string>
     <string name="widget_edit_section_schedule">Horario mostrado</string>
     <string name="widget_edit_section_alias">Visualización del nombre</string>
+    <string name="widget_edit_section_scroll">Desplazamiento</string>
+    <string name="widget_edit_scroll_subtitle">Ventana fija de forma predeterminada, compatible con todos los launchers. Al activarla, el contenido excedente se puede desplazar (experimental).</string>
+    <string name="widget_scroll_dialog_title">¿Activar el desplazamiento forzado (experimental)?</string>
+    <string name="widget_scroll_dialog_body">El desplazamiento depende del servicio de widgets del sistema. En algunas ROM de fabricantes (Xiaomi, vivo, etc.) puede mostrar un espacio en blanco, ir con retardo o no actualizarse. Si algo va mal, desactiva este interruptor para volver a la ventana fija.</string>
+    <string name="widget_scroll_dialog_confirm">Activar experimental</string>
+    <string name="widget_scroll_dialog_cancel">Cancelar</string>
     <string name="widget_edit_default_label">Predeterminado (sigue el horario actual)</string>
     <string name="widget_manage_title">Administrar widgets del escritorio</string>
     <string name="widget_edit_title">Editar widget</string>

@@ -72,6 +72,7 @@ object AppPrefs {
     const val KEY_WEEK_USE_ALIAS = "week_use_alias"     // bool default false — 周视图显示别名
     const val KEY_GRID_USE_ALIAS = "grid_use_alias"     // bool default false — 网格视图显示别名
     const val KEY_WIDGET_USE_ALIAS = "widget_use_alias" // bool default false — 全部小组件显示别名
+    const val KEY_WIDGET_SCROLL_ENABLED = "widget_scroll_enabled" // bool default false — 强制滚动(实验), 默认 FIXED 固定窗口
     const val KEY_UPDATE_CHECK_ENABLED = "update_check_enabled" // bool default true — 启动检查 GitHub releases latest
     const val KEY_HIGH_REFRESH = "high_refresh_rate" // bool default true — 窗口 preferredDisplayModeId 钉屏幕最高刷率(流畅优先); 关=跟随系统省电调度
     const val KEY_NAV_DOCK = "nav_dock" // bool default false — 底栏形态: false=贴底(通栏), true=悬浮药丸(Dock, 底边留距)
@@ -533,6 +534,11 @@ object AppPrefs {
         sp(ctx).edit { putBoolean(KEY_WIDGET_USE_ALIAS, v) }
         _changeBus.tryEmit(KEY_WIDGET_USE_ALIAS)
     }
+
+    // 强制滚动(实验) — 旧全局一档 (设计 §6)。2026-09-14 起滚动改为 per-widget
+    // (WidgetScrollStore), 本 key 只作「从未显式设置过的实例」的迁移默认, 不再写入。
+    fun isWidgetScrollEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_WIDGET_SCROLL_ENABLED, false)
 
     // ===== 节假日灰显 =====
 

@@ -190,8 +190,12 @@ object WidgetBitmapRenderers {
         variant: WidgetVariant = WidgetVariant.REGULAR,
         emptyHeader: Boolean = false,
         headerSpace: Boolean = false,
-        showBackToToday: Boolean = true
-    ): Bitmap = renderTodayRegular(context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday)
+        showBackToToday: Boolean = true,
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null
+    ): Bitmap = renderTodayRegular(
+        context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday,
+        visibleCourses
+    )
 
     /**
      * Today 状态内容判定 (纯 JVM 可测) — 无课表 / 学期外 / 无课。
@@ -255,50 +259,6 @@ object WidgetBitmapRenderers {
         }
     }
 
-    /**
-     * Today 紧凑档 — 日期小字(顶) + 状态/首课程名(居中), 纯文本无课程胶囊。
-     * 布局常量: compact 档不参与 todayContentHeightDp 滚动条带估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderTodayCompact(context: Context, data: WidgetData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = todayCompactTexts(ctx, data)
-
-        // 日期行(顶部小字)
-        p.color = s.onSurfaceVariant
-        p.textSize = 11f * density
-        p.typeface = Typeface.DEFAULT
-        val dateStr = "${data.date.monthValue}/${data.date.dayOfMonth}"
-        canvas.drawText(dateStr, pad, pad + 11f * density, p)
-
-        // 状态/首课程名 — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
-    }
-
     /** 按可用宽度截断文本(字符级贪心, 与 [[sleepy-vert-text-overflow-fix]] 同思路) */
     private fun ellipsize(p: Paint, text: String, maxW: Float): String {
         if (p.measureText(text) <= maxW) return text
@@ -314,7 +274,8 @@ object WidgetBitmapRenderers {
         context: Context, data: WidgetData, wDp: Float, hDp: Float,
         emptyHeader: Boolean,
         headerSpace: Boolean,
-        showBackToToday: Boolean = true
+        showBackToToday: Boolean = true,
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
@@ -338,7 +299,7 @@ object WidgetBitmapRenderers {
         canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
             20f * density, 20f * density, p)
 
-        val pad = 14f * density
+        val pad = 10f * density
         var y = pad
 
         // 标题行 — emptyHeader=true 时整体不画: 今日导航版顶栏用真实 RemoteViews 视图
@@ -382,7 +343,7 @@ object WidgetBitmapRenderers {
 
         // v6 headerSpace: 条带长图不要头部空档 (顶栏在布局里是上方独立行) → 24dp 前进量整段跳过。
         // 各状态行 (无课表/学期外/无课/课程列表) 都在 y+=24 之后定位 → 只需跳过这次前进。
-        if (!headerSpace) y += 24f * density
+        if (!headerSpace) y += 20f * density
 
         if (!data.hasTable) {
             p.color = s.onSurface
@@ -420,6 +381,9 @@ object WidgetBitmapRenderers {
             return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
         }
 
+        // FIXED 窗口 ALL_DONE (2026-09-14b 用户定稿): 不画「今日课程已结束」长状态行 —
+        // 唯一结束标记 = 底部条左下角「+0」胶囊 (十几个字符的状态文案禁回流)。空正文即可。
+
         // 课程列表（全部渲染，不再截断）
         // v7.10.11: 冲突分栏 — 与 App 今日页/周视图同一引擎(weekLaneRows),
         // 冲突区域一行内并排(栏间浅细竖线), 同栏课纵向堆叠, 无冲突课整宽。
@@ -427,20 +391,22 @@ object WidgetBitmapRenderers {
         // v11 撤回 v10 逐行子项 (OPPO extent 冻结/叠影/TopBar 覆盖三症状同根):
         // 渲染器回归 v9.1 — 一次画完整展开长图, 调用方保证 h=全展开高。
         // v8: 行几何单一真值 — span 起点随 headerSpace 参数化。
-        val rowH = 38f * density
-        val rowGap = 10f * density  // 课程胶囊间距放大(用户反馈太紧凑)
+        val rowH = 30f * density
+        val rowGap = 4f * density  // 2026-09-14d 密度二调 — 与 TodayRowGeometry 同源
         val rowW = w - pad * 2
 
         val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(data.courses, data.timeJson)
         val sepColor = (s.onSurface and 0x00FFFFFF) or 0x4D000000  // 30% 黑(浅色主题下=浅灰细线)
         val stackGap = 3f * density
-        val spans = TodayRowGeometry.rowSpans(data.courses, headerSpace)
+        // FIXED 窗口: 只画窗内课程 (聚类按重叠链分簇, 连续簇子集重聚类 = 原簇序列,
+        // 与推送侧窗口同一 weekLaneRows 口径 → 行几何逐像素一致)
+        val spans = TodayRowGeometry.rowSpans(visibleCourses ?: data.courses, headerSpace, data.timeJson)
         spans.forEach { span ->
             val row = span.row
             val y = span.topDp * density
             if (row.laneCount == 1) {
                 drawCourse(canvas, p, row.courses[0], data.timeJson, pad, y, rowW, rowH, s, density,
-                    fontSizeSp = 12f, colorless = colorless, displayMode = displayMode,
+                    fontSizeSp = 11f, colorless = colorless, displayMode = displayMode,
                     groupRows = data.courses.filter { it.groupId == row.courses[0].groupId },
                     useAlias = useAlias)
             } else {
@@ -472,6 +438,9 @@ object WidgetBitmapRenderers {
             }
         }
 
+        // 隐藏课提示不再画进位图 (2026-09-15 底部导航条定稿): 「+N」胶囊是底部条真实
+        // 视图 (renderNavCapsule + PendingIntent), 位图底部区域留给导航条, 无文字页脚。
+
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
     }
 
@@ -490,12 +459,12 @@ object WidgetBitmapRenderers {
             return TodayRowGeometry.contentTopDp(headerSpace) + 22f + 14f
         if (data.courses.isEmpty()) return TodayRowGeometry.contentTopDp(headerSpace) + 22f + 14f
         // v8: 行几何单一真值 — 与 renderTodayRegular 同调 TodayRowGeometry (镜像失配根除)
-        return TodayRowGeometry.contentHeightDp(data.courses, headerSpace)
+        return TodayRowGeometry.contentHeightDp(data.courses, headerSpace, data.timeJson)
     }
 
     // ── 今日导航顶栏按钮 (issue #24: 低对比圆角矩形 + 三角形图标) ──
 
-    /** 视图口径: 按钮视图 40×28dp(即点击热区, 大于可视矩形), 顶栏条高 36dp。 */
+    /** 视图口径: 按钮视图 40×24dp(即点击热区, 大于可视矩形), 底部条高 28dp。 */
     const val NAV_BUTTON_W_DP = 40f
     const val NAV_BUTTON_H_DP = 28f
     const val NAV_HEADER_H_DP = 36f
@@ -579,6 +548,34 @@ object WidgetBitmapRenderers {
         return bmp
     }
 
+    /** 底部条「+N」胶囊视图高 (宽随文本自适应, 最小 30dp)。 */
+    const val NAV_CAPSULE_H_DP = 20f
+    const val NAV_CAPSULE_MIN_W_DP = 30f
+
+    /**
+     * 底部条「+N」胶囊 — 隐藏课提示 + 配置页自救入口 (2026-09-15 底部导航条定稿,
+     * 替代旧「还有 N 节未上」文字页脚)。与三角按钮同配色 (surfaceVariant 底 +
+     * onSurfaceVariant 字), 全圆角胶囊形; 宽 = 文本测量 + 左右 8dp, 下限 30dp。
+     */
+    fun renderNavCapsule(context: Context, data: WidgetData, text: String): Bitmap {
+        val density = context.resources.displayMetrics.density
+        val s = scheme(context, data.themeKey, data.isDark)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 11f * density
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        val w = (NAV_CAPSULE_MIN_W_DP.coerceAtLeast(p.measureText(text) / density + 16f) * density).toInt()
+        val h = (NAV_CAPSULE_H_DP * density).toInt()
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        p.color = s.surfaceVariant
+        c.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()), h / 2f, h / 2f, p)
+        p.color = s.onSurfaceVariant
+        val fm = p.fontMetrics
+        c.drawText(text, (w - p.measureText(text)) / 2f, h / 2f - (fm.ascent + fm.descent) / 2f, p)
+        return bmp
+    }
+
     /**
      * 今日导航顶栏运行时配色 — 顶栏真实视图 (标题/动作文字/背景) 与卡面 bitmap 同一 scheme
      * 取色 (单一事实来源), 防止 TextView 与 Canvas 渲染色彩漂移。
@@ -618,55 +615,11 @@ object WidgetBitmapRenderers {
     }
 
     /**
-     * TwoDay 紧凑档 — 日期小字(顶) + 状态/今日首课名(居中), 纯文本无两栏课程胶囊。
-     * 布局常量: compact 档不参与 twoDayContentHeightDp 滚动条带估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderTwoDayCompact(context: Context, data: TwoDayData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = twoDayCompactTexts(ctx, data)
-
-        // 日期行(顶部小字) — 今日日期
-        p.color = s.onSurfaceVariant
-        p.textSize = 11f * density
-        p.typeface = Typeface.DEFAULT
-        val dateStr = data.days.firstOrNull()?.let { "${it.date.monthValue}/${it.date.dayOfMonth}" } ?: ""
-        canvas.drawText(dateStr, pad, pad + 11f * density, p)
-
-        // 状态/今日首课名 — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
-    }
-
-    /**
      * TwoDay 内容全展开高度(dp) — 可滚动条带渲染用。常量镜像 renderTwoDay。
      * v7.10.11: 冲突分栏行高按最高栏堆叠数算(与 renderTwoDayRegular 分栏镜像)。
      */
     fun twoDayContentHeightDp(data: TwoDayData): Float {
-        var h = 12f + 22f                           // pad + 顶部标签行
+        var h = 12f                                 // pad (2026-09-14c: 顶部标签行已删)
         if (!data.hasTable || data.days.isEmpty()) return h + 20f
         if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) return h + 22f + 14f  // 状态 + 提示
         // 最高一列决定整体高度; 每列: 列头(20) + 冲突分行课程 / "无课程"一行
@@ -676,11 +629,11 @@ object WidgetBitmapRenderers {
             val rows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
             rows.forEach { row ->
                 if (row.laneCount == 1) {
-                    cy += 44f + 8f
+                    cy += 36f + 6f
                 } else {
                     val maxStack = row.courses.groupBy { row.laneOf[it.id] }.values
                         .maxOf { it.size }.coerceAtLeast(1)
-                    cy += maxStack * 44f + (maxStack - 1) * 3f + 8f
+                    cy += maxStack * 36f + (maxStack - 1) * 3f + 6f
                 }
             }
             cy
@@ -722,7 +675,10 @@ object WidgetBitmapRenderers {
      *   [状态行 16] + 列内: 标题 12+14 + chip(有课时) 14+4 + 课程行 (行高 + 3dp 间隔)
      * 课程行高 = fontMetrics(9sp) — 与渲染同源, 无常量漂移。外层 pad 6×2。
      */
-    fun weekViewContentHeightDp(context: Context, data: WeekData, wDp: Float): Float {
+    fun weekViewContentHeightDp(
+        context: Context, data: WeekData, wDp: Float,
+        maxCoursesPerDay: Int = Int.MAX_VALUE
+    ): Float {
         val outerPad = 6f
         if (!data.hasTable) return outerPad * 2 + 20f
         val visibleDays = AppPrefs.getVisibleDays(context)
@@ -750,7 +706,9 @@ object WidgetBitmapRenderers {
                 // 课程块: 行数与渲染器 wrapMax2Lines 同式 (别名口径也同源), 
                 // 行 = 1..2 行; 课程间 3dp 间隔 (含尾课收尾 3dp, 与渲染 idx==last 分支一致)
                 val useAlias = AppPrefs.isWidgetUseAlias(context)
-                day.courses.forEachIndexed { idx, course ->
+                // §9.5 口径统一: 静态脸渲染 take(maxCoursesPerDay), 闸门按同口径量;
+                // 条带(全展开)保持默认 Int.MAX_VALUE 全量口径
+                day.courses.take(maxCoursesPerDay).forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     val lines = wrapMax2Lines(name, p, maxTextWidth * density)
                     cy += lines.size * lineH
@@ -767,113 +725,55 @@ object WidgetBitmapRenderers {
     }
 
     /**
-     * WeekList 小档纯文本行(渲染与单测共用单一事实来源)。
-     * 状态资源与 renderWeekListRegular 各分支逐一对应:
-     *   无课表→widget_create_schedule · 学期外→semester_not_started/semester_ended
-     *   今明全无课→no_course(regular 空列同资源) · 有课→今天+明天各一条"周X 课名"
-     *     (每天只取首课 — loadDataSync 已按 startNode 排序; 无课天跳过; 最多 2 行)
-     * resolver 抽象掉 Context 资源访问 + today 锚点注入星期计算(禁 LocalDate.now() 进逻辑)
-     * → 核心选取逻辑可在纯 JVM 单测断言(仓库无 Robolectric)。
+     * WeekList 紧凑档 (2026-09-14 用户定稿改版) — 与周视图·小同一张脸:
+     * 今天邻域 ≤3 列 + Regular 渲染器 (彩色胶囊保留)。旧「今天+明天各一行
+     * 周X 课名」纯文本脸被否 — 丑且无信息量, 禁回流。compact 走数据侧换列,
+     * Regular 函数体零改动 (先按用户"显示星期"设置收窄可选池, 避免 shownDays
+     * 交集为空落到"去创建课表"兜底文案)。
      */
-    fun weekListCompactTexts(context: Context, today: LocalDate, data: WeekData): List<String> =
-        weekListCompactTexts(
-            { resId -> context.getString(resId) },
-            { dow -> DateUtils.localizedDay(dow, context) },
-            AppPrefs.isWidgetUseAlias(context),
-            today, data
+    private fun renderWeekListCompact(
+        context: Context, data: WeekData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerByCol: List<String?>?
+    ): Bitmap {
+        val todayDow = LocalDate.now().dayOfWeek.value
+        val visibleDays = AppPrefs.getVisibleDays(context)
+        val poolDays = if (visibleDays.isEmpty()) data.days
+            else data.days.filter { it.dayOfWeek in visibleDays }
+        val compactDows = weekViewCompactColumns(data.copy(days = poolDays), todayDow)
+        val compactData = data.copy(
+            days = data.days.filter { it.dayOfWeek in compactDows }.sortedBy { it.dayOfWeek }
         )
-
-    /** 同上 — resolver 注入版(纯 JVM 单测入口) */
-    fun weekListCompactTexts(
-        resolve: (Int) -> String,
-        dayName: (Int) -> String,
-        today: LocalDate,
-        data: WeekData
-    ): List<String> = weekListCompactTexts(resolve, dayName, useAlias = false, today = today, data = data)
-
-    /** resolver + 别名开关注入版 — useAlias 语义: true 时显示别名(空回退原名) */
-    fun weekListCompactTexts(
-        resolve: (Int) -> String,
-        dayName: (Int) -> String,
-        useAlias: Boolean,
-        today: LocalDate,
-        data: WeekData
-    ): List<String> {
-        if (!data.hasTable || data.days.isEmpty()) return listOf(resolve(R.string.widget_create_schedule))
-        if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) {
-            val statusRes = if (data.semesterStatus == DateUtils.SemesterStatus.BEFORE_START)
-                R.string.semester_not_started else R.string.semester_ended
-            return listOf(resolve(statusRes))
-        }
-        val todayDow = today.dayOfWeek.value
-        val targetDows = listOf(todayDow, todayDow % 7 + 1)   // 今天 + 明天(周循环)
-        val lines = data.days.filter { it.dayOfWeek in targetDows && it.courses.isNotEmpty() }
-            // 按今天→明天的目标顺序排, 禁按 ISO 星期排: 周日锚点(tomorrow=周一)时
-            // ISO 排序会把"明天"排到"今天"前面
-            .sortedBy { targetDows.indexOf(it.dayOfWeek) }
-            .take(2)
-            .map { "${dayName(it.dayOfWeek)} ${CourseDisplayUtil.displayName(it.courses.first(), useAlias)}" }
-        return lines.ifEmpty { listOf(resolve(R.string.no_course)) }
-    }
-
-    /**
-     * WeekList 紧凑档 — 无标题, 今天+明天各一行"周X 课名"(取自 weekListCompactTexts),
-     * 纯文本无课程胶囊。布局常量: compact 档不参与 weekListContentHeightDp 滚动条带
-     * 估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderWeekListCompact(context: Context, data: WeekData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = weekListCompactTexts(ctx, LocalDate.now(), data)
-
-        // 今天+明天"周X 课名" — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
+        return renderWeekListRegular(context, compactData, wDp, hDp, visibleByCol, footerByCol)
     }
 
     /**
      * WeekList widget 渲染 — 7 列日列
-     * SMALL 变体 + 容器 <150dp → 走紧凑档(纯文本); REGULAR 或容器被拖大 ≥150dp → 全量排版
+     * SMALL 变体 + 容器 <150dp → 走紧凑档(今天邻域 ≤3 列, 同周视图·小);
+     * REGULAR 或容器被拖大 ≥150dp → 全量排版
      * (默认参数 REGULAR → 全部现有调用点零改动; 大档路径 renderWeekListRegular 函数体逐字节不变)
      */
     fun renderWeekList(
         context: Context, data: WeekData, wDp: Float, hDp: Float,
-        variant: WidgetVariant = WidgetVariant.REGULAR
+        variant: WidgetVariant = WidgetVariant.REGULAR,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         if (variant == WidgetVariant.SMALL && wDp < 150f) {
-            return renderWeekListCompact(context, data, wDp, hDp)
+            return renderWeekListCompact(context, data, wDp, hDp, visibleByCol, footerByCol)
         }
         // SMALL 但容器被拖大 ≥150dp → 内部升档回全量排版(设计第三节决策)
-        return renderWeekListRegular(context, data, wDp, hDp)
+        return renderWeekListRegular(context, data, wDp, hDp, visibleByCol, footerByCol)
     }
 
     /**
      * WeekList 全量排版 — 原 renderWeekList 函数体原样改名迁入(REGULAR 档逐字节不变保证)
      */
-    private fun renderWeekListRegular(context: Context, data: WeekData, wDp: Float, hDp: Float): Bitmap {
+    private fun renderWeekListRegular(
+        context: Context, data: WeekData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerByCol: List<String?>?
+    ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
         val h = (hDp * density).toInt()
@@ -968,12 +868,13 @@ object WidgetBitmapRenderers {
                 cy += chipH + 6f * density
 
                 // 课程列表 — 每门课带颜色胶囊背景
+                // FIXED 窗口 (设计 §4.3): 逐列预算截断, 列底「+N」短页脚 (无独立页脚行)
                 p.textSize = 9f * density
                 p.typeface = Typeface.DEFAULT
                 val coursePad = 3f * density
                 val courseRowH = 16f * density
                 val courseGap = 3f * density
-                day.courses.forEachIndexed { idx, course ->
+                (visibleByCol?.getOrNull(i) ?: day.courses).forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     // 课程颜色背景 (对齐 WeekGrid 风格) — 统一入口 CourseColorUtil (决策 D3)
                     // issue#22: 同名课程多地点 — 用 day.courses 同 groupId 全行,支持 AUTO/CUSTOM 模式取色
@@ -999,6 +900,15 @@ object WidgetBitmapRenderers {
                     canvas.drawText(displayName, x + coursePad + 2f * density, textBaseline, p)
                     p.typeface = Typeface.DEFAULT
                     cy += courseRowH + courseGap
+                }
+                // 列底「+N」短页脚 (FIXED 窗口隐藏了后续课)
+                footerByCol?.getOrNull(i)?.let { more ->
+                    p.color = s.onSurfaceVariant
+                    p.textSize = 9f * density
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    val mw = p.measureText(more)
+                    canvas.drawText(more, x + (colW - mw) / 2f, cy + 11f * density, p)
+                    p.typeface = Typeface.DEFAULT
                 }
             }
         }
@@ -1066,13 +976,15 @@ object WidgetBitmapRenderers {
         context: Context, data: WeekData, wDp: Float, hDp: Float,
         variant: WidgetVariant = WidgetVariant.REGULAR,
         /** 每列课程上限 — 静态 face 保持 5 门裁切; 条带全展开长图传 Int.MAX_VALUE (#31) */
-        maxCoursesPerDay: Int = 5
+        maxCoursesPerDay: Int = 5,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         if (variant == WidgetVariant.SMALL && wDp < 150f) {
             return renderWeekViewCompact(context, data, wDp, hDp, maxCoursesPerDay)
         }
         // SMALL 但容器被拖大 ≥150dp → 内部升档回全量排版(设计第三节决策)
-        return renderWeekViewRegular(context, data, wDp, hDp, maxCoursesPerDay)
+        return renderWeekViewRegular(context, data, wDp, hDp, maxCoursesPerDay, visibleByCol, footerByCol)
     }
 
     /**
@@ -1101,7 +1013,9 @@ object WidgetBitmapRenderers {
      */
     private fun renderWeekViewRegular(
         context: Context, data: WeekData, wDp: Float, hDp: Float,
-        maxCoursesPerDay: Int = 5
+        maxCoursesPerDay: Int = 5,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerByCol: List<String?>? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
@@ -1205,7 +1119,8 @@ object WidgetBitmapRenderers {
                 val courseGap = 3f * density  // 3dp (原2dp太紧, workflow验证阶段推荐3dp对齐胶囊版)
                 val fm = p.fontMetrics
                 val lineH = fm.descent - fm.ascent
-                val courses = day.courses.take(maxCoursesPerDay)
+                // FIXED 窗口 (设计 §4.3): 逐列预算截断优先于 take(5); fits 分支保留 5 门口径
+                val courses = visibleByCol?.getOrNull(i) ?: day.courses.take(maxCoursesPerDay)
                 courses.forEachIndexed { idx, course ->
                     val name = CourseDisplayUtil.displayName(course, useAlias)
                     // today → onPrimaryContainer@0.82alpha, 其他 → onSurfaceVariant
@@ -1238,6 +1153,15 @@ object WidgetBitmapRenderers {
                         cy += courseGap
                     }
                 }
+                // 列底「+N」短页脚 (FIXED 窗口隐藏了后续课)
+                footerByCol?.getOrNull(i)?.let { more ->
+                    p.color = s.onSurfaceVariant
+                    p.textSize = 9f * density
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    val mw = p.measureText(more)
+                    canvas.drawText(more, x + (colW - mw) / 2f, cy - fm.ascent, p)
+                    p.typeface = Typeface.DEFAULT
+                }
             }
         }
 
@@ -1252,15 +1176,23 @@ object WidgetBitmapRenderers {
      */
     fun renderTwoDay(
         context: Context, data: TwoDayData, wDp: Float, hDp: Float,
-        variant: WidgetVariant = WidgetVariant.REGULAR
+        variant: WidgetVariant = WidgetVariant.REGULAR,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
+        footerTexts: List<String?>? = null,
+        statusByCol: List<String?>? = null
     ): Bitmap {
-        return renderTwoDayRegular(context, data, wDp, hDp)
+        return renderTwoDayRegular(context, data, wDp, hDp, visibleByCol, footerTexts, statusByCol)
     }
 
     /**
      * TwoDay 全量排版 — 原 renderTwoDay 函数体原样改名迁入(REGULAR 档逐字节不变保证)
      */
-    private fun renderTwoDayRegular(context: Context, data: TwoDayData, wDp: Float, hDp: Float): Bitmap {
+    private fun renderTwoDayRegular(
+        context: Context, data: TwoDayData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerTexts: List<String?>?,
+        statusByCol: List<String?>?
+    ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
         val h = (hDp * density).toInt()
@@ -1286,12 +1218,7 @@ object WidgetBitmapRenderers {
         val pad = 12f * density
         var y = pad
 
-        // 顶部标签
-        p.color = s.primary
-        p.textSize = 13f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText(ctx.getString(R.string.widget_twoday_label), pad, y + 13f * density, p)
-        y += 22f * density
+        // 2026-09-14c: 顶部「最近两天」标签行删除 (用户: 是个人都知道) — 省 22dp 给课程行
 
         if (!data.hasTable || data.days.isEmpty()) {
             p.color = s.onSurface
@@ -1325,6 +1252,9 @@ object WidgetBitmapRenderers {
 
         data.days.forEachIndexed { colIdx, day ->
             val colX = pad + colIdx * (colW + colGap)
+            // FIXED 窗口 (设计 §4.2): 今天列 TIME_WINDOW / 明天列 HEAD, 推送侧算好传入
+            val colCourses = visibleByCol?.getOrNull(colIdx) ?: day.courses
+            val colStatus = statusByCol?.getOrNull(colIdx)
 
             // 列标题
             p.color = s.primary
@@ -1348,19 +1278,22 @@ object WidgetBitmapRenderers {
 
             var cy = listTop + 20f * density
 
-            if (day.courses.isEmpty()) {
+            if (colStatus != null) {
+                // ALL_DONE 列 (2026-09-14b): 什么都不画 — 「+0」胶囊是唯一结束标记;
+                // 不得落进「无课程」分支 (有课只是上完了, 说无课程是撒谎)
+            } else if (colCourses.isEmpty()) {
                 p.color = s.onSurfaceVariant
                 p.textSize = 11f * density
                 canvas.drawText(ctx.getString(R.string.no_course), colX, cy + 11f * density, p)
             } else {
                 // 胶囊固定最大高度 44dp, 不再撑满整个列
                 // v7.10.11: 冲突分栏 — 同引擎, 冲突课并排半栏(栏间浅细竖线), 同栏堆叠
-                val rowGap = 8f * density
-                val maxRowH = 44f * density
+                val rowGap = 6f * density
+                val maxRowH = 36f * density
                 val stackGap = 3f * density
                 val laneGap = 5f * density
                 val sepColor = (s.onSurface and 0x00FFFFFF) or 0x4D000000
-                val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(day.courses, day.timeJson)
+                val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(colCourses, day.timeJson)
                 laneRows.forEach { row ->
                     if (row.laneCount == 1) {
                         drawCourse(canvas, p, row.courses[0], day.timeJson, colX, cy, colW, maxRowH, s, density,
@@ -1407,6 +1340,25 @@ object WidgetBitmapRenderers {
             }
         }
 
+        // FIXED 窗口每列「+N」胶囊 (2026-09-14 用户定稿): 各列独立计数 —
+        // 合并「+N 节待上」禁回流 (今天/明天各欠几节必须分得清)。
+        footerTexts?.forEachIndexed { colIdx, text ->
+            if (text == null) return@forEachIndexed
+            p.textSize = 11f * density
+            p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            val tw = p.measureText(text)
+            val pillW = (tw + 16f * density).coerceAtMost(colW)
+            val pillH = 18f * density
+            val cx = pad + colIdx * (colW + colGap) + colW / 2f
+            val left = (cx - pillW / 2f).coerceIn(pad, w - pad - pillW)
+            val top = h - pad - pillH
+            p.color = s.surfaceVariant
+            canvas.drawRoundRect(RectF(left, top, left + pillW, top + pillH), pillH / 2f, pillH / 2f, p)
+            p.color = s.onSurfaceVariant
+            val fm = p.fontMetrics
+            canvas.drawText(text, cx - tw / 2f, top + pillH / 2f - (fm.ascent + fm.descent) / 2f, p)
+        }
+
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
     }
 
@@ -1414,7 +1366,7 @@ object WidgetBitmapRenderers {
      * Canvas 手动换行: 最多2行, 超出截断 "…".
      * CJK 按字符断行; Latin 在空格处断行.
      */
-    private fun wrapMax2Lines(
+    internal fun wrapMax2Lines(
         text: String,
         paint: Paint,
         maxWidth: Float

@@ -79,7 +79,7 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        for (id in appWidgetIds) WidgetBindingStore.remove(context, id)
+        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id) }
     }
 
     private fun renderWidget(context: Context, awm: AppWidgetManager, widgetId: Int) {
@@ -95,32 +95,15 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
         // 正解 (API31+): OPTION_APPWIDGET_SIZES 返回当前真实 SizeF(dp 列表), 取最大那个 = 容器真实尺寸,
         //   bitmap 宽高比 == 容器宽高比 → 无拉伸无黑边。
         // 兼容 (API<31 回退): MIN_W × MAX_H 近似默认窄高尺寸。
-        val optMaxW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
-        val optMaxH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
-        val optMinW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-        val optMinH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-        var wDp = 0
-        var hDp = 0
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            // 类型化重载 getParcelableArrayList(key, Class) 是 API 33 新增,
-            //   API 31/32 调用会 NoSuchMethodError → 守卫必须用 TIRAMISU 而非 S
-            val sizes = opts.getParcelableArrayList(
-                AppWidgetManager.OPTION_APPWIDGET_SIZES, android.util.SizeF::class.java)
-            sizes?.maxByOrNull { it.width * it.height }?.let { s -> wDp = s.width.toInt(); hDp = s.height.toInt() }
-        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            // API 31/32: OPTION_APPWIDGET_SIZES 已存在但只有无类型重载(开发期过时警告, 运行时安全)
-            @Suppress("DEPRECATION", "UncheckedCast")
-            val legacy = opts.getParcelableArrayList<android.util.SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-            legacy?.maxByOrNull { it.width * it.height }?.let { s -> wDp = s.width.toInt(); hDp = s.height.toInt() }
-        }
-        if (wDp <= 0 || hDp <= 0) {
-            // 回退: MIN_W (最窄) × MAX_H (最高) ≈ 默认放置后的窄高容器
-            wDp = optMinW.takeIf { it > 0 } ?: 360
-            hDp = optMaxH.takeIf { it > 0 } ?: 600
-        }
-        val w = (wDp * density).toInt().coerceAtLeast((180 * density).toInt())
-        val h = (hDp * density).toInt().coerceAtLeast((250 * density).toInt())
-        Log.d(TAG, "renderWidget: opts MAX=${optMaxW}x${optMaxH}dp MIN=${optMinW}x${optMinH}dp " +
+        // §9.3: 尺寸解析统一走 computeSizeDp (WidgetSizeCore 单一口径: API33 类型化/
+        // API31-32 无类型/回退 fallbackSizeDp), 不再内联镜像一份 max-area 逻辑。
+        val (wDp, hDp) = RemoteViewsWidgetHelper.computeSizeDp(opts)
+        // §4.4: 位图地板 (180×250dp) 已删 — 按容器真实尺寸绘制, fitXY 1:1 无压扁无留白;
+        // 极小尺寸的可读性由 renderBitmap 降级阶梯 (时间标签→色带) 兜底, 不再靠锁尺寸。
+        val w = (wDp * density).toInt().coerceAtLeast(1)
+        val h = (hDp * density).toInt().coerceAtLeast(1)
+        Log.d(TAG, "renderWidget: opts MIN=${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)}" +
+            "x${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)}dp " +
             "SIZES_wDp=${wDp}x${hDp}dp → bitmap=${w}x${h}px ratio=%.2f (density=$density)".format(w.toFloat()/h))
 
         // SMALL 变体 + 容器 <150dp → 最小档: 不再"折叠成单列的网格脸"(用户反馈: 2×2 比例奇怪),
@@ -153,6 +136,23 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "WeekGridV19"
+
+        /**
+         * §4.4 降级阶梯几何 — bodyH(px)/slotH(px) 推导 (渲染器与契约测试单一事实来源)。
+         * 与旧内联算式逐字节同式: outerPad 6dp×2 + headH 56dp, bodyH 地板 20dp,
+         * 节间隙 1.5dp×(n+1), slotH 地板 3dp (整除口径保持 Int / Int)。
+         */
+        internal fun weekGridBodyGeomPx(hPx: Int, density: Float, maxNode: Int): Pair<Int, Float> {
+            fun dp(v: Float) = (v * density).roundToInt()
+            val bodyH = (hPx - dp(6f) * 2 - dp(56f)).coerceAtLeast(dp(20f))
+            val totalGapH = dp(1.5f) * (maxNode + 1)
+            val slotH = ((bodyH - totalGapH) / maxNode).toFloat().coerceAtLeast(dp(3f).toFloat())
+            return bodyH to slotH
+        }
+
+        /** §4.4 降级阶梯末档: 单节 slotH < 9dp → 文字行排不下, 切色带模式 (无文字非空白) */
+        internal fun weekGridColorBand(slotHPx: Float, density: Float): Boolean =
+            slotHPx < (9f * density).roundToInt()
 
         fun renderBitmap(context: Context, data: WeekData, wPx: Int, hPx: Int): Bitmap {
             val density = context.resources.displayMetrics.density
@@ -204,12 +204,11 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             val gapW = dp(2.5f)
 
             val bodyW = wPx - outerPad * 2
-            val bodyH = (hPx - outerPad * 2 - headH).coerceAtLeast(dp(20f))
+            // §4.4 降级阶梯几何单一事实来源 (与 weekGridBodyGeomPx 契约测试同源)
+            val (bodyH, slotH) = weekGridBodyGeomPx(hPx, density, maxNode)
             val totalGapW = gapW * (dayCount + 1)
             val dayW = ((bodyW - timeW - totalGapW) / dayCount)
                 .toFloat().coerceAtLeast(dp(20f).toFloat())  // 下限: 防 launcher 返极小宽度致负数
-            val totalGapH = gapH * (maxNode + 1)
-            val slotH = ((bodyH - totalGapH) / maxNode).toFloat().coerceAtLeast(dp(3f).toFloat())
 
             Log.d(TAG, "w=${wPx}x${hPx} maxNode=$maxNode dayCount=$dayCount " +
                 "slotH=${slotH}px dayW=${dayW}px headH=${headH}px")
@@ -309,6 +308,40 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             // ── Body ──
             y = (outerPad + headH).toFloat()
             val bodyTop = y
+
+            // §4.4 降级阶梯末档: slotH 小到文字行排不下 (单节卡高 <9dp) → 色带模式:
+            // 日头保留, 主体只画课程色条 (冲突课按 lane 分宽), 无任何文字。任意高度非空白。
+            if (weekGridColorBand(slotH, density)) {
+                for ((idx, dow) in sortedDays.withIndex()) {
+                    val colX = x + timeW + gapW + idx * (dayW + gapW)
+                    val dayData = data.days.firstOrNull { it.dayOfWeek == dow } ?: continue
+                    if (dow == todayDow) {
+                        p.color = bgToday
+                        p.alpha = 40
+                        c.drawRect(RectF(colX, bodyTop, colX + dayW, bodyTop + bodyH), p)
+                        p.alpha = 255
+                    }
+                    for (laneRect in com.lingion.sleepy.util.ConflictLayoutEngine
+                            .gridDayLanes(dayData.courses, dayData.timeJson)) {
+                        val course = laneRect.course
+                        val startIdx = (course.startNode - 1).coerceAtLeast(0)
+                        val step = course.step.coerceAtLeast(1).coerceAtMost(maxNode - startIdx)
+                        val top = bodyTop + gapH + startIdx * (slotH + gapH)
+                        val barH = (slotH * step + gapH * (step - 1)).coerceAtLeast(1f)
+                        val laneX = colX + dayW * laneRect.laneStartFraction
+                        val laneW = dayW * laneRect.laneWidthFraction
+                        p.color = CourseColorUtil.pickCourseColorIntWithGroupRows(
+                            course, allCourses.filter { it.groupId == course.groupId },
+                            isDark, gridLine, colorless
+                        )
+                        p.alpha = 200
+                        val r = minOf(dp(4f).toFloat(), barH / 2f)
+                        c.drawRoundRect(RectF(laneX, top, laneX + laneW, top + barH), r, r, p)
+                        p.alpha = 255
+                    }
+                }
+                return bmp
+            }
 
             // time column labels
             p.textAlign = Paint.Align.CENTER

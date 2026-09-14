@@ -162,11 +162,11 @@ class ScrollStripWholeImageTest {
             !body.contains("TodayPagerCore")
         )
         // 取证标签: 所有元素 drawn or not 全打标 — spacer 也要有 (静态分支仍在用)
-        val nav = src.substringAfter("fun configureTodayNav(")
+        val nav = src.substringAfter("fun configureTodayBar(")
             .substringBefore("val zones = listOf(")
         assertTrue(
-            "configureTodayNav 必须给 spacer 打标签",
-            nav.contains("widget_spacer_l") && nav.contains("widget_spacer_r")
+            "configureTodayBar 必须给 spacer 打标签",
+            nav.contains("widget_spacer_l")
         )
     }
 
@@ -196,10 +196,10 @@ class ScrollStripWholeImageTest {
 
     @Test
     fun `nav layouts label every element including spacers and root`() {
-        listOf("widget_today_nav_static.xml").forEach { name ->
+        listOf("widget_today_nav_static.xml", "widget_today_nav_static_compact.xml").forEach { name ->
             val xml = layoutFile(name).readText()
             assertTrue("$name spacer 左须有 id", xml.contains("widget_spacer_l"))
-            assertTrue("$name spacer 右须有 id", xml.contains("widget_spacer_r"))
+            assertTrue("$name 底部条容器须有 id", xml.contains("widget_today_bar"))
         }
     }
 }

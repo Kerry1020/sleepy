@@ -521,6 +521,11 @@ class BootReceiver : BroadcastReceiver() {
             if (AppPrefs.isReminderEnabled(context)) {
                 SleepyApp.get().notificationScheduler.scheduleAll()
             }
+            // 课程边界闹钟无条件重排 (设计 §5): 与通知开关无关, armNext 阻塞读库 → IO
+            val appContext = context.applicationContext
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                com.lingion.sleepy.widget.WidgetBoundaryScheduler.armNext(appContext)
+            }
         }
     }
 }

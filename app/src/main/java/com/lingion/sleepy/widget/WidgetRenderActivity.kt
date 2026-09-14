@@ -38,11 +38,13 @@ class WidgetRenderActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val which = intent.getStringExtra("widget") ?: "weekgrid"
+        // 设计 §7 三档重定档 (评审 #19): L=300×250, M=300×160
         val (wDp, hDp) = when (which) {
-            "today" -> 250f to 180f
-            "twoday" -> 320f to 220f
-            "weeklist" -> 320f to 200f
-            else -> 250f to 360f
+            "today" -> 300f to 250f
+            "twoday" -> 300f to 250f
+            "weeklist" -> 300f to 250f
+            "today_wide", "twoday_wide", "weeklist_wide" -> 300f to 160f
+            else -> 300f to 250f
         }
         Log.d(TAG, "rendering widget=$which, size=${wDp}x${hDp}dp")
 

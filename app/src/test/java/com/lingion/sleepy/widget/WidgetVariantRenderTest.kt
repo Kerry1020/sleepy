@@ -184,91 +184,22 @@ class WidgetVariantRenderTest {
         hasTable = true
     )
 
-    /** 星期名 fake — 模拟 DateUtils.localizedDay 的 R.array.day_names 输出(周一…周日) */
-    private fun dayLabel(dow: Int): String =
-        listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")[dow - 1]
-
     @Test
-    fun `weekList compact texts show today and tomorrow first courses`() {
-        // 2026-09-02 = 周三(锚点), 明天 09-03 = 周四; 周五无课跳过
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            ::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), weekData
-        )
-        assertEquals(2, texts.size)
-        // 每天只取首课(courses 已按 startNode 排序): 周三取 高等数学 非第 2 门 数据结构
-        assertEquals("周三 高等数学", texts[0])
-        assertEquals("周四 大学英语", texts[1])
-    }
-
-    @Test
-    fun `weekList compact texts cover no-table out-of-semester and empty states`() {
-        val noTable = weekData.copy(hasTable = false)
-        assertEquals(
-            listOf("widget_create_schedule"),
-            WidgetBitmapRenderers.weekListCompactTexts(::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), noTable)
-        )
-
-        val beforeStart = weekData.copy(semesterStatus = DateUtils.SemesterStatus.BEFORE_START)
-        assertEquals(
-            listOf("semester_not_started"),
-            WidgetBitmapRenderers.weekListCompactTexts(::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), beforeStart)
-        )
-
-        val afterEnd = weekData.copy(semesterStatus = DateUtils.SemesterStatus.AFTER_END)
-        assertEquals(
-            listOf("semester_ended"),
-            WidgetBitmapRenderers.weekListCompactTexts(::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), afterEnd)
-        )
-
-        // 今明两天全无课 → no_course 一行
-        val empty = weekData.copy(days = weekData.days.map { it.copy(courses = emptyList()) })
-        assertEquals(
-            listOf("no_course"),
-            WidgetBitmapRenderers.weekListCompactTexts(::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), empty)
-        )
-    }
-
-    @Test
-    fun `weekList compact sunday anchor keeps today first`() {
-        // 周日(2026-09-06)锚点: 今天=周日(7), 明天=周一(ISO 1, 周循环回绕)
-        // 回归: 旧实现按 ISO 星期排序 → 周一(明天)排到周日(今天)前面
-        val sundayWeek = weekData.copy(
-            days = listOf(
-                DayData(
-                    date = LocalDate.of(2026, 9, 6),
-                    dayOfWeek = 7,
-                    courses = listOf(testCourse(name = "周日体育", startNode = 1)),
-                    timeJson = TimeTableUtils.DEFAULT_TIME_JSON
-                ),
-                DayData(
-                    date = LocalDate.of(2026, 9, 7),
-                    dayOfWeek = 1,
-                    courses = listOf(testCourse(name = "周一高数", startNode = 1)),
-                    timeJson = TimeTableUtils.DEFAULT_TIME_JSON
-                )
-            )
-        )
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            ::resolve, ::dayLabel, LocalDate.of(2026, 9, 6), sundayWeek
-        )
-        assertEquals(2, texts.size)
-        assertEquals("周日 周日体育", texts[0])   // 今天恒为第 1 行
-        assertEquals("周一 周一高数", texts[1])   // 明天第 2 行
-    }
-
-    @Test
-    fun `weekList compact only today has courses yields single row`() {
-        // 只有今天(周三)有课, 明天(周四)无课 → 只回 1 行
-        val todayOnly = weekData.copy(
-            days = weekData.days.map {
-                if (it.dayOfWeek == 3) it else it.copy(courses = emptyList())
-            }
-        )
-        val texts = WidgetBitmapRenderers.weekListCompactTexts(
-            ::resolve, ::dayLabel, LocalDate.of(2026, 9, 2), todayOnly
-        )
-        assertEquals(1, texts.size)
-        assertEquals("周三 高等数学", texts[0])
+    fun `weekList compact face is 3-day column face not text lines`() {
+        // 2026-09-14 用户定稿: 列表·小 2×2 = 与周视图·小同一张脸 (今天邻域 ≤3 列
+        // 彩色胶囊)。旧「周X 课名」两行纯文本脸整体退场 — 禁回流。
+        var dir: java.io.File? = java.io.File(".").absoluteFile
+        lateinit var r: String
+        while (dir != null) {
+            val f = java.io.File(dir, "app/src/main/java/com/lingion/sleepy/widget/WidgetBitmapRenderers.kt")
+            if (f.exists()) { r = f.readText(); break }
+            dir = dir.parentFile
+        }
+        val fn = r.substringAfter("private fun renderWeekListCompact").substringBefore("fun renderWeekList(")
+        assertTrue("compact 档必须复用 compact 列选取", fn.contains("weekViewCompactColumns("))
+        assertTrue("compact 档必须走 Regular 渲染器", fn.contains("renderWeekListRegular("))
+        assertFalse("纯文本脸 weekListCompactTexts 禁回流", r.contains("weekListCompactTexts"))
+        // 列选取本身 (今天邻域 ≤3 列) 由 weekViewCompactColumns 既有单测锁定
     }
 
     @Test

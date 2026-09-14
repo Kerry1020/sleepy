@@ -77,11 +77,10 @@ class SleepyApp : Application() {
      * 这里主动调 notifyDataChanged() 广播 APPWIDGET_UPDATE,强制全部 5 个
      * RemoteViews widget 重渲染,确保跟随系统主题。
      *
-     * fontScale (issue#31 P3「字体遮盖箭头」残余): 顶栏档位 (navHeaderTier) 与
-     * bitmap 都在推送时定格 — 用户事后调大系统字体, launcher 会用新字号重 inflate
-     * 顶栏 TextView (sp 随宿主缩放), 但我们的档位判定/图不会自动重算, 最长要等
-     * 15-min periodic 兜底, 期间大字文本可能挤压箭头。fontScale 一变立即全量重推
-     * = 判定与实测同字体口径。
+     * fontScale (issue#31 P3「字体遮盖箭头」残余): 位图标题/胶囊/按钮都在推送时定格 —
+     * 用户事后调大系统字体, 已推送的位图不会自动重算, 最长要等
+     * 15-min periodic 兜底, 期间大字文本可能挤压排版。fontScale 一变立即全量重推
+     * = 渲染与实测同字体口径。
      */
     private var lastNightMode: Int = -1
     private var lastFontScale: Float = -1f

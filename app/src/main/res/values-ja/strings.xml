@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Sleepy 時間割</string>
     <string name="widget_today_label">今日の授業</string>
+    <string name="widget_today_wide_label">今日 · 中</string>
+    <string name="widget_twoday_wide_label">2日間 · 中</string>
+    <string name="widget_week_list_wide_label">週リスト · 中</string>
     <string name="widget_week_list_label">今週の時間割（リスト）</string>
     <string name="widget_week_grid_label">今週の時間割（グリッド）</string>
     <string name="widget_twoday_label">直近2日</string>
@@ -331,6 +334,9 @@
     <string name="today_nav_back_to_today">今日に戻る</string>
     <string name="today_no_course">今日は授業がありません</string>
     <string name="today_rest">休み / 自習 でもOK</string>
+    <string name="widget_footer_more">あと %1$d コマ</string>
+    <string name="widget_status_all_done">本日の授業は終了しました</string>
+    <string name="widget_footer_more_short">+%1$d</string>
 
     <string name="ok">OK</string>
     <string name="cancel">キャンセル</string>
@@ -349,6 +355,12 @@
     <string name="widget_open_sleepy">Sleepyを開いて追加</string>
     <string name="widget_edit_section_schedule">表示する時間割</string>
     <string name="widget_edit_section_alias">科目名の表示</string>
+    <string name="widget_edit_section_scroll">スクロール</string>
+    <string name="widget_edit_scroll_subtitle">既定は固定ウィンドウで全メーカーのホーム画面に対応。有効にすると超過分をスクロールできます（実験的）</string>
+    <string name="widget_scroll_dialog_title">強制スクロールを有効にしますか（実験的）？</string>
+    <string name="widget_scroll_dialog_body">スクロールはシステムのウィジェットサービスに依存するため、一部のメーカー ROM（Xiaomi、vivo など）では空白表示・動作の重さ・更新不能が起こる可能性があります。異常が起きたらこのスイッチをオフにして固定ウィンドウに戻してください。</string>
+    <string name="widget_scroll_dialog_confirm">実験的に有効にする</string>
+    <string name="widget_scroll_dialog_cancel">キャンセル</string>
     <string name="widget_edit_default_label">デフォルト（現在の時間割に従う）</string>
     <string name="widget_manage_title">ホームウィジェットを管理</string>
     <string name="widget_edit_title">ウィジェットを編集</string>
