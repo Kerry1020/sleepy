@@ -55,8 +55,8 @@ object AppPrefs {
     const val KEY_CONFLICT_FOLD_SIZE = "conflict_fold_size" // Float dp — 折角幅度(fold 样式): 折痕直角边长, 视觉符号与命中区共用; 默认 16dp = 旧硬编码值
     val CONFLICT_FOLD_SIZE_RANGE = 8f..28f        // 拖杆量程(dp)
     const val CONFLICT_FOLD_SIZE_DEFAULT = 16f    // 默认(dp) — 沿用旧 FOLD_SIZE_DP 硬编码值
-    const val KEY_START_VIEW = "start_view" // "full" / "cards" — 启动默认视图（仅通用设置里设置；手动切换课表顶部视图不写入）
-    const val KEY_SHOW_DATE = "show_date"       // boolean
+    const val KEY_START_VIEW = "start_view" // "full" / "cards" — 启动默认视图（仅通用设置里设置；手动切换课表顶部视图不写入；出厂默认 cards）
+    const val KEY_SHOW_DATE = "show_date"       // boolean — 网格视图表头显示当前日期（出厂默认 true，用户反馈找不到开关）
     const val KEY_VISIBLE_DAYS = "visible_days" // "1,2,3,4,5,6,7"
     const val KEY_VERT_PUNCT_REPLACE = "vert_punct_replace" // bool default false (方案B开关)
     const val KEY_WIDGET_COLORLESS = "widget_colorless" // bool default false
@@ -380,8 +380,9 @@ object AppPrefs {
 
     // ===== 启动默认视图：完整 / 卡片 =====
 
+    // 出厂默认 "cards"（网格视图）— 用户反馈网格更好用，新装直接进网格
     fun getStartView(ctx: Context): String =
-        sp(ctx).getString(KEY_START_VIEW, "full") ?: "full"
+        sp(ctx).getString(KEY_START_VIEW, "cards") ?: "cards"
 
     fun setStartView(ctx: Context, value: String) {
         require(value == "full" || value == "cards")
@@ -390,8 +391,9 @@ object AppPrefs {
 
     // ===== 网格显示日期 =====
 
+    // 出厂默认显示日期 — 用户反馈不知道开关在哪，直接默认开；设置页仍可关
     fun isShowDate(ctx: Context): Boolean =
-        sp(ctx).getBoolean(KEY_SHOW_DATE, false)
+        sp(ctx).getBoolean(KEY_SHOW_DATE, true)
 
     fun setShowDate(ctx: Context, v: Boolean) {
         sp(ctx).edit().putBoolean(KEY_SHOW_DATE, v).apply()
