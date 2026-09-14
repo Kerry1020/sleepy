@@ -191,11 +191,10 @@ object WidgetBitmapRenderers {
         emptyHeader: Boolean = false,
         headerSpace: Boolean = false,
         showBackToToday: Boolean = true,
-        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
-        statusText: String? = null
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null
     ): Bitmap = renderTodayRegular(
         context, data, wDp, hDp, emptyHeader, headerSpace, showBackToToday,
-        visibleCourses, statusText
+        visibleCourses
     )
 
     /**
@@ -276,8 +275,7 @@ object WidgetBitmapRenderers {
         emptyHeader: Boolean,
         headerSpace: Boolean,
         showBackToToday: Boolean = true,
-        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null,
-        statusText: String? = null
+        visibleCourses: List<com.lingion.sleepy.data.entity.CourseEntity>? = null
     ): Bitmap {
         val density = context.resources.displayMetrics.density
         val w = (wDp * density).toInt()
@@ -383,14 +381,8 @@ object WidgetBitmapRenderers {
             return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
         }
 
-        // FIXED 窗口 ALL_DONE (设计 §3.0 公共闸): 状态行替代课程行, 无页脚
-        if (statusText != null) {
-            p.color = s.onSurface
-            p.textSize = 16f * density
-            p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText(statusText, pad, y + 16f * density, p)
-            return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
-        }
+        // FIXED 窗口 ALL_DONE (2026-09-14b 用户定稿): 不画「今日课程已结束」长状态行 —
+        // 唯一结束标记 = 底部条左下角「+0」胶囊 (十几个字符的状态文案禁回流)。空正文即可。
 
         // 课程列表（全部渲染，不再截断）
         // v7.10.11: 冲突分栏 — 与 App 今日页/周视图同一引擎(weekLaneRows),
@@ -1292,10 +1284,8 @@ object WidgetBitmapRenderers {
             var cy = listTop + 20f * density
 
             if (colStatus != null) {
-                // FIXED 窗口 ALL_DONE: 列内状态行替代课程 (今天列专属)
-                p.color = s.onSurfaceVariant
-                p.textSize = 11f * density
-                canvas.drawText(colStatus, colX, cy + 11f * density, p)
+                // ALL_DONE 列 (2026-09-14b): 什么都不画 — 「+0」胶囊是唯一结束标记;
+                // 不得落进「无课程」分支 (有课只是上完了, 说无课程是撒谎)
             } else if (colCourses.isEmpty()) {
                 p.color = s.onSurfaceVariant
                 p.textSize = 11f * density
