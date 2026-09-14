@@ -115,6 +115,19 @@ class TodayDateNavWiringTest {
         assertEquals("today_nav_back_to_today", headerNoDate.rightText)
     }
 
+    @Test
+    fun `navigated state never renders date twice when back affordance is hidden`() {
+        val data = WidgetData(date = LocalDate.of(2026, 9, 14), courses = emptyList(),
+            timeJson = "", hasTable = false, isToday = false)
+        val header = WidgetBitmapRenderers.todayHeaderParts(
+            data = data, dayName = "周一", showDate = true,
+            resolve = { resId -> resNames.getValue(resId) },
+            showBackToToday = false
+        )
+        assertEquals("9/14 · 周一", header.title)
+        assertNull("导航态日期已在标题中, 不得再画第二份 9/14", header.rightText)
+    }
+
     private val resNames = mapOf(
         R.string.today_today to "today_today",
         R.string.today_nav_back_to_today to "today_nav_back_to_today"
