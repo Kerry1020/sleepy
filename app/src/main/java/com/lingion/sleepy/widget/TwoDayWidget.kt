@@ -48,15 +48,14 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
             computeTwoDayWindows(data, hDp.toFloat(), TodayWidgetReceiver.currentNowMin())
         } else null
         val visibleByCol = wins?.map { w -> w.visible.flatMap { it.row.courses } }
-        // 每列独立「+N」(2026-09-14 用户定稿): 今天/明天各说各的隐藏课数,
-        // 合并求和的「+N 节待上」禁回流 — 谁知道是哪一天欠几节。
+        // 每列独立「+N」(2026-09-14 用户定稿 + 同日 0 值定稿): 今天/明天各说各的,
+        // 恒画 — 上完/没课列显示「+0」; 合并求和禁回流。「已结束」长状态行退场,
+        // statusByCol 仅作 ALL_DONE 列抑制「无课程」文案的标记 (不画字)。
         val footerTexts = wins?.map { w ->
-            if (w.footer) context.getString(R.string.widget_footer_more_short, w.hiddenAheadCourses)
-            else null
-        }?.takeIf { l -> l.any { it != null } }
+            context.getString(R.string.widget_footer_more_short, w.hiddenAheadCourses)
+        }
         val statusByCol = wins?.map { w ->
-            if (w.status == FixedWindowCore.Status.ALL_DONE)
-                context.getString(R.string.widget_status_all_done) else null
+            if (w.status == FixedWindowCore.Status.ALL_DONE) "" else null
         }
         if (contentH <= hDp || wins != null) {
             RemoteViewsWidgetHelper.renderAndPush(

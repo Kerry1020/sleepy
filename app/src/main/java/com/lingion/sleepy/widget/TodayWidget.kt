@@ -157,19 +157,16 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             // 条背景 = 卡面同色 (与位图 bg 同一 scheme, 无缝)
             val colors = WidgetBitmapRenderers.todayNavHeaderColors(context, data)
             views.setInt(R.id.widget_today_bar, "setBackgroundColor", colors.bg)
-            // 「+N」胶囊 (2026-09-14 用户定稿): 有隐藏课就恒画 — 与按钮并列,
-            // 按钮不得盖过它 (挤也画); 纯指示控件, 不可点。
-            if (hidden > 0) {
-                views.setImageViewBitmap(
-                    R.id.widget_nav_more,
-                    WidgetBitmapRenderers.renderNavCapsule(context, data, "+$hidden")
+            // 「+N」胶囊 (2026-09-14 用户定稿 + 同日 0 值定稿): 恒画 — 有隐藏课 +N,
+            // 全部上完/无隐藏课「+0」。长状态行 (今日课程已结束) 整体退场, 0 就是结束
+            // 标记; 恒推位图+VISIBLE 也根除 launcher 视图复用残留旧值问题。
+            views.setImageViewBitmap(
+                R.id.widget_nav_more,
+                WidgetBitmapRenderers.renderNavCapsule(
+                    context, data, if (hidden > 0) "+$hidden" else "+0"
                 )
-                views.setViewVisibility(R.id.widget_nav_more, android.view.View.VISIBLE)
-            } else {
-                // 无隐藏课必须显式 GONE — 部分 launcher 复用视图树, 不推 GONE
-                // 旧胶囊会残留 (用户实测: 翻到没课的一天仍显示「+3」)
-                views.setViewVisibility(R.id.widget_nav_more, android.view.View.GONE)
-            }
+            )
+            views.setViewVisibility(R.id.widget_nav_more, android.view.View.VISIBLE)
             views.setContentDescription(
                 R.id.widget_nav_more,
                 "capsule hidden=$hidden w=$wDp"
@@ -280,8 +277,6 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 computeTodayWindow(data, hDp.toFloat(), if (data.isToday) currentNowMin() else null)
             } else null
             val winCourses = win?.visible?.flatMap { it.row.courses }
-            val statusText = win?.takeIf { it.status == FixedWindowCore.Status.ALL_DONE }
-                ?.let { context.getString(R.string.widget_status_all_done) }
             // 「+N」胶囊计数 (2026-09-15 底部导航条定稿): 隐藏课不再画文字页脚,
             // 窗口填满内容预算 (footerH=0), 底部条恒在且恒放得下。
             val hidden = win?.hiddenAheadCourses ?: 0
@@ -294,7 +289,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                         renderBitmap = { d, w, h ->
                             WidgetBitmapRenderers.renderToday(
                                 context, d, w, h, variant,
-                                visibleCourses = winCourses, statusText = statusText
+                                visibleCourses = winCourses
                             )
                         },
                         layoutRes = todayBarLayout(wDp, data.isToday, navEnabled = false),
@@ -326,7 +321,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 val shell = WidgetBitmapRenderers.renderToday(
                     context, data, wDp.toFloat(), hDp.toFloat(), variant,
                     showBackToToday = false,
-                    visibleCourses = winCourses, statusText = statusText
+                    visibleCourses = winCourses
                 )
                 val views = android.widget.RemoteViews(
                     context.packageName,
