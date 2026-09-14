@@ -34,28 +34,29 @@ class BottomBarFitTest {
         error("$name not found")
     }
 
-    // ---- 胶囊宽度判定 (纯函数) ----
+    // ---- 宽档布局选档判定 (纯函数; 2026-09-14 胶囊恒画改版: 判定只选布局, 不再隐藏胶囊) ----
 
     @Test
-    fun `capsule fits today-state at 2x2 width`() {
+    fun `wide layout fits today-state at 2x2 width`() {
         // 今日态: pad20 + 胶囊36 + 间隙4 + ◀▶80 = 140 ≤ 148 (荣耀 2×2 实测宽)
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(148, isToday = true, navEnabled = true))
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(140, isToday = true, navEnabled = true))
-        assertFalse(TodayWidgetReceiver.bottomBarCapsuleFits(139, isToday = true, navEnabled = true))
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(148, isToday = true, navEnabled = true))
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(140, isToday = true, navEnabled = true))
+        assertFalse(TodayWidgetReceiver.bottomBarWideFits(139, isToday = true, navEnabled = true))
     }
 
     @Test
-    fun `capsule yields to buttons in nav-state narrow`() {
-        // 导航态: pad20 + 胶囊36 + 间隙4 + 三钮132 = 192 — 装不下胶囊 GONE, 按钮优先
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(192, isToday = false, navEnabled = true))
-        assertFalse(TodayWidgetReceiver.bottomBarCapsuleFits(148, isToday = false, navEnabled = true))
+    fun `narrow nav-state falls to compact layout, capsule never hidden`() {
+        // 导航态宽档门槛: pad20 + 胶囊36 + 间隙4 + 三钮132 = 192;
+        // 148 放不下 → 换紧凑档 (12+36+4+96=148), 胶囊仍恒画 — 用户定稿: 挤也画
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(192, isToday = false, navEnabled = true))
+        assertFalse(TodayWidgetReceiver.bottomBarWideFits(148, isToday = false, navEnabled = true))
     }
 
     @Test
-    fun `capsule always fits no-nav variant and unknown width`() {
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(60, isToday = true, navEnabled = false))
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(0, isToday = false, navEnabled = true))
-        assertTrue(TodayWidgetReceiver.bottomBarCapsuleFits(-1, isToday = true, navEnabled = true))
+    fun `wide layout always fits no-nav variant and unknown width`() {
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(60, isToday = true, navEnabled = false))
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(0, isToday = false, navEnabled = true))
+        assertTrue(TodayWidgetReceiver.bottomBarWideFits(-1, isToday = true, navEnabled = true))
     }
 
     // ---- 填满档 (footerH=0): 装得下几行画几行, 隐藏课只点亮胶囊 ----
@@ -133,6 +134,34 @@ class BottomBarFitTest {
     }
 
     @Test
+    fun `compact layout keeps capsule and shrinks buttons`() {
+        val xml = layoutFile("widget_today_nav_static_compact.xml").readText()
+        assertTrue("缺底部条容器 widget_today_bar", xml.contains("widget_today_bar"))
+        assertTrue("条必须贴底", xml.contains("android:layout_gravity=\"bottom\""))
+        assertTrue("条高须 36dp (与宽档同高, 内容预算同扣)", xml.contains("36dp"))
+        assertTrue("缺胶囊 widget_nav_more", xml.contains("widget_nav_more"))
+        assertTrue("紧凑档按钮须 32×26dp", xml.contains("32dp") && xml.contains("26dp"))
+        assertEquals("须单个 weight=1 spacer",
+            1, Regex("layout_weight=\"1\"").findAll(xml).count())
+        val iMore = xml.indexOf("widget_nav_more")
+        val iPrev = xml.indexOf("widget_today_nav_prev")
+        val iToday = xml.indexOf("widget_today_nav_today")
+        val iNext = xml.indexOf("widget_today_nav_next")
+        assertTrue("底部条顺序须 capsule<prev<today<next",
+            iMore in 1 until iPrev && iPrev < iToday && iToday < iNext)
+        assertFalse("禁裸 <View> (RemoteViews 白名单)", Regex("<View\\b").containsMatchIn(xml))
+    }
+
+    @Test
+    fun `capsule is non-clickable in both bar layouts`() {
+        for (name in listOf("widget_today_nav_static.xml", "widget_today_nav_static_compact.xml")) {
+            val xml = layoutFile(name).readText()
+            val capsule = xml.substringAfter("widget_nav_more").substringBefore("/>")
+            assertFalse("$name 胶囊不得声明 clickable", capsule.contains("clickable"))
+        }
+    }
+
+    @Test
     fun `old topbar machinery fully removed`() {
         val src = widgetSource("TodayWidget.kt")
         assertFalse("NavTier 档位机制必须退场 (注释提及不算)", src.contains("NavTier."))
@@ -152,10 +181,14 @@ class BottomBarFitTest {
         assertTrue("内容预算须扣底部条高", src.contains("TodayRowGeometry.NAV_BAR_H_DP"))
         assertTrue("push 必须调 configureTodayBar", src.contains("configureTodayBar(context, views, id, receiverClass, data, hidden, wDp)"))
         assertTrue("最小档复用管线也走底部条", src.contains("configureTodayBar(context, v, id, null, data, hidden, wDp)"))
-        assertTrue("胶囊自救 PI 缺失", src.contains("footerConfigurePi(context, widgetId)"))
+        assertTrue("两条静态路径都须走布局选档",
+            src.contains("todayBarLayout(wDp, data.isToday, navEnabled = false)") &&
+            src.contains("todayBarLayout(wDp, data.isToday, navEnabled = true)"))
         val bar = src.substringAfter("fun configureTodayBar(")
-            .substringBefore("internal fun bottomBarCapsuleFits")
-        assertTrue("胶囊可见性须走宽度判定", bar.contains("bottomBarCapsuleFits(wDp, data.isToday, navEnabled)"))
+            .substringBefore("internal fun bottomBarWideFits")
+        assertTrue("胶囊须恒画 (只看 hidden)", bar.contains("if (hidden > 0)"))
+        assertFalse("胶囊不可挂点击 PI (用户定稿: 纯指示不可点)",
+            bar.contains("widget_nav_more, footerConfigurePi"))
         assertTrue("今日态须隐藏回今天钮 (要么能点要么不存在)",
             bar.contains("if (data.isToday) android.view.View.GONE else android.view.View.VISIBLE"))
         assertTrue("条底色须与卡片同色", bar.contains("R.id.widget_today_bar, \"setBackgroundColor\""))

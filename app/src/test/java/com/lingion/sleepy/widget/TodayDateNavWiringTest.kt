@@ -200,7 +200,7 @@ class TodayDateNavWiringTest {
         // android.view.View 无 @RemoteView 注解 → 裸 <View> 在 launcher inflate 必炸
         // → 「载入窗口小组件时出现问题」(v1.0.53 回归: 两个今日变体都走 nav 布局,
         //   周课表布局无裸 View 所以只有今日挂)。
-        listOf("widget_today_nav_static.xml").forEach { name ->
+        listOf("widget_today_nav_static.xml", "widget_today_nav_static_compact.xml").forEach { name ->
             val xml = layoutFile(name).readText()
             assertFalse(
                 "$name 禁止裸 <View> (无 @RemoteView 注解, launcher 端 inflate 抛异常)",

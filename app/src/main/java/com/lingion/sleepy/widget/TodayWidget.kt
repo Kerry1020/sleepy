@@ -157,22 +157,18 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
             // 条背景 = 卡面同色 (与位图 bg 同一 scheme, 无缝)
             val colors = WidgetBitmapRenderers.todayNavHeaderColors(context, data)
             views.setInt(R.id.widget_today_bar, "setBackgroundColor", colors.bg)
-            // 「+N」胶囊 — 唯一需要宽度协商的元素: 装不下 GONE (按钮优先, 用户定稿「能用就行」)
-            val showCapsule = hidden > 0 &&
-                bottomBarCapsuleFits(wDp, data.isToday, navEnabled)
-            if (showCapsule) {
+            // 「+N」胶囊 (2026-09-14 用户定稿): 有隐藏课就恒画 — 与按钮并列,
+            // 按钮不得盖过它 (挤也画); 纯指示控件, 不可点。
+            if (hidden > 0) {
                 views.setImageViewBitmap(
                     R.id.widget_nav_more,
                     WidgetBitmapRenderers.renderNavCapsule(context, data, "+$hidden")
                 )
                 views.setViewVisibility(R.id.widget_nav_more, android.view.View.VISIBLE)
-                views.setOnClickPendingIntent(
-                    R.id.widget_nav_more, footerConfigurePi(context, widgetId)
-                )
             }
             views.setContentDescription(
                 R.id.widget_nav_more,
-                "capsule shown=$showCapsule hidden=$hidden w=$wDp"
+                "capsule hidden=$hidden w=$wDp"
             )
             views.setContentDescription(R.id.widget_spacer_l, "spacerL w=$wDp")
             if (!navEnabled) {
@@ -228,16 +224,23 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
         }
 
         /**
-         * 底部条「+N」胶囊宽度判定 (纯函数, JVM 锁死):
+         * 底部条宽档布局放得下判定 (纯函数, JVM 锁死; 2026-09-14 胶囊恒画改版):
          * pad(10+10) + 胶囊(36 保守估计) + 间隙(4) + 按钮 ≤ wDp。
          * 按钮 = 无导航 0 / 今日态 ◀▶ 80 / 导航态 ◀▶+回今天+边距 132。
-         * wDp≤0 (尺寸未知) → 保守显示。
+         * 放不下 → 换紧凑档 (32×26 钮、零间距), 胶囊两档都恒画 — 只降按钮规格,
+         * 不再隐藏胶囊 (用户定稿: 按钮不得盖过「+N」)。wDp≤0 → 保守用宽档。
          */
-        internal fun bottomBarCapsuleFits(wDp: Int, isToday: Boolean, navEnabled: Boolean): Boolean {
+        internal fun bottomBarWideFits(wDp: Int, isToday: Boolean, navEnabled: Boolean): Boolean {
             if (wDp <= 0) return true
             val buttons = if (!navEnabled) 0f else if (isToday) 80f else 40f + 6f + 40f + 6f + 40f
             return 20f + 36f + 4f + buttons <= wDp.toFloat()
         }
+
+        /** 底部条布局选档: 宽档放得下胶囊+三钮用宽档, 否则紧凑档 (胶囊两档都恒画)。 */
+        private fun todayBarLayout(wDp: Int, isToday: Boolean, navEnabled: Boolean): Int =
+            if (bottomBarWideFits(wDp, isToday, navEnabled))
+                com.lingion.sleepy.R.layout.widget_today_nav_static
+            else com.lingion.sleepy.R.layout.widget_today_nav_static_compact
 
         /**
          * 今日课程推送管线(静态/可滚动闸门) — 网格小最小档与今日课程·小共用,
@@ -290,7 +293,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                                 visibleCourses = winCourses, statusText = statusText
                             )
                         },
-                        layoutRes = com.lingion.sleepy.R.layout.widget_today_nav_static,
+                        layoutRes = todayBarLayout(wDp, data.isToday, navEnabled = false),
                         configureViews = { v: android.widget.RemoteViews ->
                             configureTodayBar(context, v, id, null, data, hidden, wDp)
                         },
@@ -323,7 +326,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 )
                 val views = android.widget.RemoteViews(
                     context.packageName,
-                    com.lingion.sleepy.R.layout.widget_today_nav_static
+                    todayBarLayout(wDp, data.isToday, navEnabled = true)
                 )
                 views.setImageViewBitmap(com.lingion.sleepy.R.id.widget_bitmap, shell)
                 val tap = PendingIntent.getActivity(

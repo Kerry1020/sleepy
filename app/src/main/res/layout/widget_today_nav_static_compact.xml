@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Today widget 静态卡 — 底部导航条版 (2026-09-15 用户定稿):
-     顶栏只留位图内日期标题 (renderToday 带头渲染, 不再 emptyHeader 留白);
-     翻页 ◀ / 回今天 / ▶ 与「+N」胶囊全部迁到底部 36dp 固定条 — 顶栏与按钮
-     不再抢宽度 (旧 NavTier 降级档位整体退场)。
-     条背景 = 卡面同色 (configureTodayBar 运行时 setInt), 内容预算恒扣条高,
-     行永不画到条下。全部子视图限 RemoteViews 白名单 (禁 View/Space,
-     WidgetLayoutWhitelistTest 锁死 — 9ffebc36 载入翻车血证)。 -->
+<!-- Today widget 静态卡 — 底部导航条·紧凑档 (2×2 等窄档, 2026-09-14 用户定稿):
+     「+N」胶囊与翻页钮是并列控件 — 胶囊恒画不被按钮挤掉, 挤就挤一点。
+     窄档放不下宽档 (40×28 钮 + 6dp 间距) 时改用本布局: 钮 32×26、零间距、
+     内边距 6dp → 导航态 12+36+4+96=148dp 仍容胶囊。子视图限 RemoteViews
+     白名单 (禁 View/Space, WidgetLayoutWhitelistTest 锁死)。 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_scroll_root"
     android:layout_width="match_parent"
@@ -22,9 +20,8 @@
         android:adjustViewBounds="false"
         android:contentDescription="@string/widget_week_grid_label" />
 
-    <!-- 底部导航条 36dp = TodayRowGeometry.NAV_BAR_H_DP。
-         左: 「+N」胶囊 (有隐藏课才显示, 点 → 配置页自救); 右: ◀ 回今天 ▶。
-         spacer weight=1 可压到 0; 按钮 40×28dp 视图即点击区。 -->
+    <!-- 底部导航条 36dp = TodayRowGeometry.NAV_BAR_H_DP (与宽档同高, 内容预算同扣)。
+         胶囊不可点 (纯指示); 三钮 32×26dp 视图即点击区。 -->
     <LinearLayout
         android:id="@+id/widget_today_bar"
         android:layout_width="match_parent"
@@ -32,13 +29,13 @@
         android:layout_gravity="bottom"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
 
         <ImageView
             android:id="@+id/widget_nav_more"
             android:layout_width="wrap_content"
-            android:layout_height="20dp"
+            android:layout_height="18dp"
             android:layout_gravity="center_vertical"
             android:adjustViewBounds="true" />
 
@@ -50,24 +47,22 @@
 
         <ImageView
             android:id="@+id/widget_today_nav_prev"
-            android:layout_width="40dp"
-            android:layout_height="28dp"
+            android:layout_width="32dp"
+            android:layout_height="26dp"
             android:clickable="true"
             android:contentDescription="@string/today_nav_prev_day" />
 
         <ImageView
             android:id="@+id/widget_today_nav_today"
-            android:layout_width="40dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
+            android:layout_width="32dp"
+            android:layout_height="26dp"
             android:clickable="true"
             android:contentDescription="@string/today_nav_back_to_today" />
 
         <ImageView
             android:id="@+id/widget_today_nav_next"
-            android:layout_width="40dp"
-            android:layout_height="28dp"
+            android:layout_width="32dp"
+            android:layout_height="26dp"
             android:clickable="true"
             android:contentDescription="@string/today_nav_next_day" />
     </LinearLayout>
