@@ -479,6 +479,7 @@ Prefer to stay on GitHub? [Discussions](https://github.com/lingion/sleepy/discus
 
 ## Documentation
 
+- **[Try Online](https://sleepy.qdp.qzz.io)** — Web timetable, opens in the browser with no install; supports multi-format import (WakeUp share text / ICS / CSV / Excel), data stays local
 - **[Wiki](https://github.com/lingion/sleepy/wiki)** — 54-page deep manual: every screen, all import/export formats, the five widget families, reminder internals, architecture and codebase map, all cross-linked from the sidebar
 - **[Operation Guide](https://blog.qdp.qzz.io/docs/sleepy/overview)** — step-by-step user manual covering installation, import, widgets, themes, and troubleshooting
 - **[Technical Write-up](https://blog.qdp.qzz.io/sleepy-material-you-schedule)** — architecture deep-dive: schedule parser engine, gold-angle HSL, Wisedu reverse-engineering, widget rendering pipeline
