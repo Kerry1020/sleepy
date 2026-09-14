@@ -51,11 +51,11 @@ class FixedWindowWiringTest {
         date = LocalDate.now(), courses = courses, timeJson = "", hasTable = true
     )
 
-    // ---- Today 系容量口径 (availH = hDp − 34 − 底部条36 = hDp − 70, 行 36 距 7) ----
+    // ---- Today 系容量口径 (availH = hDp − 30 − 底部条28 = hDp − 58, 行 30 距 4) ----
 
     @Test
     fun `today S tier shows one row plus footer when overflowing`() {
-        // hDp=110 → availH=40: 一行 36 装得下, 两行 79 装不下 → 1 行 + 胶囊 (填满档 footer=true)
+        // hDp=110 → availH=52: 一行 30 装得下, 两行 64 装不下 → 1 行 + 胶囊 (填满档 footer=true)
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 110f, h("07:00")
         )
@@ -66,14 +66,14 @@ class FixedWindowWiringTest {
     }
 
     @Test
-    fun `today M tier fits two rows plus footer`() {
-        // hDp=160 → availH=90: 两行 79 装得下, 三行 122 装不下 → 2 行 + 胶囊
+    fun `today M tier fits three rows plus footer`() {
+        // hDp=160 → availH=102: 三行 98 装得下, 四行 132 装不下 → 3 行 + 胶囊
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 160f, h("07:00")
         )
-        assertEquals(2, w.visible.size)
+        assertEquals(3, w.visible.size)
         assertTrue(w.footer)
-        assertEquals(3, w.hiddenAheadCourses)
+        assertEquals(2, w.hiddenAheadCourses)
     }
 
     @Test

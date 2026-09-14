@@ -17,29 +17,29 @@ import com.lingion.sleepy.util.ConflictLayoutEngine
 object TodayRowGeometry {
 
     /** 单课胶囊高 — renderTodayRegular 同款 (改这边必同步那边, 测试锁死)。 */
-    const val ROW_H_DP = 36f
+    const val ROW_H_DP = 30f
 
-    /** 行间距 — 2026-09-14c 密度上调 (38/10→36/7): 同屏多装课, 用户要求能显示几节装几节。 */
-    const val ROW_GAP_DP = 7f
+    /** 行间距 — 2026-09-14d 密度二调 (36/7→30/4): 2×2 与双日同格数同装 2 节。 */
+    const val ROW_GAP_DP = 4f
 
     /** 同栏堆叠课间距。 */
     const val STACK_GAP_DP = 3f
 
-    /** 顶 pad — 位图顶部内边距 (2026-09-14c: 14→12 密度上调)。 */
-    const val PAD_TOP_DP = 12f
+    /** 顶 pad — 位图顶部内边距 (2026-09-14d: 12→10 密度二调)。 */
+    const val PAD_TOP_DP = 10f
 
-    /** 标题行前进量 (headerSpace=false 时头部空档; 2026-09-14c: 24→22)。 */
-    const val HEADER_ADVANCE_DP = 22f
+    /** 标题行前进量 (headerSpace=false 时头部空档; 2026-09-14d: 22→20)。 */
+    const val HEADER_ADVANCE_DP = 20f
 
     /** 底 pad — 内容区底部内边距。 */
     const val PAD_BOTTOM_DP = 14f
 
     /**
-     * 底部导航条高 (2026-09-15 用户定稿): 翻页键/回今天/「+N」胶囊从顶栏迁到底部固定条,
+     * 底部导航条高 (2026-09-14d 密度二调: 36→28): 翻页键/回今天/「+N」胶囊从顶栏迁到底部固定条,
      * 顶栏只剩位图内日期标题 → 顶栏与按钮不再抢宽度。内容预算恒扣此高度,
-     * 条内元素永远放得下 (不再需要顶栏降级档位)。
+     * 条内元素永远放得下 (不再需要顶栏降级档位)。布局 XML 条容器高必须与此一致 (测试锁死)。
      */
-    const val NAV_BAR_H_DP = 36f
+    const val NAV_BAR_H_DP = 28f
 
     /** 一行的纵向 span (dp) — 行序 + [topDp, bottomDp) 区间。 */
     data class RowSpan(

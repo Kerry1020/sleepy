@@ -76,14 +76,14 @@ class TodayOverflowGeometryTest {
             "TodayRowGeometry 必须纯 Kotlin (禁 Android import)",
             Regex("import android\\.").containsMatchIn(src)
         )
-        // headerSpace 参数化: 起点 12 vs 34 语义锁死
+        // headerSpace 参数化: 起点 10 vs 30 语义锁死
         assertTrue(
-            "行几何必须按 headerSpace 参数化起点 (true→12dp, false→34dp)",
+            "行几何必须按 headerSpace 参数化起点 (true→10dp, false→30dp)",
             src.contains("headerSpace")
         )
         assertTrue(
-            "行高常量 36dp 锁死 (渲染/内容两侧同一口径)",
-            src.contains("36f")
+            "行高常量 30dp 锁死 (渲染/内容两侧同一口径)",
+            src.contains("30f")
         )
     }
 
@@ -132,11 +132,11 @@ class TodayOverflowGeometryTest {
         )
         val geo = TodayRowGeometry.rowSpans(courses, headerSpace = false)
         assertEquals("链式区域并一渲染行", 1, geo.size)
-        assertEquals("冲突行高 = 2*36+3 (maxStack 镜像语义)", 75f, geo[0].bottomDp - geo[0].topDp, 0.01f)
+        assertEquals("冲突行高 = 2*30+3 (maxStack 镜像语义)", 63f, geo[0].bottomDp - geo[0].topDp, 0.01f)
         val noHeaderH = TodayRowGeometry.contentHeightDp(courses, headerSpace = false)
-        assertEquals("带头内容高 = 34 起点 + 行 75 + 底 pad 14 (末行后无 gap)", 34f + 75f + 14f, noHeaderH, 0.01f)
+        assertEquals("带头内容高 = 30 起点 + 行 63 + 底 pad 14 (末行后无 gap)", 30f + 63f + 14f, noHeaderH, 0.01f)
         val headerH = TodayRowGeometry.contentHeightDp(courses, headerSpace = true)
-        assertEquals("去头内容高 = 12 起点 + 行 75 + 底 pad 14 (末行后无 gap)", 12f + 75f + 14f, headerH, 0.01f)
+        assertEquals("去头内容高 = 10 起点 + 行 63 + 底 pad 14 (末行后无 gap)", 10f + 63f + 14f, headerH, 0.01f)
     }
 
     // ---- 修复 2 (v9.1 形态回归): 条带 = 单 child 整张不透明长图 ----

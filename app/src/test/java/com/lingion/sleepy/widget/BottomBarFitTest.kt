@@ -8,7 +8,7 @@ import java.io.File
 
 /**
  * 底部导航条定稿 (2026-09-15 用户定稿) 守卫:
- * 翻页键/回今天/「+N」胶囊从顶栏迁到底部 36dp 固定条, 顶栏只剩位图内日期标题。
+ * 翻页键/回今天/「+N」胶囊从顶栏迁到底部 28dp 固定条, 顶栏只剩位图内日期标题。
  * 覆盖: 胶囊宽度判定 (纯函数) / 填满档 (footerH=0 不再二次预留) /
  * 布局契约 (底部条 + 元素顺序) / 旧顶栏档位机制退场。
  */
@@ -118,9 +118,9 @@ class BottomBarFitTest {
         val xml = layoutFile("widget_today_nav_static.xml").readText()
         assertTrue("缺底部条容器 widget_today_bar", xml.contains("widget_today_bar"))
         assertTrue("条必须贴底", xml.contains("android:layout_gravity=\"bottom\""))
-        assertTrue("条高须 36dp (NAV_BAR_H_DP 口径)", xml.contains("36dp"))
+        assertTrue("条高须 28dp (NAV_BAR_H_DP 口径)", xml.contains("28dp"))
         assertTrue("缺胶囊 widget_nav_more", xml.contains("widget_nav_more"))
-        assertTrue("按钮须 40dp/28dp", xml.contains("40dp") && xml.contains("28dp"))
+        assertTrue("按钮须 40dp/24dp", xml.contains("40dp") && xml.contains("24dp"))
         assertEquals("须单个 weight=1 spacer (Space 无 @RemoteView 禁用)",
             1, Regex("layout_weight=\"1\"").findAll(xml).count())
         // 底部条子视图顺序: capsule < prev < today < next (用户定稿: 胶囊左下角, 三键左到右)
@@ -138,9 +138,9 @@ class BottomBarFitTest {
         val xml = layoutFile("widget_today_nav_static_compact.xml").readText()
         assertTrue("缺底部条容器 widget_today_bar", xml.contains("widget_today_bar"))
         assertTrue("条必须贴底", xml.contains("android:layout_gravity=\"bottom\""))
-        assertTrue("条高须 36dp (与宽档同高, 内容预算同扣)", xml.contains("36dp"))
+        assertTrue("条高须 28dp (与宽档同高, 内容预算同扣)", xml.contains("28dp"))
         assertTrue("缺胶囊 widget_nav_more", xml.contains("widget_nav_more"))
-        assertTrue("紧凑档按钮须 32×26dp", xml.contains("32dp") && xml.contains("26dp"))
+        assertTrue("紧凑档按钮须 32×24dp", xml.contains("32dp") && xml.contains("24dp"))
         assertEquals("须单个 weight=1 spacer",
             1, Regex("layout_weight=\"1\"").findAll(xml).count())
         val iMore = xml.indexOf("widget_nav_more")

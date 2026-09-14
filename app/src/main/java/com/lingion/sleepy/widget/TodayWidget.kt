@@ -140,7 +140,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
 
         /**
          * 今日系底部导航条配置 (2026-09-15 用户定稿, 替代旧顶栏 configureTodayNav) —
-         * 位图带头渲染日期标题, 底部 36dp 条为真实视图:
+         * 位图带头渲染日期标题, 底部 28dp 条为真实视图:
          * 最左「+N」胶囊 (有隐藏课且宽度装得下才显示, 点 → 配置页自救通道) +
          * ◀ 前一天 / 回今天 (仅导航态) / ▶ 后一天。条高恒计入内容预算
          * (computeTodayWindow 扣 NAV_BAR_H_DP) → 条内元素永远放得下,
@@ -315,7 +315,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
                 }
             } else if (contentH <= hDp || win != null) {
                 // Today 系静态分支 (2026-09-15 底部导航条定稿) — 位图带头渲染
-                // (日期+星期标题画进位图顶部, 不再 emptyHeader 留白), 底部 36dp 真实
+                // (日期+星期标题画进位图顶部, 不再 emptyHeader 留白), 底部 28dp 真实
                 // 视图条: 「+N」胶囊 + ◀/回今天/▶。内容预算恒扣条高 → 装得下几行画几行
                 // (旧「预留页脚 → 明明放得下两节只画一节」翻车根除)。
                 val shell = WidgetBitmapRenderers.renderToday(
@@ -380,7 +380,7 @@ open class TodayWidgetReceiver : AppWidgetProvider() {
 
         /**
          * Today 系 FIXED 窗口计算 (设计 §4.1):
-         * availH = hDp − 内容顶 (pad14+头部预留24=38) − 底部导航条36;行几何与渲染逐字节同源
+         * availH = hDp − 内容顶 (pad10+头部预留20=30) − 底部导航条28 = hDp−58;行几何与渲染逐字节同源
          * (TodayRowGeometry.rowSpans = 节点聚类, 与 todayContentHeightDp 同口径)。
          * nowMin=null (非今天/预览) → HEAD 模式;今天 → TIME_WINDOW。
          */
