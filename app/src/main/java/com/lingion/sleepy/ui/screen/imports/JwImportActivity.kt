@@ -110,6 +110,8 @@ class JwImportActivity : ComponentActivity() {
                 var stage by remember { mutableStateOf<Stage>(Stage.SelectSchool) }
                 var errorMsg by remember { mutableStateOf<String?>(null) }
                 var statusMsg by remember { mutableStateOf<String?>(null) }
+                // #27: 红条此前只置不清,报错后必须退出页面才消失。阶段一切换即清零。
+                LaunchedEffect(stage) { errorMsg = null }
                 var importFinished by remember { mutableStateOf(false) }
                 // 解析后的课程暂存 + 配置确认状态
                 var parsedCourses by remember { mutableStateOf<List<JwCourse>>(emptyList()) }
@@ -373,13 +375,22 @@ class JwImportActivity : ComponentActivity() {
                                 containerColor = SleepyTheme.colors.errorContainer
                             )
                         ) {
-                            Text(
-                                text = msg,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                color = SleepyTheme.colors.onErrorContainer
-                            )
+                            // #27: 可当场关闭,不必退出页面
+                            Column {
+                                Text(
+                                    text = msg,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    color = SleepyTheme.colors.onErrorContainer
+                                )
+                                TextButton(
+                                    onClick = { errorMsg = null },
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Text(getString(R.string.jw_err_dismiss))
+                                }
+                            }
                         }
                     }
                 }
