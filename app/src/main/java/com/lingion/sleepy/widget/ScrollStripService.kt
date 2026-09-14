@@ -116,7 +116,7 @@ class ScrollStripService : RemoteViewsService() {
                     // WeekList 同构 (同台 OPPO 一直正常)。条带与壳图同源坐标系 →
                     // 滚动位 0 首屏与壳图逐像素一致。
                     contentHdp = WidgetBitmapRenderers.todayContentHeightDp(d, headerSpace = emptyHeader)
-                    rowCount = TodayRowGeometry.rowSpans(d.courses, emptyHeader).size
+                    rowCount = TodayRowGeometry.rowSpans(d.courses, emptyHeader, d.timeJson).size
                     val renderH = ceil(contentHdp)
                     // 条带无可点按钮 — 「回到今天」文字不画 (与壳图同参, 用户 2026-09-13 定稿)
                     full = WidgetBitmapRenderers.renderToday(
