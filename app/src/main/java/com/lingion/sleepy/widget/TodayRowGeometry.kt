@@ -17,22 +17,29 @@ import com.lingion.sleepy.util.ConflictLayoutEngine
 object TodayRowGeometry {
 
     /** 单课胶囊高 — renderTodayRegular 同款 (改这边必同步那边, 测试锁死)。 */
-    const val ROW_H_DP = 38f
+    const val ROW_H_DP = 30f
 
-    /** 行间距 — 课程胶囊间距 (用户反馈"太紧凑"后放大值)。 */
-    const val ROW_GAP_DP = 10f
+    /** 行间距 — 2026-09-14d 密度二调 (36/7→30/4): 2×2 与双日同格数同装 2 节。 */
+    const val ROW_GAP_DP = 4f
 
     /** 同栏堆叠课间距。 */
     const val STACK_GAP_DP = 3f
 
-    /** 顶 pad — 位图顶部内边距。 */
-    const val PAD_TOP_DP = 14f
+    /** 顶 pad — 位图顶部内边距 (2026-09-14d: 12→10 密度二调)。 */
+    const val PAD_TOP_DP = 10f
 
-    /** 标题行前进量 (headerSpace=false 时头部空档)。 */
-    const val HEADER_ADVANCE_DP = 24f
+    /** 标题行前进量 (headerSpace=false 时头部空档; 2026-09-14d: 22→20)。 */
+    const val HEADER_ADVANCE_DP = 20f
 
     /** 底 pad — 内容区底部内边距。 */
     const val PAD_BOTTOM_DP = 14f
+
+    /**
+     * 底部导航条高 (2026-09-14d 密度二调: 36→28): 翻页键/回今天/「+N」胶囊从顶栏迁到底部固定条,
+     * 顶栏只剩位图内日期标题 → 顶栏与按钮不再抢宽度。内容预算恒扣此高度,
+     * 条内元素永远放得下 (不再需要顶栏降级档位)。布局 XML 条容器高必须与此一致 (测试锁死)。
+     */
+    const val NAV_BAR_H_DP = 28f
 
     /** 一行的纵向 span (dp) — 行序 + [topDp, bottomDp) 区间。 */
     data class RowSpan(
@@ -50,11 +57,19 @@ object TodayRowGeometry {
      * 全部渲染行的纵向 span, 顺序 = 渲染顺序 (weekLaneRows 行序)。
      * 冲突行高 = 最高栏堆叠数 × ROW_H + (堆叠数−1) × STACK_GAP —
      * 与分栏渲染 (drawCourse 逐栏堆叠) 同一公式, 一处定义。
+     *
+     * timeJson (issue #37): 传课时聚簇走分钟域 — 非标准时间课 (如 9:45 下课)
+     * 不再因节点占位区间相同被误判冲突; 与渲染端 weekLaneRows(data.courses,
+     * data.timeJson) 同域, 行 span 与实画行一一对应。
      */
-    fun rowSpans(courses: List<CourseEntity>, headerSpace: Boolean): List<RowSpan> {
+    fun rowSpans(
+        courses: List<CourseEntity>,
+        headerSpace: Boolean,
+        timeJson: String? = null
+    ): List<RowSpan> {
         val spans = ArrayList<RowSpan>()
         var y = contentTopDp(headerSpace)
-        ConflictLayoutEngine.weekLaneRows(courses).forEachIndexed { idx, row ->
+        ConflictLayoutEngine.weekLaneRows(courses, timeJson).forEachIndexed { idx, row ->
             val h = rowHeightDp(row)
             spans += RowSpan(idx, row, y, y + h)
             y += h + ROW_GAP_DP
@@ -75,8 +90,12 @@ object TodayRowGeometry {
      * 内容全展开高度 (dp) — 末行底 + 底 pad。
      * 空列表 = 起点 + 底 pad (与渲染的空态分支自洽, 调用方负责空态语义行)。
      */
-    fun contentHeightDp(courses: List<CourseEntity>, headerSpace: Boolean): Float =
-        rowSpans(courses, headerSpace).lastOrNull()?.let { it.bottomDp + PAD_BOTTOM_DP }
+    fun contentHeightDp(
+        courses: List<CourseEntity>,
+        headerSpace: Boolean,
+        timeJson: String? = null
+    ): Float =
+        rowSpans(courses, headerSpace, timeJson).lastOrNull()?.let { it.bottomDp + PAD_BOTTOM_DP }
             ?: contentTopDp(headerSpace) + PAD_BOTTOM_DP
 
     /**

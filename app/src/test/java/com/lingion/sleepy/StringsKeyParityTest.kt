@@ -43,6 +43,25 @@ class StringsKeyParityTest {
     )
 
     /**
+     * 小组件重设计新增 string key (2026-09, feat/widget-fixed-window, 设计 §8)。
+     * 全 6 locale 必须齐 (评审 #22: 本测试只查显式列出的键, 新键必须手动登记)。
+     */
+    private val widgetRedesignKeys = listOf(
+        "widget_footer_more",
+        "widget_footer_more_short",
+        "widget_status_all_done",
+        "widget_edit_section_scroll",
+        "widget_edit_scroll_subtitle",
+        "widget_scroll_dialog_title",
+        "widget_scroll_dialog_body",
+        "widget_scroll_dialog_confirm",
+        "widget_scroll_dialog_cancel",
+        "widget_today_wide_label",
+        "widget_twoday_wide_label",
+        "widget_week_list_wide_label"
+    )
+
+    /**
      * 自定义主题系统新增 string key(2026-09-11,feat/theme-custom-color)。
      * 全 6 locale 必须齐 — 缺任一 = MissingTranslation lint error 回归。
      */
@@ -82,6 +101,16 @@ class StringsKeyParityTest {
         for (locale in localeDirs) {
             val dir = File(basePath, locale)
             assertTrue("Missing locale dir $locale", dir.isDirectory)
+        }
+    }
+
+    @Test
+    fun widget_redesign_keys_present_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in widgetRedesignKeys) {
+                assertTrue("$locale missing $key", text.contains('"' + key + '"'))
+            }
         }
     }
 

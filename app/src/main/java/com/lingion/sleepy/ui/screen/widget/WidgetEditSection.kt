@@ -18,7 +18,12 @@ data class WidgetEditScope(
     val onSelectTable: (Long?) -> Unit,
     /** issue#26: 全部小组件共享一档 — widget 场景 课程名显示 原名/别名 */
     val useAlias: Boolean = false,
-    val onUseAliasChange: (Boolean) -> Unit = {}
+    val onUseAliasChange: (Boolean) -> Unit = {},
+    /** 设计 §6: receiver simpleName (如 TodaySmallWidgetReceiver), 供族判断; null=未知 */
+    val receiverSimpleName: String? = null,
+    /** 强制滚动(实验) — 全局一档, 默认 false = FIXED 固定窗口 */
+    val scrollEnabled: Boolean = false,
+    val onScrollEnabledChange: (Boolean) -> Unit = {}
 )
 
 /**
