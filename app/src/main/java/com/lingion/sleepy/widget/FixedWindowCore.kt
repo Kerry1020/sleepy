@@ -111,6 +111,12 @@ object FixedWindowCore {
         val full = greedy(tail, availH, gapDp, forceFirst = true)
         if (full.size == tail.size) return WindowResult(full, false, 0, Status.NONE)
 
+        // footerH=0 → 填满档 (Today 底部导航条 2026-09-15): 底部条高已在 availH 外恒扣,
+        // 窗口不再二次预留 → 装得下 2 行就画 2 行, 隐藏课只点亮「+N」胶囊。
+        if (footerH <= 0f) {
+            return WindowResult(full, true, hiddenCourses(entries, anchorIdx + full.size), Status.NONE)
+        }
+
         val withFooter = greedy(tail, availH - footerH, gapDp, forceFirst = false)
         return if (withFooter.isEmpty()) {
             WindowResult(full, false, hiddenCourses(entries, anchorIdx + full.size), Status.NONE)

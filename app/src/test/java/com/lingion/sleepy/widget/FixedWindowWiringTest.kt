@@ -51,11 +51,11 @@ class FixedWindowWiringTest {
         date = LocalDate.now(), courses = courses, timeJson = "", hasTable = true
     )
 
-    // ---- Today 系容量口径 (availH = hDp − 52, 行 38 距 10) ----
+    // ---- Today 系容量口径 (availH = hDp − 38 − 底部条36 = hDp − 74, 行 38 距 10) ----
 
     @Test
     fun `today S tier shows one row plus footer when overflowing`() {
-        // hDp=110 → availH=58: 一行 38 装得下, 两行 86 装不下 → 1 行 + 页脚
+        // hDp=110 → availH=36: forceFirst 保 1 行, 截断点亮胶囊 (填满档 footer=true)
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 110f, h("07:00")
         )
@@ -67,7 +67,7 @@ class FixedWindowWiringTest {
 
     @Test
     fun `today M tier fits two rows plus footer`() {
-        // hDp=160 → availH=108: 两行 86 装得下, 三行 134 装不下; 页脚预算 88 仍容两行
+        // hDp=160 → availH=86: 两行 86 恰好装得下, 三行 134 装不下 → 2 行 + 胶囊
         val w = TodayWidgetReceiver.computeTodayWindow(
             dataOf(dayCourses(5)), 160f, h("07:00")
         )
@@ -172,10 +172,10 @@ class FixedWindowWiringTest {
         assertTrue("forceScroll 参数缺失", s.contains("forceScroll: Boolean = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)"))
         assertTrue("窗口计算未接 push", s.contains("computeTodayWindow(data, hDp.toFloat()"))
         assertTrue("静态分支未放行窗口", s.contains("contentH <= hDp || win != null"))
-        assertTrue("页脚布局未接", s.contains("R.layout.widget_bitmap_footer"))
-        assertTrue("导航静态页脚布局未接", s.contains("R.layout.widget_today_nav_static_footer"))
-        assertTrue("页脚点击 PI 未挂", s.contains("R.id.widget_footer_bar"))
-        assertTrue("页脚自救 PI 缺失", s.contains("footerConfigurePi"))
+        assertTrue("底部条布局未接", s.contains("R.layout.widget_today_nav_static"))
+        assertTrue("底部条配置未接", s.contains("configureTodayBar(context, views, id, receiverClass, data, hidden, wDp)"))
+        assertTrue("胶囊自救 PI 缺失", s.contains("footerConfigurePi(context, widgetId)"))
+        assertTrue("窗口须走填满档", s.contains("footerH = 0f"))
     }
 
     @Test

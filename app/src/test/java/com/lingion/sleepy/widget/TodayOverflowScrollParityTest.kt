@@ -65,12 +65,12 @@ class TodayOverflowScrollParityTest {
         val today = widgetSource("TodayWidget.kt").readText()
         val navBody = today.substringAfter("Today 系 overflow").substringBefore("fun loadDataSync")
         val nonNavBody = today.substringAfter("!navEnabled").substringBefore("} else if (contentH")
-        val shellPattern = Regex("renderToday\\(\\s*context,\\s*data,\\s*wDp\\.toFloat\\(\\),\\s*contentH,")
+        val shellPattern = Regex("renderToday\\(\\s*context,\\s*\\w*[dD]ata,\\s*wDp\\.toFloat\\(\\),\\s*\\w*[cC]ontentH,")
         assertTrue("nav overflow 壳图渲染高 = contentH (v11)", shellPattern.containsMatchIn(navBody))
         assertTrue("!navEnabled overflow 壳图渲染高 = contentH (TwoDay 同步)",
             shellPattern.containsMatchIn(nonNavBody))
         // 禁: shell 不能再传 hDp.toFloat() 给 renderToday
-        val bugPattern = Regex("renderToday\\(\\s*context,\\s*data,\\s*wDp\\.toFloat\\(\\),\\s*hDp\\.toFloat\\(\\)")
+        val bugPattern = Regex("renderToday\\(\\s*context,\\s*\\w*[dD]ata,\\s*wDp\\.toFloat\\(\\),\\s*hDp\\.toFloat\\(\\)")
         assertFalse(
             "renderToday 第三参数禁传 hDp.toFloat() (v9 bug: 容器尺寸进 renderer 后丢行)",
             bugPattern.containsMatchIn(navBody) || bugPattern.containsMatchIn(nonNavBody)
