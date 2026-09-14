@@ -171,7 +171,7 @@ class TodayDateNavHeaderWiringTest {
             body.contains("NAV_BUTTON_W_DP") && body.contains("NAV_BUTTON_H_DP"))
         val today = widgetSource("TodayWidget.kt").readText()
         val barBody = today.substringAfter("fun configureTodayBar(")
-            .substringBefore("internal fun bottomBarCapsuleFits")
+            .substringBefore("internal fun bottomBarWideFits")
         assertTrue("configureTodayBar 须 setImageViewBitmap 推送刷新按钮",
             barBody.contains("setImageViewBitmap") && barBody.contains("renderNavRefresh"))
         assertFalse("nav_today 不走文字 (文字判定作废)",

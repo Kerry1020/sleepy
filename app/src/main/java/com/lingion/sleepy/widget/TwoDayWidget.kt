@@ -48,8 +48,12 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
             computeTwoDayWindows(data, hDp.toFloat(), TodayWidgetReceiver.currentNowMin())
         } else null
         val visibleByCol = wins?.map { w -> w.visible.flatMap { it.row.courses } }
-        val footerText = wins?.filter { it.footer }?.takeIf { it.isNotEmpty() }
-            ?.let { context.getString(R.string.widget_footer_more, it.sumOf { w -> w.hiddenAheadCourses }) }
+        // 每列独立「+N」(2026-09-14 用户定稿): 今天/明天各说各的隐藏课数,
+        // 合并求和的「+N 节待上」禁回流 — 谁知道是哪一天欠几节。
+        val footerTexts = wins?.map { w ->
+            if (w.footer) context.getString(R.string.widget_footer_more_short, w.hiddenAheadCourses)
+            else null
+        }?.takeIf { l -> l.any { it != null } }
         val statusByCol = wins?.map { w ->
             if (w.status == FixedWindowCore.Status.ALL_DONE)
                 context.getString(R.string.widget_status_all_done) else null
@@ -62,13 +66,13 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
                     WidgetBitmapRenderers.renderTwoDay(
                         context, d, w, h, variant,
                         visibleByCol = visibleByCol,
-                        footerText = footerText, statusByCol = statusByCol
+                        footerTexts = footerTexts, statusByCol = statusByCol
                     )
                 },
-                layoutRes = if (footerText != null)
+                layoutRes = if (footerTexts != null)
                     com.lingion.sleepy.R.layout.widget_bitmap_footer
                 else com.lingion.sleepy.R.layout.widget_bitmap_container,
-                configureViews = footerConfigureViews(context, id, footerText),
+                configureViews = footerConfigureViews(context, id, footerTexts),
                 pushGen = gen
             )
         } else {
@@ -114,11 +118,11 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
     companion object {
         private const val TAG = "TwoDayRV"
 
-        /** 页脚条点击 PI 挂接 (footerText 非空才挂); 与 Today 系同一自救通道 */
+        /** 页脚条点击 PI 挂接 (任一列有「+N」才挂); 与 Today 系同一自救通道 */
         internal fun footerConfigureViews(
-            context: Context, widgetId: Int, footerText: String?
+            context: Context, widgetId: Int, footerTexts: List<String?>?
         ): ((android.widget.RemoteViews) -> Unit)? {
-            if (footerText == null) return null
+            if (footerTexts == null) return null
             val pi = TodayWidgetReceiver.footerConfigurePi(context, widgetId)
             return { v: android.widget.RemoteViews ->
                 v.setOnClickPendingIntent(com.lingion.sleepy.R.id.widget_footer_bar, pi)

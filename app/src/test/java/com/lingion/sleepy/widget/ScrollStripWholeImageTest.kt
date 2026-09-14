@@ -196,7 +196,7 @@ class ScrollStripWholeImageTest {
 
     @Test
     fun `nav layouts label every element including spacers and root`() {
-        listOf("widget_today_nav_static.xml").forEach { name ->
+        listOf("widget_today_nav_static.xml", "widget_today_nav_static_compact.xml").forEach { name ->
             val xml = layoutFile(name).readText()
             assertTrue("$name spacer 左须有 id", xml.contains("widget_spacer_l"))
             assertTrue("$name 底部条容器须有 id", xml.contains("widget_today_bar"))

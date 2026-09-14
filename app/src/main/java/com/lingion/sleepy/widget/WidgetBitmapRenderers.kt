@@ -1250,10 +1250,10 @@ object WidgetBitmapRenderers {
         context: Context, data: TwoDayData, wDp: Float, hDp: Float,
         variant: WidgetVariant = WidgetVariant.REGULAR,
         visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>? = null,
-        footerText: String? = null,
+        footerTexts: List<String?>? = null,
         statusByCol: List<String?>? = null
     ): Bitmap {
-        return renderTwoDayRegular(context, data, wDp, hDp, visibleByCol, footerText, statusByCol)
+        return renderTwoDayRegular(context, data, wDp, hDp, visibleByCol, footerTexts, statusByCol)
     }
 
     /**
@@ -1262,7 +1262,7 @@ object WidgetBitmapRenderers {
     private fun renderTwoDayRegular(
         context: Context, data: TwoDayData, wDp: Float, hDp: Float,
         visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
-        footerText: String?,
+        footerTexts: List<String?>?,
         statusByCol: List<String?>?
     ): Bitmap {
         val density = context.resources.displayMetrics.density
@@ -1419,13 +1419,23 @@ object WidgetBitmapRenderers {
             }
         }
 
-        // FIXED 窗口合并页脚 (设计 §4.2): 底部居中 20dp 区
-        if (footerText != null) {
-            p.color = s.onSurfaceVariant
+        // FIXED 窗口每列「+N」胶囊 (2026-09-14 用户定稿): 各列独立计数 —
+        // 合并「+N 节待上」禁回流 (今天/明天各欠几节必须分得清)。
+        footerTexts?.forEachIndexed { colIdx, text ->
+            if (text == null) return@forEachIndexed
             p.textSize = 11f * density
-            p.typeface = Typeface.DEFAULT
-            val fw = p.measureText(footerText)
-            canvas.drawText(footerText, (w - fw) / 2f, h - 12f * density, p)
+            p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            val tw = p.measureText(text)
+            val pillW = (tw + 16f * density).coerceAtMost(colW)
+            val pillH = 18f * density
+            val cx = pad + colIdx * (colW + colGap) + colW / 2f
+            val left = (cx - pillW / 2f).coerceIn(pad, w - pad - pillW)
+            val top = h - pad - pillH
+            p.color = s.surfaceVariant
+            canvas.drawRoundRect(RectF(left, top, left + pillW, top + pillH), pillH / 2f, pillH / 2f, p)
+            p.color = s.onSurfaceVariant
+            val fm = p.fontMetrics
+            canvas.drawText(text, cx - tw / 2f, top + pillH / 2f - (fm.ascent + fm.descent) / 2f, p)
         }
 
         return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
