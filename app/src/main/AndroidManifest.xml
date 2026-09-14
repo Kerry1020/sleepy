@@ -237,6 +237,11 @@
             android:name=".widget.notification.DailyNotifyReceiver"
             android:exported="false" />
 
+        <!-- Widget course-boundary refresh alarm target (design §5) -->
+        <receiver
+            android:name=".widget.WidgetBoundaryReceiver"
+            android:exported="false" />
+
         <!-- Before-class midnight scheduler -->
         <receiver
             android:name=".widget.notification.BeforeClassScheduleReceiver"

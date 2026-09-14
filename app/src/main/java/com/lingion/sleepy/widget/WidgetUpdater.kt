@@ -119,6 +119,10 @@ object WidgetUpdater {
                     Log.e(TAG, "${receiver.simpleName} broadcast failed", e)
                 }
             }
+
+            // 课程边界闹钟重排 (设计 §5): 数据变了边界就变, 每次全量刷新后重对齐。
+            // 放 IO 块内 — armNext 阻塞读库, 禁在 Main。
+            WidgetBoundaryScheduler.armNext(context)
         }
         // 跨天链: 广播全部落地后重新对齐下一晚 (放 withContext 外 — worker 取消信号
         // 不会打断已提交的 WorkManager 排程; 午夜 worker 走本函数 → 链自续)。
