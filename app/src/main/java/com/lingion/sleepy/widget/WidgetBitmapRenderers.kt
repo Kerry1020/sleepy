@@ -299,7 +299,7 @@ object WidgetBitmapRenderers {
         canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
             20f * density, 20f * density, p)
 
-        val pad = 12f * density
+        val pad = 10f * density
         var y = pad
 
         // 标题行 — emptyHeader=true 时整体不画: 今日导航版顶栏用真实 RemoteViews 视图
@@ -343,7 +343,7 @@ object WidgetBitmapRenderers {
 
         // v6 headerSpace: 条带长图不要头部空档 (顶栏在布局里是上方独立行) → 24dp 前进量整段跳过。
         // 各状态行 (无课表/学期外/无课/课程列表) 都在 y+=24 之后定位 → 只需跳过这次前进。
-        if (!headerSpace) y += 22f * density
+        if (!headerSpace) y += 20f * density
 
         if (!data.hasTable) {
             p.color = s.onSurface
@@ -391,8 +391,8 @@ object WidgetBitmapRenderers {
         // v11 撤回 v10 逐行子项 (OPPO extent 冻结/叠影/TopBar 覆盖三症状同根):
         // 渲染器回归 v9.1 — 一次画完整展开长图, 调用方保证 h=全展开高。
         // v8: 行几何单一真值 — span 起点随 headerSpace 参数化。
-        val rowH = 36f * density
-        val rowGap = 7f * density  // 2026-09-14c 密度上调 — 与 TodayRowGeometry 同源
+        val rowH = 30f * density
+        val rowGap = 4f * density  // 2026-09-14d 密度二调 — 与 TodayRowGeometry 同源
         val rowW = w - pad * 2
 
         val laneRows = com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(data.courses, data.timeJson)
@@ -406,7 +406,7 @@ object WidgetBitmapRenderers {
             val y = span.topDp * density
             if (row.laneCount == 1) {
                 drawCourse(canvas, p, row.courses[0], data.timeJson, pad, y, rowW, rowH, s, density,
-                    fontSizeSp = 12f, colorless = colorless, displayMode = displayMode,
+                    fontSizeSp = 11f, colorless = colorless, displayMode = displayMode,
                     groupRows = data.courses.filter { it.groupId == row.courses[0].groupId },
                     useAlias = useAlias)
             } else {
@@ -464,7 +464,7 @@ object WidgetBitmapRenderers {
 
     // ── 今日导航顶栏按钮 (issue #24: 低对比圆角矩形 + 三角形图标) ──
 
-    /** 视图口径: 按钮视图 40×28dp(即点击热区, 大于可视矩形), 顶栏条高 36dp。 */
+    /** 视图口径: 按钮视图 40×24dp(即点击热区, 大于可视矩形), 底部条高 28dp。 */
     const val NAV_BUTTON_W_DP = 40f
     const val NAV_BUTTON_H_DP = 28f
     const val NAV_HEADER_H_DP = 36f

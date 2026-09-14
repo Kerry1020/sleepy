@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Today widget 静态卡 — 底部导航条版 (2026-09-15 用户定稿):
      顶栏只留位图内日期标题 (renderToday 带头渲染, 不再 emptyHeader 留白);
-     翻页 ◀ / 回今天 / ▶ 与「+N」胶囊全部迁到底部 36dp 固定条 — 顶栏与按钮
+     翻页 ◀ / 回今天 / ▶ 与「+N」胶囊全部迁到底部 28dp 固定条 — 顶栏与按钮
      不再抢宽度 (旧 NavTier 降级档位整体退场)。
      条背景 = 卡面同色 (configureTodayBar 运行时 setInt), 内容预算恒扣条高,
      行永不画到条下。全部子视图限 RemoteViews 白名单 (禁 View/Space,
@@ -22,13 +22,13 @@
         android:adjustViewBounds="false"
         android:contentDescription="@string/widget_week_grid_label" />
 
-    <!-- 底部导航条 36dp = TodayRowGeometry.NAV_BAR_H_DP。
+    <!-- 底部导航条 28dp = TodayRowGeometry.NAV_BAR_H_DP (2026-09-14d 密度二调 36→28)。
          左: 「+N」胶囊 (有隐藏课才显示, 点 → 配置页自救); 右: ◀ 回今天 ▶。
-         spacer weight=1 可压到 0; 按钮 40×28dp 视图即点击区。 -->
+         spacer weight=1 可压到 0; 按钮 40×24dp 视图即点击区。 -->
     <LinearLayout
         android:id="@+id/widget_today_bar"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="28dp"
         android:layout_gravity="bottom"
         android:orientation="horizontal"
         android:gravity="center_vertical"
@@ -38,7 +38,7 @@
         <ImageView
             android:id="@+id/widget_nav_more"
             android:layout_width="wrap_content"
-            android:layout_height="20dp"
+            android:layout_height="16dp"
             android:layout_gravity="center_vertical"
             android:adjustViewBounds="true" />
 
@@ -51,14 +51,14 @@
         <ImageView
             android:id="@+id/widget_today_nav_prev"
             android:layout_width="40dp"
-            android:layout_height="28dp"
+            android:layout_height="24dp"
             android:clickable="true"
             android:contentDescription="@string/today_nav_prev_day" />
 
         <ImageView
             android:id="@+id/widget_today_nav_today"
             android:layout_width="40dp"
-            android:layout_height="28dp"
+            android:layout_height="24dp"
             android:layout_marginStart="6dp"
             android:layout_marginEnd="6dp"
             android:clickable="true"
@@ -67,7 +67,7 @@
         <ImageView
             android:id="@+id/widget_today_nav_next"
             android:layout_width="40dp"
-            android:layout_height="28dp"
+            android:layout_height="24dp"
             android:clickable="true"
             android:contentDescription="@string/today_nav_next_day" />
     </LinearLayout>

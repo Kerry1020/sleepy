@@ -8,7 +8,7 @@ import java.io.File
 
 /**
  * issue #24 导航定稿守卫 (2026-09-15 底部条改版后)。
- * 顶栏控件条已整体退场 → 日期标题画进位图, 翻页/回今天/「+N」胶囊进底部 36dp 条
+ * 顶栏控件条已整体退场 → 日期标题画进位图, 翻页/回今天/「+N」胶囊进底部 28dp 条
  * (宽度/填满契约见 BottomBarFitTest)。本文件守: StackView 机制全清除、
  * ScrollStripService emptyHeader 透传、渲染器低对比图标风格、computeSizeDp 方向、
  * configure activity 任务栈。
