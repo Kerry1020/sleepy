@@ -26,11 +26,20 @@ class WidgetScrollToggleTest {
     }
 
     @Test
-    fun `all four push sites read the toggle`() {
+    fun `all four push sites read the per-widget toggle`() {
         for (f in listOf("TodayWidget.kt", "TwoDayWidget.kt", "WeekListWidget.kt", "WeekViewWidget.kt")) {
             val s = src("widget/$f")
-            assertTrue("$f 未读滚动开关", s.contains("AppPrefs.isWidgetScrollEnabled(context)"))
+            assertTrue("$f 未读本实例滚动开关", s.contains("WidgetScrollStore.isScrollEnabled(context, id)"))
+            assertFalse("$f 残留全局读", s.contains("AppPrefs.isWidgetScrollEnabled(context)"))
             assertFalse("$f 残留硬编码 forceScroll=false", s.contains("val forceScroll = false"))
+        }
+    }
+
+    @Test
+    fun `all receivers clear per-widget scroll on delete`() {
+        for (f in listOf("TodayWidget.kt", "TwoDayWidget.kt", "WeekListWidget.kt", "WeekViewWidget.kt", "WeekGridWidgetProvider.kt")) {
+            val s = src("widget/$f")
+            assertTrue("$f onDeleted 未清滚动位", s.contains("WidgetScrollStore.remove(context, id)"))
         }
     }
 
@@ -48,7 +57,8 @@ class WidgetScrollToggleTest {
     @Test
     fun `toggle flip triggers full widget re-push`() {
         val vm = src("widget/WidgetEditViewModel.kt")
-        assertTrue("翻转未重推", vm.contains("AppPrefs.setWidgetScrollEnabled(ctx, v)"))
+        assertTrue("翻转未写本实例位", vm.contains("WidgetScrollStore.setScrollEnabled(ctx, widgetId, v)"))
+        assertTrue("状态未读本实例位", vm.contains("WidgetScrollStore.isScrollEnabled(ctx, widgetId)"))
         assertTrue("族信息未注入", vm.contains("getAppWidgetInfo(widgetId)?.configure?.className"))
         val body = vm.substringAfter("fun setScrollEnabled")
         assertTrue("setScrollEnabled 未调 notifyDataChanged",

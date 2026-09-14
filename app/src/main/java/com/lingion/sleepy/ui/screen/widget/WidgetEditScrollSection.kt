@@ -28,7 +28,7 @@ import com.lingion.sleepy.R
 import com.lingion.sleepy.ui.theme.SleepyTheme
 
 /**
- * 设计 §6: widget 编辑页「滚动方式」节 — 强制滚动(实验) 全局一档。
+ * 设计 §6: widget 编辑页「滚动方式」节 — 强制滚动(实验) 本实例一档 (per-widget)。
  *
  * 出厂默认关 = FIXED 固定窗口 (全厂商可用, 课多显示「+N」)。开启走旧滚动条带,
  * 依赖系统小组件服务, 部分厂商 ROM 可能空白/卡顿 → 开启前确认弹窗如实告知风险,

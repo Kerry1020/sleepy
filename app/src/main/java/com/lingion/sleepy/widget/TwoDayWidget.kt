@@ -40,7 +40,7 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
         val variant = variantHint
         // FIXED 窗口 (设计 §4.2, 出厂默认): 每列独立窗口 — 今天列 TIME_WINDOW,
         // 明天列 HEAD; 页脚合并为一条 (hiddenAhead 求和)。forceScroll=实验开关 (步骤 4)。
-        val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
+        val forceScroll = WidgetScrollStore.isScrollEnabled(context, id)
         val wins = if (!forceScroll && data.hasTable &&
             data.semesterStatus == DateUtils.SemesterStatus.IN_RANGE &&
             data.days.any { it.courses.isNotEmpty() }
@@ -111,7 +111,7 @@ open class TwoDayWidgetReceiver : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        for (id in appWidgetIds) WidgetBindingStore.remove(context, id)
+        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id) }
     }
 
     companion object {

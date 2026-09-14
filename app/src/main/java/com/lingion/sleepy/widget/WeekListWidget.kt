@@ -39,7 +39,7 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
         val variant = variantHint
         // FIXED 窗口 (设计 §4.3, 出厂默认): 逐列预算截断 + 列底「+N」; compact 档
         // (SMALL<150dp) 自有列选取 (今天邻域 ≤3 列), 不叠窗口 (与周视图·小同构)。
-        val forceScroll = com.lingion.sleepy.util.AppPrefs.isWidgetScrollEnabled(context)
+        val forceScroll = WidgetScrollStore.isScrollEnabled(context, id)
         val compactFace = variant == WidgetVariant.SMALL && wDp < 150
         val visibleDays = com.lingion.sleepy.util.AppPrefs.getVisibleDays(context)
         // 闸门口径 (§9.1): compact 脸 = 今天邻域 ≤3 列实际列集 (2026-09-14 改版,
@@ -119,7 +119,7 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        for (id in appWidgetIds) WidgetBindingStore.remove(context, id)
+        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id) }
     }
 
     companion object {
