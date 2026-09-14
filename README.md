@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki 手册</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">全部版本</a> · <a href="docs/adapt-kit/README.md">让你的学校支持教务直连</a> · <a href="#社区">💬 社区</a>
+  <a href="README.md">中文</a> · <a href="README_EN.md">English</a> · <a href="https://github.com/lingion/sleepy/wiki">Wiki 手册</a> · <a href="https://github.com/lingion/sleepy/releases/latest">Download APK</a> · <a href="https://github.com/lingion/sleepy/releases">全部版本</a> · <a href="docs/adapt-kit/README.md">让你的学校支持教务直连</a> · <a href="https://sleepy.qdp.qzz.io">在线体验</a> · <a href="#社区">💬 社区</a>
 </p>
 
 ---
@@ -490,6 +490,7 @@ Bug 反馈和新学校适配走 [Issues](https://github.com/lingion/sleepy/issue
 
 ## Documentation
 
+- **[在线体验](https://sleepy.qdp.qzz.io)** — Web 版课表，浏览器打开即用，无需安装；支持多格式导入（WakeUp 分享文本 / ICS / CSV / Excel），数据仅存本地
 - **[Wiki](https://github.com/lingion/sleepy/wiki)** — 54-page deep manual: every screen, all import/export formats, the five widget families, reminder internals, architecture and codebase map, all cross-linked from the sidebar
 - **[Operation Guide](https://blog.qdp.qzz.io/docs/sleepy/overview)** — step-by-step user manual covering installation, import, widgets, themes, and troubleshooting
 - **[Technical Write-up](https://blog.qdp.qzz.io/sleepy-material-you-schedule)** — architecture deep-dive: schedule parser engine, gold-angle HSL, Wisedu reverse-engineering, widget rendering pipeline
