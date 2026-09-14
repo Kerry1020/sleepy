@@ -44,7 +44,7 @@ object AppPrefs {
     const val KEY_BEFORE_CLASS_FLUID_PRIMARY = "before_class_fluid_primary" // name/time/room
     const val KEY_THEME = "theme_key"
     const val KEY_LANG = "language"
-    const val KEY_DISPLAY_MODE = "display_mode" // "node" or "time"
+    const val KEY_DISPLAY_MODE = "display_mode" // "node" or "time" — 出厂默认 "time" (用户 2026-09-14: 默认显示时间段)
     const val KEY_GRID_SUB_INFO = "grid_sub_info" // "room" / "teacher" / "none" — 网格卡片副信息（周视图网格卡课程名下方那行；左栏已有节次，故此处不再显示节次/时间）
     const val KEY_CONFLICT_STYLE = "conflict_style" // "stack" / "fold" / "rail" — 冲突课程显示样式（网格视图同格冲突时；stack=叠层偏移, fold=折角揭示, rail=侧边竖轨, 默认 "rail"）
     const val KEY_CONFLICT_TOP_INSET = "conflict_top_inset" // Float dp — [已拆分停写] 旧共用值: A=右/下偏移 d, C=右缘让宽; 读取仅作迁移源
@@ -224,8 +224,10 @@ object AppPrefs {
 
     // ===== 显示模式：节次 / 时间 =====
 
+    // 出厂默认 "time"（时间段）— 用户 2026-09-14 指令: 默认显示时间而非节次;
+    // 设置页节次/时间二选一仍可改; 已手动设置过的老用户不受影响 (已存值优先)
     fun getDisplayMode(ctx: Context): String =
-        sp(ctx).getString(KEY_DISPLAY_MODE, "node") ?: "node"
+        sp(ctx).getString(KEY_DISPLAY_MODE, "time") ?: "time"
 
     fun setDisplayMode(ctx: Context, mode: String) {
         sp(ctx).edit().putString(KEY_DISPLAY_MODE, mode).apply()
