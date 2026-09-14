@@ -15,7 +15,7 @@ class WidgetVariantInfoTest {
 
     @Test
     fun `ALL_WIDGET_VARIANTS has exactly 10 entries`() {
-        assertEquals(10, ALL_WIDGET_VARIANTS.size)
+        assertEquals(13, ALL_WIDGET_VARIANTS.size)
     }
 
     @Test
@@ -50,15 +50,20 @@ class WidgetVariantInfoTest {
         val byKind = ALL_WIDGET_VARIANTS.map { v ->
             v.receiverClass.simpleName.removeSuffix("SmallWidgetProvider")
                 .removeSuffix("SmallWidgetReceiver")
+                .removeSuffix("WideWidgetReceiver")
                 .removeSuffix("WidgetProvider")
                 .removeSuffix("WidgetReceiver")
         }
         val counts = byKind.groupingBy { it }.eachCount()
+        // 设计 §7: Today/TwoDay/WeekList 三族有 M 变体 (base+small+wide=3),
+        // WeekView/WeekGrid 不设 M (2)。
+        val expected = mapOf(
+            "Today" to 3, "TwoDay" to 3, "WeekList" to 3,
+            "WeekView" to 2, "WeekGrid" to 2
+        )
+        assertEquals(expected.keys, counts.keys)
         counts.forEach { (kind, count) ->
-            assertEquals(
-                "kind=$kind must appear exactly twice (base + small)",
-                2, count
-            )
+            assertEquals("kind=$kind count", expected.getValue(kind), count)
         }
         // And specifically: the 5 base + 5 small must be present.
         assertNotEquals(0, byKind.count { it == "Today" })

@@ -76,9 +76,10 @@ class WidgetBindingCleanupWiringTest {
     }
 
     @Test
-    fun `all ten variants are covered by the five cleanup bases`() {
-        // 10 receivers ÷ 2 (base + small shell per layout) = 5 bases
+    fun `all thirteen variants are covered by the five cleanup bases`() {
+        // 13 receivers ÷ 5 bases: Today/TwoDay/WeekList 各 base+small+wide=3,
+        // WeekView/WeekGrid 各 base+small=2;wide shell 与 small 一样继承 base 的 onDeleted
         assertEquals(5, cleanupBases.size)
-        assertEquals(10, ALL_WIDGET_VARIANTS.size)
+        assertEquals(13, ALL_WIDGET_VARIANTS.size)
     }
 }

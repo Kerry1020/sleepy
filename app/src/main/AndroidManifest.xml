@@ -127,6 +127,42 @@
         </receiver>
 
         <receiver
+            android:name=".widget.TodayWideWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_today_wide_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_wide_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TwoDayWideWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_twoday_wide_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/twoday_wide_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.WeekListWideWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_week_list_wide_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weeklist_wide_widget_info" />
+        </receiver>
+
+        <receiver
             android:name=".widget.WeekListWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_week_list_label">

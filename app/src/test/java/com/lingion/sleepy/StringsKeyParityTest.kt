@@ -55,7 +55,10 @@ class StringsKeyParityTest {
         "widget_scroll_dialog_title",
         "widget_scroll_dialog_body",
         "widget_scroll_dialog_confirm",
-        "widget_scroll_dialog_cancel"
+        "widget_scroll_dialog_cancel",
+        "widget_today_wide_label",
+        "widget_twoday_wide_label",
+        "widget_week_list_wide_label"
     )
 
     /**

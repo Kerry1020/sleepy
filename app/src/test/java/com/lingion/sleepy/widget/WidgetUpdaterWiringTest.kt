@@ -22,7 +22,7 @@ class WidgetUpdaterWiringTest {
             WeekGridSmallWidgetProvider::class.java
         )
 
-        assertEquals("all 10 widget providers are registered", 10, receivers.size)
+        assertEquals("all 13 widget providers are registered", 13, receivers.size)
         expected.forEach { receiver ->
             assertTrue("missing ${receiver.simpleName}", receiver in receivers)
         }
