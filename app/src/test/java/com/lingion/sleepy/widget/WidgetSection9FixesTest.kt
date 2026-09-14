@@ -53,10 +53,10 @@ class WidgetSection9FixesTest {
     @Test
     fun `weeklist gate measures compact face for small variant`() {
         val s = src("WeekListWidget.kt")
-        // §9.1: compact 脸闸门 = weekListCompactTexts ≤2 行 ×20dp, 且仅在非 forceScroll 时
-        assertTrue(s.contains("weekListCompactTexts(context, LocalDate.now(), data)"))
-        assertTrue(s.contains(".take(2).size * 20f"))
+        // §9.1 (2026-09-14 改版): compact 脸闸门 = 今天邻域 ≤3 列实际列集, 仅非 forceScroll
+        assertTrue(s.contains("weekViewCompactColumns("))
         assertTrue(s.contains("if (!forceScroll && compactFace)"))
+        assertFalse("两行纯文本闸门禁回流", s.contains("weekListCompactTexts"))
     }
 
     @Test
@@ -80,7 +80,7 @@ class WidgetSection9FixesTest {
     @Test
     fun `weekview content height honors course cap`() {
         val r = src("WidgetBitmapRenderers.kt")
-        val fn = r.substringAfter("fun weekViewContentHeightDp(").substringBefore("fun weekListCompactTexts")
+        val fn = r.substringAfter("fun weekViewContentHeightDp(").substringBefore("private fun renderWeekListCompact")
         assertTrue("§9.5: 测量函数必须有 maxCoursesPerDay 参数", fn.contains("maxCoursesPerDay: Int = Int.MAX_VALUE"))
         assertTrue("§9.5: 循环必须按封顶截断", fn.contains("day.courses.take(maxCoursesPerDay).forEachIndexed"))
     }

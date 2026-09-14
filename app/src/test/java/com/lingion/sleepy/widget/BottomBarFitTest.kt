@@ -187,6 +187,8 @@ class BottomBarFitTest {
         val bar = src.substringAfter("fun configureTodayBar(")
             .substringBefore("internal fun bottomBarWideFits")
         assertTrue("胶囊须恒画 (只看 hidden)", bar.contains("if (hidden > 0)"))
+        assertTrue("无隐藏课须显式 GONE (防 launcher 视图复用残留)",
+            bar.contains("R.id.widget_nav_more, android.view.View.GONE"))
         assertFalse("胶囊不可挂点击 PI (用户定稿: 纯指示不可点)",
             bar.contains("widget_nav_more, footerConfigurePi"))
         assertTrue("今日态须隐藏回今天钮 (要么能点要么不存在)",

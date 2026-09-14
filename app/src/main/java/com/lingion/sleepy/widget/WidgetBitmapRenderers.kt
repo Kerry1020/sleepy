@@ -733,96 +733,32 @@ object WidgetBitmapRenderers {
     }
 
     /**
-     * WeekList 小档纯文本行(渲染与单测共用单一事实来源)。
-     * 状态资源与 renderWeekListRegular 各分支逐一对应:
-     *   无课表→widget_create_schedule · 学期外→semester_not_started/semester_ended
-     *   今明全无课→no_course(regular 空列同资源) · 有课→今天+明天各一条"周X 课名"
-     *     (每天只取首课 — loadDataSync 已按 startNode 排序; 无课天跳过; 最多 2 行)
-     * resolver 抽象掉 Context 资源访问 + today 锚点注入星期计算(禁 LocalDate.now() 进逻辑)
-     * → 核心选取逻辑可在纯 JVM 单测断言(仓库无 Robolectric)。
+     * WeekList 紧凑档 (2026-09-14 用户定稿改版) — 与周视图·小同一张脸:
+     * 今天邻域 ≤3 列 + Regular 渲染器 (彩色胶囊保留)。旧「今天+明天各一行
+     * 周X 课名」纯文本脸被否 — 丑且无信息量, 禁回流。compact 走数据侧换列,
+     * Regular 函数体零改动 (先按用户"显示星期"设置收窄可选池, 避免 shownDays
+     * 交集为空落到"去创建课表"兜底文案)。
      */
-    fun weekListCompactTexts(context: Context, today: LocalDate, data: WeekData): List<String> =
-        weekListCompactTexts(
-            { resId -> context.getString(resId) },
-            { dow -> DateUtils.localizedDay(dow, context) },
-            AppPrefs.isWidgetUseAlias(context),
-            today, data
+    private fun renderWeekListCompact(
+        context: Context, data: WeekData, wDp: Float, hDp: Float,
+        visibleByCol: List<List<com.lingion.sleepy.data.entity.CourseEntity>?>?,
+        footerByCol: List<String?>?
+    ): Bitmap {
+        val todayDow = LocalDate.now().dayOfWeek.value
+        val visibleDays = AppPrefs.getVisibleDays(context)
+        val poolDays = if (visibleDays.isEmpty()) data.days
+            else data.days.filter { it.dayOfWeek in visibleDays }
+        val compactDows = weekViewCompactColumns(data.copy(days = poolDays), todayDow)
+        val compactData = data.copy(
+            days = data.days.filter { it.dayOfWeek in compactDows }.sortedBy { it.dayOfWeek }
         )
-
-    /** 同上 — resolver 注入版(纯 JVM 单测入口) */
-    fun weekListCompactTexts(
-        resolve: (Int) -> String,
-        dayName: (Int) -> String,
-        today: LocalDate,
-        data: WeekData
-    ): List<String> = weekListCompactTexts(resolve, dayName, useAlias = false, today = today, data = data)
-
-    /** resolver + 别名开关注入版 — useAlias 语义: true 时显示别名(空回退原名) */
-    fun weekListCompactTexts(
-        resolve: (Int) -> String,
-        dayName: (Int) -> String,
-        useAlias: Boolean,
-        today: LocalDate,
-        data: WeekData
-    ): List<String> {
-        if (!data.hasTable || data.days.isEmpty()) return listOf(resolve(R.string.widget_create_schedule))
-        if (data.semesterStatus != DateUtils.SemesterStatus.IN_RANGE) {
-            val statusRes = if (data.semesterStatus == DateUtils.SemesterStatus.BEFORE_START)
-                R.string.semester_not_started else R.string.semester_ended
-            return listOf(resolve(statusRes))
-        }
-        val todayDow = today.dayOfWeek.value
-        val targetDows = listOf(todayDow, todayDow % 7 + 1)   // 今天 + 明天(周循环)
-        val lines = data.days.filter { it.dayOfWeek in targetDows && it.courses.isNotEmpty() }
-            // 按今天→明天的目标顺序排, 禁按 ISO 星期排: 周日锚点(tomorrow=周一)时
-            // ISO 排序会把"明天"排到"今天"前面
-            .sortedBy { targetDows.indexOf(it.dayOfWeek) }
-            .take(2)
-            .map { "${dayName(it.dayOfWeek)} ${CourseDisplayUtil.displayName(it.courses.first(), useAlias)}" }
-        return lines.ifEmpty { listOf(resolve(R.string.no_course)) }
-    }
-
-    /**
-     * WeekList 紧凑档 — 无标题, 今天+明天各一行"周X 课名"(取自 weekListCompactTexts),
-     * 纯文本无课程胶囊。布局常量: compact 档不参与 weekListContentHeightDp 滚动条带
-     * 估算(固定 size 变体), 无需镜像。
-     */
-    private fun renderWeekListCompact(context: Context, data: WeekData, wDp: Float, hDp: Float): Bitmap {
-        val density = context.resources.displayMetrics.density
-        val w = (wDp * density).toInt()
-        val h = (hDp * density).toInt()
-        val s = scheme(context, data.themeKey, data.isDark)
-        val ctx = SleepyApp.get()
-
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(c)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        // 背景圆角
-        p.color = s.bg
-        canvas.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()),
-            20f * density, 20f * density, p)
-
-        val pad = 10f * density
-        val lines = weekListCompactTexts(ctx, LocalDate.now(), data)
-
-        // 今天+明天"周X 课名" — 居中大字
-        p.color = s.onSurface
-        p.textSize = 15f * density
-        p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        var y = h / 2f
-        for (line in lines.take(2)) {
-            canvas.drawText(ellipsize(p, line, w - pad * 2), pad, y, p)
-            y += 20f * density
-        }
-
-        return bmp.apply { eraseColor(Color.TRANSPARENT); Canvas(this).drawBitmap(c, 0f, 0f, null) }
+        return renderWeekListRegular(context, compactData, wDp, hDp, visibleByCol, footerByCol)
     }
 
     /**
      * WeekList widget 渲染 — 7 列日列
-     * SMALL 变体 + 容器 <150dp → 走紧凑档(纯文本); REGULAR 或容器被拖大 ≥150dp → 全量排版
+     * SMALL 变体 + 容器 <150dp → 走紧凑档(今天邻域 ≤3 列, 同周视图·小);
+     * REGULAR 或容器被拖大 ≥150dp → 全量排版
      * (默认参数 REGULAR → 全部现有调用点零改动; 大档路径 renderWeekListRegular 函数体逐字节不变)
      */
     fun renderWeekList(
@@ -832,7 +768,7 @@ object WidgetBitmapRenderers {
         footerByCol: List<String?>? = null
     ): Bitmap {
         if (variant == WidgetVariant.SMALL && wDp < 150f) {
-            return renderWeekListCompact(context, data, wDp, hDp)
+            return renderWeekListCompact(context, data, wDp, hDp, visibleByCol, footerByCol)
         }
         // SMALL 但容器被拖大 ≥150dp → 内部升档回全量排版(设计第三节决策)
         return renderWeekListRegular(context, data, wDp, hDp, visibleByCol, footerByCol)
