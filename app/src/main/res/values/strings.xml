@@ -111,6 +111,11 @@
     <string name="read_failed">读取失败: %1$s</string>
     <string name="cannot_read_file">无法读取文件</string>
     <string name="import_preview_sub">先预览，再导入，不让课表被一把覆盖</string>
+    <string name="import_drafts">导入草稿</string>
+    <string name="import_drafts_empty">暂无保存的导入草稿</string>
+    <string name="import_draft_restore">恢复草稿</string>
+    <string name="import_draft_delete">删除草稿</string>
+    <string name="import_draft_saved_at">保存于 %1$s</string>
     <string name="format_wakeup_share">WakeUp 分享文本</string>
     <string name="format_wakeup_desc">【来自WakeUp课程表】开头</string>
     <string name="format_wakeup_json">WakeUp JSON</string>
@@ -687,6 +692,12 @@
     <!-- i18n: additional strings added for full localization -->
     <string name="default_table_with_num">默认%1$d</string>
     <string name="new_course">新课程</string>
+    <string name="jw_import_exit_title">退出导入？</string>
+    <string name="jw_import_exit_message">当前导入尚未完成，退出后可以保留草稿供稍后继续。</string>
+    <string name="jw_import_exit_continue">继续导入</string>
+    <string name="jw_import_exit_keep_draft">退出并保留草稿</string>
+    <string name="jw_import_exit_delete_draft">退出并删除草稿</string>
+
     <string name="jw_import_title">教务导入 - %1$s</string>
     <string name="month_day_format">%1$d月%2$d日</string>
     <string name="section_short">%1$d</string>
