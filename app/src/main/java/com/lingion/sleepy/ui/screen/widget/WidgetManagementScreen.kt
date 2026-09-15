@@ -23,25 +23,15 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lingion.sleepy.R
-import com.lingion.sleepy.ui.component.SettingsFlatCard
 import com.lingion.sleepy.ui.theme.SleepyTheme
-import com.lingion.sleepy.util.AppPrefs
 import com.lingion.sleepy.widget.PlacedWidgetItem
 import com.lingion.sleepy.widget.WidgetManagementViewModel
-import com.lingion.sleepy.widget.WidgetUpdater
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 /**
  * Lists every Sleepy widget instance currently placed on the home screen,
@@ -59,13 +49,6 @@ fun WidgetManagementScreen(
     val vm = remember { WidgetManagementViewModel() }
     val items by vm.state.collectAsState()
     val colors = SleepyTheme.colors
-    val context = LocalContext.current
-    var todayFirst by remember { mutableStateOf(AppPrefs.isCompactWindowTodayFirst(context)) }
-    // 显示项变更后立即刷小组件(与 GeneralSettingsScreen 同构)
-    val widgetScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
-    fun refreshWidgets() {
-        widgetScope.launch { WidgetUpdater.notifyDataChanged(context) }
-    }
 
     Scaffold(
         containerColor = colors.background,
@@ -93,25 +76,6 @@ fun WidgetManagementScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 最小档三天窗口 (2026-09-15 用户令): 只作用于「· 小」变体的 compact 脸;
-            // 今日居第一位 = 今天/明天/后天; 居第二位 = 昨天/今天/明天。上下周打通, 固定三天。
-            Column(modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp)) {
-                SettingsFlatCard(
-                    title = stringResource(R.string.widget_manage_compact_title),
-                    subtitle = stringResource(R.string.widget_manage_compact_detail),
-                    options = listOf(
-                        stringResource(R.string.widget_manage_compact_today_first),
-                        stringResource(R.string.widget_manage_compact_today_second)
-                    ),
-                    selectedKey = if (todayFirst) 0 else 1,
-                    onSelect = { i ->
-                        val v = i == 0
-                        todayFirst = v
-                        AppPrefs.setCompactWindowTodayFirst(context, v)
-                        refreshWidgets()
-                    }
-                )
-            }
             Box(modifier = Modifier.fillMaxSize()) {
                 if (items.isEmpty()) {
                     Column(

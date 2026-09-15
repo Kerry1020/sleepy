@@ -138,7 +138,7 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id) }
+        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id); WidgetCompactWindowStore.remove(context, id) }
     }
 
     companion object {
@@ -206,7 +206,7 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
                         // 最小档三天窗口 (2026-09-15 用户令): 真实日期, 上下周打通
                         val compactWindow = WidgetCompactWindow.build(
                             repo, table.id, table.timeJson, table.startDate, table.maxWeek,
-                            today, com.lingion.sleepy.util.AppPrefs.isCompactWindowTodayFirst(context)
+                            today, WidgetCompactWindowStore.isTodayFirst(context, appWidgetId)
                         )
                         WeekData(days = days, hasTable = true, isDark = isDark, themeKey = themeKey, semesterStatus = status, compactWindow = compactWindow)
                     }
