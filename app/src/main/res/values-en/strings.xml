@@ -365,6 +365,12 @@
     <string name="n_courses">%1$d</string>
     <string name="action_close">Close</string>
 
+    <string name="import_drafts">Import drafts</string>
+    <string name="import_drafts_empty">No saved import drafts</string>
+    <string name="import_draft_restore">Restore draft</string>
+    <string name="import_draft_delete">Delete draft</string>
+    <string name="import_draft_saved_at">Saved %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">Please create a schedule first</string>
     <string name="widget_open_sleepy">Open Sleepy to add</string>
