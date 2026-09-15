@@ -678,6 +678,12 @@
     <!-- i18n: additional strings added for full localization -->
     <string name="default_table_with_num">默认%1$d</string>
     <string name="new_course">新课程</string>
+    <string name="jw_import_exit_title">退出导入？</string>
+    <string name="jw_import_exit_message">当前导入尚未完成，退出后可以保留草稿供稍后继续。</string>
+    <string name="jw_import_exit_continue">继续导入</string>
+    <string name="jw_import_exit_keep_draft">退出并保留草稿</string>
+    <string name="jw_import_exit_delete_draft">退出并删除草稿</string>
+
     <string name="jw_import_title">教务导入 - %1$s</string>
     <string name="month_day_format">%1$d月%2$d日</string>
     <string name="section_short">%1$d</string>

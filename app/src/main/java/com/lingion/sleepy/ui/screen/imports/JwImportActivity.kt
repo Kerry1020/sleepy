@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
@@ -113,6 +114,23 @@ class JwImportActivity : ComponentActivity() {
                 // #27: 红条此前只置不清,报错后必须退出页面才消失。阶段一切换即清零。
                 LaunchedEffect(stage) { errorMsg = null }
                 var importFinished by remember { mutableStateOf(false) }
+                var exitDraftState by remember { mutableStateOf(ExitDraftState()) }
+                fun requestExit() {
+                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.RequestExit)
+                    exitDraftState = result.state
+                    if (result.outcome == ExitDraftOutcome.FinishDirectly) finish()
+                }
+                fun handleExitChoice(choice: ExitDraftChoice) {
+                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.Choose(choice))
+                    exitDraftState = result.state
+                    when (result.outcome) {
+                        ExitDraftOutcome.KeepDraft,
+                        ExitDraftOutcome.DeleteDraft -> finish()
+                        ExitDraftOutcome.None,
+                        ExitDraftOutcome.FinishDirectly -> Unit
+                    }
+                }
+                BackHandler(enabled = exitDraftState.activeImport) { requestExit() }
                 // 解析后的课程暂存 + 配置确认状态
                 var parsedCourses by remember { mutableStateOf<List<JwCourse>>(emptyList()) }
                 var parsedSchool by remember { mutableStateOf<JwSchoolInfo?>(null) }
@@ -143,10 +161,7 @@ class JwImportActivity : ComponentActivity() {
                         val colors = SleepyTheme.colors
                         var confirmError by remember { mutableStateOf<String?>(null) }
                         AlertDialog(
-                            onDismissRequest = {
-                                stage = Stage.WebViewLogin
-                                parsedCourses = emptyList()
-                            },
+                            onDismissRequest = { requestExit() },
                             title = {
                                 Column {
                                     Text(getString(R.string.jw_config_title), color = colors.onSurface)
@@ -234,6 +249,7 @@ class JwImportActivity : ComponentActivity() {
                                             Log.d("JwImport", "importAsNewTable tableId=$tableId courses=${parsedCourses.size}")
                                             statusMsg = getString(R.string.jw_import_success, parsedCourses.size)
                                             importFinished = true
+                                            exitDraftState = exitDraftState.copy(activeImport = false)
                                         } catch (e: Exception) {
                                             Log.e("JwImport", "import failed", e)
                                             errorMsg = getString(R.string.jw_parse_failed, e.message ?: "")
@@ -245,10 +261,7 @@ class JwImportActivity : ComponentActivity() {
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = {
-                                    stage = Stage.WebViewLogin
-                                    parsedCourses = emptyList()
-                                }) {
+                                TextButton(onClick = { requestExit() }) {
                                     Text(getString(R.string.back))
                                 }
                             }
@@ -265,9 +278,10 @@ class JwImportActivity : ComponentActivity() {
                                         return@SchoolSelectScreen
                                     }
                                     selectedSchool = school
+                                    exitDraftState = exitDraftState.copy(activeImport = true)
                                     stage = Stage.WebViewLogin
                                 },
-                                onBack = { finish() }
+                                onBack = { requestExit() }
                             )
                         }
                     }
@@ -315,6 +329,7 @@ class JwImportActivity : ComponentActivity() {
                                             // 不直接落库，进配置确认页
                                             parsedCourses = courses
                                             parsedSchool = sch
+                                            exitDraftState = exitDraftState.copy(activeImport = true)
                                             // 根据课程实际节次数生成行；
                                             // 如果 WebView 抓到 periods 则预填，否则空行让用户填
                                             val maxNode = courses.maxOf { maxOf(it.startNode, it.endNode) }
@@ -356,10 +371,18 @@ class JwImportActivity : ComponentActivity() {
                                     }
                                     statusMsg = null
                                 },
-                                onBack = { stage = Stage.SelectSchool }
+                                onBack = { requestExit() }
                             )
                         } // end SaveableStateProvider("WebViewLogin") (school != null)
                     }
+                }
+
+                exitDraftState.takeIf { it.confirmationVisible }?.let {
+                    ExitDraftConfirmationDialog(
+                        onContinue = { handleExitChoice(ExitDraftChoice.Continue) },
+                        onKeepDraft = { handleExitChoice(ExitDraftChoice.KeepDraft) },
+                        onDeleteDraft = { handleExitChoice(ExitDraftChoice.DeleteDraft) },
+                    )
                 }
 
                 // 错误与状态提示：直接显示在中央 errorMsg + 底部 statusMsg
