@@ -439,6 +439,12 @@
     <string name="n_courses">%1$d 门</string>
     <string name="action_close">关闭</string>
 
+    <string name="import_drafts">导入草稿</string>
+    <string name="import_drafts_empty">暂无保存的导入草稿</string>
+    <string name="import_draft_restore">恢复草稿</string>
+    <string name="import_draft_delete">删除草稿</string>
+    <string name="import_draft_saved_at">保存于 %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">请先创建课表</string>
     <string name="widget_open_sleepy">打开 Sleepy 开始添加</string>
