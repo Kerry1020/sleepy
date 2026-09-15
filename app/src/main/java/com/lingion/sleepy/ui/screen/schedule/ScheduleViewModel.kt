@@ -223,6 +223,13 @@ class ScheduleViewModel : ViewModel() {
         return id
     }
 
+    /** issue#40: 修改共享时间节次表内容 — 全部绑定课表立即生效, 课程行零改动 */
+    fun updatePeriodTableContent(table: com.lingion.sleepy.data.entity.PeriodTableEntity) {
+        viewModelScope.launch {
+            repo.updatePeriodTable(table)
+        }
+    }
+
     fun updateTable(table: TimeTableEntity) {
         viewModelScope.launch { repo.updateTable(table) }
     }

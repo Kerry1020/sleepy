@@ -108,19 +108,27 @@ fun EditTableScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    val timeJson = table.timeJson
-    val slotRows = remember(table.id) {
+    // issue#40: 编辑的就是"有效时间表" — 绑定了独立时间节次表时, 节次编辑区
+    // 展示/修改的是该时间节次表(多张绑定课表同享), 保存写回 period_tables;
+    // 未绑定时行为不变(编辑本表兼容列)。
+    val effectivePeriodTable = state.effectivePeriodTable?.takeIf {
+        table.periodTableId != null && it.id == table.periodTableId
+    }
+    val timeJson = effectivePeriodTable?.timeJson ?: table.timeJson
+    val slotRows = remember(table.id, effectivePeriodTable?.id, timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
             addAll(TimeTableUtils.parseTimeSlotRows(timeJson))
         }
     }
     // v1.0.16 自动模式配置（编辑当前课表时使用）
-    val smartConfig = remember(table.id) {
+    val smartConfig = remember(table.id, effectivePeriodTable?.id, timeJson) {
         mutableStateOf(
             // 如果表里已存 smartConfigJson，反序列化恢复；否则从现有 slotRows 推断初始值
-            if (table.smartConfigJson.isNotBlank()) {
+            if ((effectivePeriodTable?.smartConfigJson ?: table.smartConfigJson).isNotBlank()) {
                 try {
-                    Json.decodeFromString<SmartPeriodConfig>(table.smartConfigJson)
+                    Json.decodeFromString<SmartPeriodConfig>(
+                        effectivePeriodTable?.smartConfigJson ?: table.smartConfigJson
+                    )
                 } catch (e: Exception) {
                     SmartPeriodConfig(
                         totalPeriods = slotRows.size.coerceAtLeast(1),
@@ -284,17 +292,30 @@ fun EditTableScreen(
                         } catch (e: Exception) {
                             ""
                         }
+                        val newTimeJson = TimeTableUtils.buildTimeJsonFromRows(slotRows.toList())
                         val updated = table.copy(
                             name = name.ifBlank { table.name },
                             startDate = DateUtils.normalizeStartDate(startDate),
                             maxWeek = maxWeek,
-                            timeJson = TimeTableUtils.buildTimeJsonFromRows(slotRows.toList()),
+                            timeJson = newTimeJson,
                             smartConfigJson = smartConfigJson
                         )
                         scope.launch {
-                            // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
-                            // 课程不能再停在 13-16 节)
-                            viewModel.updateTableRemappingCourses(updated)
+                            if (effectivePeriodTable != null) {
+                                // issue#40: 节次编辑区改的是共享时间节次表 — 写回 period_tables,
+                                // 全部绑定课表立即生效; 课程行零改动(设计 §9.1 节次绑定不重算)
+                                viewModel.updatePeriodTableContent(
+                                    effectivePeriodTable.copy(
+                                        timeJson = newTimeJson,
+                                        smartConfigJson = smartConfigJson,
+                                        nodesPerDay = slotRows.size.coerceAtLeast(1)
+                                    )
+                                )
+                            } else {
+                                // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
+                                // 课程不能再停在 13-16 节)
+                                viewModel.updateTableRemappingCourses(updated)
+                            }
                             onSaved()
                         }
                     },
