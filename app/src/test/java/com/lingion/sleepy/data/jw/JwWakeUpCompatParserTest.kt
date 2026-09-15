@@ -56,6 +56,122 @@ class JwWakeUpCompatParserTest {
     }
 
     @Test
+    fun `jz json array uses JZHandCourseInfoItem schema`() {
+        val source = """
+            [{"kcmc":"数据结构","xqj":3,"jsxm":"钱老师","skdd":"教2-301","djj":5,"dsz":6,"qmz":"1-8;10-16","bjmc":"计科21","xkkh":"(2025-2026-1)-","lx":1,"mz":2,"qz":0,"rwlx":1}]
+        """.trimIndent()
+
+        val courses = JwJzParser(source).generateCourseList()
+
+        assertEquals(2, courses.size)
+        assertEquals("数据结构", courses[0].name)
+        assertEquals(3, courses[0].day)
+        assertEquals(5, courses[0].startNode)
+        assertEquals("教2-301", courses[0].room)
+        assertEquals("钱老师", courses[0].teacher)
+        assertEquals(1, courses[0].startWeek)
+        assertEquals(8, courses[0].endWeek)
+        assertEquals(10, courses[1].startWeek)
+        assertEquals(16, courses[1].endWeek)
+    }
+
+    @Test
+    fun `jz html CourseFormTable br split cells`() {
+        val source = """
+            <html><body><table id="CourseFormTable">
+            <tr><td>&nbsp;</td><td style="text-align:center">星期一</td></tr>
+            <tr><td style="text-align:center">第5节</td>
+            <td>数据结构<br>1-16单,18<br>钱老师<br>第5-6节<br>教2-301</td></tr>
+            </table></body></html>
+        """.trimIndent()
+
+        val courses = JwJzParser(source).generateCourseList()
+
+        assertTrue(courses.isNotEmpty())
+        assertEquals("数据结构", courses[0].name)
+        assertEquals(2, courses[0].day)
+        assertEquals(1, courses[0].type)
+        assertEquals("教2-301", courses[0].room)
+        assertEquals("钱老师", courses[0].teacher)
+    }
+
+    @Test
+    fun `kingo TaskActivity js grid uses index times unitCount`() {
+        val source = """
+            <html><body><script>
+            var activity = null;
+            var courseName = '高等代数';
+            var actTeachers = new Array();
+            actTeachers.push({'name':'孙老师'});
+            activity = new TaskActivity('高等代数','孙老师','博学楼A-302','101010000000000000000000000000000000000000000000');
+            index = 3 * unitCount + 2;
+            activity.index = index;
+            table0.marshalTable();
+            </script></body></html>
+        """.trimIndent()
+
+        val courses = JwKingoParser(source).generateCourseList()
+
+        assertTrue(courses.isNotEmpty())
+        assertEquals("高等代数", courses[0].name)
+        assertEquals(3, courses[0].day)
+        assertEquals(3, courses[0].startNode)
+        assertEquals("博学楼A-302", courses[0].room)
+        assertEquals("孙老师", courses[0].teacher)
+        assertEquals(1, courses[0].startWeek)
+        assertEquals(5, courses[0].endWeek)
+        assertEquals(1, courses[0].type)
+    }
+
+    @Test
+    fun `xju dgData brace blocks with week parity`() {
+        val source = """
+            <html><body><table id="ctl00_contentParent_dgData">
+            <tr><th>节次</th><th>星期一</th><th>星期二</th></tr>
+            <tr><td align="center">第1-2节</td>
+            <td>{大学物理(1-16周单)[教师:李老师,地点:物理楼-1]}</td><td>&nbsp;</td></tr>
+            <tr><td align="center">第3-4节</td><td>&nbsp;</td>
+            <td>{有机化学(2-15周双)[教师:周老师,地点:化学楼-2]}</td></tr>
+            </table></body></html>
+        """.trimIndent()
+
+        val courses = JwXjuParser(source).generateCourseList()
+
+        assertTrue(courses.isNotEmpty())
+        assertEquals("大学物理", courses[0].name)
+        assertEquals(1, courses[0].day)
+        assertEquals(1, courses[0].startNode)
+        assertEquals("李老师", courses[0].teacher)
+        assertEquals(1, courses[0].type)
+        assertEquals("化学楼-2", courses[1].room)
+        assertEquals(2, courses[1].day)
+        assertEquals(2, courses[1].type)
+    }
+
+    @Test
+    fun `suda grid rows use course teacher labels`() {
+        val source = """
+            <html><body><table id="MainWork_DataGrid1">
+            <tr align="center"><td>星期一</td><td>星期二</td></tr>
+            <tr><td>高等数学<br>课程:高等数学<br>(张老师)<br>第1-16周<br>博远楼-101</td><td>&nbsp;</td></tr>
+            <tr><td>&nbsp;</td><td>大学英语<br>课程:大学英语<br>(刘老师)<br>第1-16周双<br>博远楼-202</td></tr>
+            </table></body></html>
+        """.trimIndent()
+
+        val courses = JwSudaParser(source).generateCourseList()
+
+        assertTrue(courses.isNotEmpty())
+        assertEquals("高等数学", courses[0].name)
+        assertEquals(1, courses[0].day)
+        assertEquals(1, courses[0].startWeek)
+        assertEquals(16, courses[0].endWeek)
+        assertEquals("张老师", courses[0].teacher)
+        assertEquals("博远楼-101", courses[0].room)
+        assertEquals(2, courses[1].day)
+        assertEquals(2, courses[1].type)
+    }
+
+    @Test
     fun `shuwei activities preserve odd even week ranges`() {
         val source = """
             {"activities":[{"courseName":"编译原理","weekday":5,"startSection":7,"endSection":8,"weeksStr":"1-15单,2-16双","room":"C-201","teacher":"王老师"}]}
