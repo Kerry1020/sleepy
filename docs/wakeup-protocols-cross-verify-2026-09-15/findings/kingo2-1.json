@@ -1,0 +1,13 @@
+{
+  "repo_name": "wzj1122/jxufe-auto-evaluate",
+  "stars": 5,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    {"path": "auto-evaluate.user.js", "purpose": "KINGOSOFT 自动评教油猴脚本 (登录态检测 + 框架导航 + DOM 操作)", "lines_with_protocol": [20, 21, 351, 355, 476, 490, 497]}
+  ],
+  "protocol_approach": "Tampermonkey 用户脚本, 注入 jwxt.jxufe.edu.cn KINGOSOFT 教务主页, 纯 DOM 操作不涉课表接口。三层 iframe DOM: frmDesk -> frame_1 -> frmReport。登录态检测 = location.href.indexOf('login.action') >= 0 即会话过期。评教列表行 tr[id^='tr'], 单元格 id 后缀 _pjdf(得分)/_wjdc(问卷)/_js(教师)/_kc(课程); 评教表单 radio name^='cj', 保存按钮 #butSub, 删除链接 onclick 含 deltwjxpj。",
+  "exact_regex_or_code_snippet": "@match https://jwxt.jxufe.edu.cn/frame/homes.action* ; if (location.href.indexOf('login.action') >= 0) { logW('检测到登录页面，等待重新登录...'); } ; doc.querySelectorAll(\"tr[id^='tr']\") ; var s9 = d.querySelector('#S9') (评教菜单项)",
+  "verdict": "INDIRECT",
+  "verdict_reason": "预期内: 评教不涉课表协议, 无 kbcx/xskbcx 或网格 JS 证据; 但提供 KINGOSOFT 通用形态佐证 — login.action 登录态失效重定向判定 + /frame/homes.action 主框架 + frmDesk/frame_1/frmReport 三层 iframe 结构 (与 cqwu provider 同构)。"
+}

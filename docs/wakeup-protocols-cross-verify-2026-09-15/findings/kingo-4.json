@@ -1,0 +1,11 @@
+{
+  "repo_name": "XTAI9/SYU_KINGGOClassSel",
+  "stars": 2,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": ["provider.js", "parser.js", "timer.js", "README.md"],
+  "protocol_approach": "青果老版班级课表只出噪点图片: provider 取 iframe[name=frmRpt] 内 img 转 base64, POST 到小米官方 OCR https://open-schedule-prod.ai.xiaomi.com/kingo-ocr, parser 只映射 OCR 返回 JSON, 不直接调 kingosoft 接口",
+  "exact_regex_or_code_snippet": "const res = await fetch('https://open-schedule-prod.ai.xiaomi.com/kingo-ocr', {method:'POST', body:param}); json.map(course=>({name,teacher,weeks||'1-16',sections||[1,2],day||1,position})); buildWeeks 含'单'flag=1 i%2!==0 / '双'flag=2 i%2===0; README: '只能得到有噪点的课表图片...无法实现对接'",
+  "verdict": "INDIRECT",
+  "verdict_reason": "不直接调 kingosoft JSON 接口: 老版青果仅课表图片, 依赖小米 kingo-ocr 识别, 作者自证对接失败仅存档"
+}

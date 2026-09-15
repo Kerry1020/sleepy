@@ -1,0 +1,11 @@
+{
+  "repo_name": "icepie/aischedule-lit-kingosoft",
+  "stars": 13,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": ["src/provider.ts", "src/parser.ts"],
+  "protocol_approach": "经典青果 aspx: provider 用同步 XHR GET 相对路径 /wsxk/stu_zxjg_rpt.aspx (学生正选结果报表), 校验响应含'正选结果', parser 解析 table#pageReport 嵌套表格纯 HTML",
+  "exact_regex_or_code_snippet": "http.open('GET', webpath + '/wsxk/stu_zxjg_rpt.aspx', false); data.includes('正选结果'); $(html).find('table#pageRpt').find('table').eq(1).find('tbody'); 行 class 属性=表头跳过; td.eq(1).text().split(']')取课名, td.eq(4) a 取教师, td.eq(10) 文本节点 '[1-16周]星期一[5-6节]/XB309' 与 '1-16周 星期一 5-6节/ XB309' 两格式; 单周 i%2!==0 双周 i%2===0",
+  "verdict": "POSITIVE",
+  "verdict_reason": "青果老版 aspx 报表端点+pageRpt 表格结构+单双周/周次节次区间解析证据链完整"
+}

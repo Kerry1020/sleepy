@@ -1,0 +1,32 @@
+{
+  "repo_name": "HF-CYGG/Dawn-Course",
+  "stars": 48,
+  "default_branch": "main",
+  "license": "GPL-3.0",
+  "relevant_files": [
+    {
+      "path": "feature/import/src/main/assets/parsers/kingosoft.js",
+      "purpose": "青果(Kingosoft) 课表 HTML 表格解析器 (QuickJS 内嵌 JS, 469行): 表头星期映射 + 单元格解析 + 列表式课表解析 + 正方样式兜底 + 旧版 td.td 兜底",
+      "lines_with_protocol": [14, 42, 48, 59, 74, 91, 101, 108, 109, 111, 115, 132, 146, 153, 164, 195, 205, 220, 250, 254, 333, 347, 414, 425, 438, 445]
+    },
+    {
+      "path": "feature/import/src/main/assets/parsers/common_parser_utils.js",
+      "purpose": "通用工具库: stripWeekNoise/parseWeeks(单双周)/parseSections/extractWeeksStr/extractSectionsStr/decodeHtmlEntities; 注释明言该库最全版本源自 kingosoft.js",
+      "lines_with_protocol": [108, 116, 122, 128, 163, 171, 177, 199, 271, 282, 298, 305, 311, 317, 319]
+    },
+    {
+      "path": "feature/import/src/main/java/com/dawncourse/feature/import_module/engine/ParserSelectionPolicy.kt",
+      "purpose": "解析器调度: kingosoft.js 与 qiangzhi.js/zhengfang.js 并列为内置兜底解析器 (FALLBACK_PARSERS), 共享 common_parser_utils.js 依赖",
+      "lines_with_protocol": [35]
+    },
+    {
+      "path": "core/domain/src/main/java/com/dawncourse/core/domain/model/ScriptSchoolContext.kt",
+      "purpose": "教务类型识别: text.contains(\"kingo\")||text.contains(\"青果\") -> \"KINGOSOFT\" 枚举判定",
+      "lines_with_protocol": [32]
+    }
+  ],
+  "protocol_approach": "青果走 HTML 表格解析 (非网格坐标公式): QuickJS 内嵌 kingosoft.js 用正则抽取 <tr>/<td>, 先试列表式课表(表头含 课程/周次/节次/星期 列映射), 再退化为网格式(表头扫 星期一~星期日 建列索引, td 逐格解析), 再兜底旧版 td.class=\"td\" 按出现顺序即星期序 (dayIndex++); 无 TaskActivity/unitCount 网格公式",
+  "exact_regex_or_code_snippet": "kingosoft.js 坐标映射 (行59-65, 反向索引): `var reverseIdx = cells.length - 1 - c; if (text.indexOf(\"星期一\") !== -1 || text.indexOf(\"周一\") !== -1) dayMap[reverseIdx] = 1; ...` 数据行 (行74-77): `var reverseIdx = cells.length - 1 - c; var day = dayMap[reverseIdx];` 旧版兜底 (行108-115): `/<td[^>]*class=[\"']?td[\"']?[^>]*>(.*?)<\\/td>/gi` 按出现顺序 `day = dayIndex + 1; dayIndex++`。周次+节次联合正则 (行195): `/([0-9,\\-]+)\\s*(?:周|周次)?\\s*[\\[\\(（]\\s*([0-9,\\-]+)\\s*(?:节|节次)?\\s*[\\]\\)）]/` 捕获组1=周次 组2=节次 (如 \"1-16[1-2]\")。单双周 (common_utils 行167-169,128-133): `if (str.indexOf('单') > -1) type = 1; if (str.indexOf('双') > -1) type = 2;` → `pushWeek`: `type===1 && w%2===1` 入单周, `type===2 && w%2===0` 入双周, 周次钳制 1..53。节次粘连防护 (行116): `.replace(/[（(\\[][^）)\\]]*节[^）)\\]]*[）)\\]]/g, '')` 先剥离 \"5周[1-2节]\" 的节次括号再拆区间",
+  "verdict": "POSITIVE",
+  "verdict_reason": "存在专门命名的 kingosoft.js 青果解析器且有完整课表协议证据: HTML 表格解析三段式 (列表式表头映射/网格式星期表头 dayMap 反向索引/旧版 td.td 顺序兜底), 周次节次联合正则与单双周奇偶过滤, 调度层把 KINGOSOFT 作为与 QIANGZHI 并列的独立协议族"
+}

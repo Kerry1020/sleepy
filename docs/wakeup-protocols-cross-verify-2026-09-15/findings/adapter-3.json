@@ -1,0 +1,11 @@
+{
+  "repo_name": "Sittymin/tzvcst-schedule-chaoxing",
+  "stars": 1,
+  "default_branch": "main",
+  "license": "AGPL-3.0",
+  "relevant_files": ["Provider.js", "Parser.js"],
+  "protocol_approach": "与 moeshin 同族超星排课 JSON 路: fetch /admin/pkgl/xskb/queryKbForXsd 拿 xhid/xqdm, fetch /admin/xsd/xyjc/getXsjbxx 自动取当前学期 (result.data.dqxnxq, 失败再 #xnxq1 option 手选), 再 /admin/pkgl/xskb/sdpkkbList 取数组; Parser 侧做冲突课合并 (mergeConflictingCourses) 与非连续节次拆分",
+  "exact_regex_or_code_snippet": "const path = \"/admin/pkgl/xskb/queryKbForXsd\"; ... const response = await fetch(\"/admin/xsd/xyjc/getXsjbxx\"); if (result.ret === 0 && result.data && result.data.dqxnxq) { xnxq = result.data.dqxnxq; } ... return fetch(\"/admin/pkgl/xskb/sdpkkbList?\" + new URLSearchParams({xnxq, xhid, xqdm})).then((data) => { return data.map((info) => { return { name: cleanTag(info.kcmc), teacher: cleanTag(info.tmc), position: cleanTag(info.croommc), sections: info.djc, weeks: info.zcstr.split(\",\").map(Number), day: info.xingqi }; }); });",
+  "verdict": "POSITIVE",
+  "verdict_reason": "超星排课接口族二次实锤且更完整 (新增 /admin/xsd/xyjc/getXsjbxx 学期自动发现 + zcstr 逗号周次串), 字段族 kcmc/tmc/croommc/djc/xingqi 与仓 2 同源; queryKbForGrdb/kckbData/LessonArray 同样 0 命中"
+}

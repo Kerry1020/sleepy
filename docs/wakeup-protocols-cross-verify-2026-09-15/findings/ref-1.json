@@ -1,0 +1,16 @@
+{
+  "repo_name": "zfman/pub-docs",
+  "stars": 8,
+  "default_branch": "master",
+  "license": null,
+  "relevant_files": [
+    "qingguo/README.md",
+    "qingguo/请求示例.md",
+    "qingguo/加密方法.md",
+    "qingguo/破解笔记.md"
+  ],
+  "protocol_approach": "青果(kingosoft)教务App协议逆向文档。单端点POST表单: http://<host>/manager/wap/wapController.jsp (破解笔记中实URL为 http://www.xiqueer.com:8080/manager//wap/wapController.jsp)。所有接口共用同一地址与4个表单字段: param(业务参数KV串经自定义字符移位加密, 密钥='ju8opt', encrypt1逐字符加法+36进制映射, 6字符/段), param2(encrypt2, 32位hex=MD5摘要), token(登录时'00000', 登录后用返回token), appinfo(固定'android2.4.302')。区分操作靠param明文里的action/step: 登录 action=getLoginInfoNew+isky=1; 学期 action=getXtgn&step=xnxq; 课表 action=getKb&step=kbdetail_bz&channel=jrkb&xnxq=<termId>&week=''. 另有 jwApi.jsp(head[sign]包param签名, action=jw_apply)用于空教室 kxjs。返回JSON业务字段直接明文。",
+  "exact_regex_or_code_snippet": "课表返回结构(GreenFruitCourse): {xn, zc(当前周), maxjc, qssj, jssj, week1..week7: [ {kcmc课程名, skdd教室, rkjs教师, jcxx节次'3-4'(start-end, step=end-start+1), skzs周次'1-18周', jcdm'03,04', skbjmc班级, xf学分, jsdm} ], sjhjinfo}。请求构造: hashMap.put(\"action\",\"getKb\"); hashMap.put(\"step\",\"kbdetail_bz\"); hashMap.put(\"xnxq\",termId); hashMap.put(\"channel\",\"jrkb\"); → EncryptMethod.encrypt(hashMap,token) → POST fields param/param2/token/appinfo。登录返回判定 flag=='0' 成功; token取 profile.getToken(); userid格式='学校ID_学号'。",
+  "verdict": "PRIMARY",
+  "verdict_reason": "青果(kingosoft)移动教务协议完整文档: 端点/加密(param='ju8opt'密钥字符加密+param2=MD5)/三接口action语义/课表week1..week7 JSON结构全部有据。课表字段 kcmc/skdd/rkjs/jcxx/skzs 与 Sleepy 现有 qingguo 类协议字段一致, 可作字段级印证与缺失细节(加密算法、param2生成、登录参数表)的权威参照。"
+}

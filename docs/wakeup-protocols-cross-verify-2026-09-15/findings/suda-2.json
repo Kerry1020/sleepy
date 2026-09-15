@@ -1,0 +1,16 @@
+{
+  "repo_name": "yuanyuanzijin/dutsso",
+  "stars": 51,
+  "default_branch": "master",
+  "license": null,
+  "relevant_files": [
+    "dutsso.py",
+    "examples/22_yjs_get_score.py",
+    "examples/21_yjs_get_plan.py",
+    "examples/23_yjs_choose_course.py"
+  ],
+  "protocol_approach": "大连理工 SSO(CAS) 模块, 研究生教务 202.118.65.123/pyxx/*.aspx (ASP.NET, ContentPlaceHolder id=MainWork)。选课列表/成绩/培养方案统一解析 `#MainWork_dgData tr` (跳过表头 [1:]); 选修成绩表解析 `#MainWork_Datagrid1 tr` — code search 命中的 token 实为 DataGrid 的变体拼写 'Datagrid1', 且只出现在成绩读取路径, 与课表无关。表格全部是普通逐行列表 (td 固定下标取字段), 非 rowspan 网格课表; 上课时间以文本列 c_time 原样带出, 不做周次展开。ASP.NET 回传靠 __VIEWSTATE/__EVENTVALIDATION + __EVENTTARGET='ctl00$MainWork$dgData$ctlNN$Linkbutton2' 事件串, 印证同族 aspx 门户的 postback 协议形态。",
+  "exact_regex_or_code_snippet": "dutsso.py:567 `xx_scores = soup.select('#MainWork_Datagrid1 tr')[1:]`; :550 `bx_scores = soup.select('#MainWork_dgData tr')[1:]`; :645 `tr_list = soup.select(\"#MainWork_dgData tr\")[1:]`; :753 `__EVENTTARGET = \"ctl00$MainWork$dgData$ctl%s$Linkbutton2\" % course_tr['c_position']`。全文件 0 处 '课程：'/'主讲教师：' 标记, 0 处 第N-M周 regex, 0 处 rowspan 处理。",
+  "verdict": "inconclusive-for-timetable",
+  "verdict_reason": "MainWork_DataGrid1 命中坐实的是大连理工研究生教务 (不同学校, 202.118.65.123/pyxx) 的成绩/选课列表页, 证明 'MainWork_+DataGrid 系' 是 ASP.NET MasterPage ContentPlaceHolder 内 DataGrid 控件 id 的同族命名模式 (dgData/Datagrid1/dgListSw 并存于同页), 支持这种 id 在苏大同类门户上出现的合理性; 但该仓不含网格课表解析、无 '课程：'/'主讲教师：' 行标记、无 '第N-M周(单|双)' regex、无 rowspan 处理, 对 Sleepy suda_post 的课表解析实现细节不构成独立佐证, 只佐证命名族与 aspx postback 骨架。"
+}

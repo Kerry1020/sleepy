@@ -1,0 +1,230 @@
+[
+ {
+  "project": "Dawn-Course",
+  "author": "HF-CYGG",
+  "license": "GPL-3.0",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "shiguang_warehouse",
+  "author": "XingHeYuZhuan",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "WakeUp_SHU",
+  "author": "ershiyidian",
+  "license": "NOASSERTION",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "CourseTable",
+  "author": "NYIST-CIPS",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "CourseHelper",
+  "author": "jiangyiqi99",
+  "license": "GPL-3.0",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "aischedule-lit-kingosoft",
+  "author": "icepie",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "XiaoAISchedule_hebust",
+  "author": "web1n",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "ai-schedule-chaoxing",
+  "author": "moeshin",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "tzvcst-schedule-chaoxing",
+  "author": "Sittymin",
+  "license": "AGPL-3.0",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "xiaoai-shuwei-course",
+  "author": "ZKJJaker",
+  "license": null,
+  "role_in_verification": "NEGATIVE"
+ },
+ {
+  "project": "jxufe-auto-evaluate",
+  "author": "wzj1122",
+  "license": "MIT",
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "KINGOSOFT-LOGIN",
+  "author": "52funny",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "WakeupSchedule_Kotlin",
+  "author": "tKM9WsmQUaUgNttn3DGUsHkxG8",
+  "license": null,
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "xiaoaiSchedule",
+  "author": "xiaxiaoyu8",
+  "license": null,
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "mi-schedule",
+  "author": "Kou-JunHao",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "AISchedule-xjsf",
+  "author": "ltxhhz",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "AIScheduleSCAU",
+  "author": "greyovo",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "MI_AI_Course_Schedule",
+  "author": "ceresOPA",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "AISchedule-QiangZhi",
+  "author": "MyLikeGirl",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "ScheduleXParser_SCAU",
+  "author": "greyovo",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "classpush",
+  "author": "sungithub270",
+  "license": "GPL-3.0",
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "XiaoAiScheduleOfSUOT",
+  "author": "trueWangSyutung",
+  "license": null,
+  "role_in_verification": "强智参照"
+ },
+ {
+  "project": "XiaoAiCurriculumSchedule",
+  "author": "LukeJean",
+  "license": null,
+  "role_in_verification": "强智参照"
+ },
+ {
+  "project": "getICS",
+  "author": "Konata09",
+  "license": null,
+  "role_in_verification": "强智参照"
+ },
+ {
+  "project": "WITClassScheduleToCalendar",
+  "author": "DOROMOLLL",
+  "license": "MIT",
+  "role_in_verification": "强智参照"
+ },
+ {
+  "project": "CrawlerCourseTable",
+  "author": "canliture",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "SYU_KINGGOClassSel",
+  "author": "XTAI9",
+  "license": null,
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "hait_AICourseTable",
+  "author": "zzzsq1",
+  "license": null,
+  "role_in_verification": "NULL_EVIDENCE"
+ },
+ {
+  "project": "AIShedule_cqwu",
+  "author": "cqwu-ehall",
+  "license": "AGPL-3.0",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "WakeUpSchedule",
+  "author": "Daydream357",
+  "license": "MIT",
+  "role_in_verification": "INDIRECT"
+ },
+ {
+  "project": "suda-yjs-shedule",
+  "author": "heriec",
+  "license": null,
+  "role_in_verification": "partial"
+ },
+ {
+  "project": "shike-android",
+  "author": "sw7943604-del",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "shiguang_Tester",
+  "author": "XingHeYuZhuan",
+  "license": "MIT",
+  "role_in_verification": "工具"
+ },
+ {
+  "project": "dutsso",
+  "author": "yuanyuanzijin",
+  "license": null,
+  "role_in_verification": "inconclusive-for-timetable"
+ },
+ {
+  "project": "pub-docs",
+  "author": "zfman",
+  "license": null,
+  "role_in_verification": "PRIMARY"
+ },
+ {
+  "project": "NEU-JWXT-Toolkit",
+  "author": "RekaYOO",
+  "license": "MIT",
+  "role_in_verification": "POSITIVE"
+ },
+ {
+  "project": "eduData-GoBack",
+  "author": "huhu415",
+  "license": null,
+  "role_in_verification": "supports"
+ },
+ {
+  "project": "NUISTTable",
+  "author": "zyc-816",
+  "license": null,
+  "role_in_verification": "POSITIVE"
+ }
+]
