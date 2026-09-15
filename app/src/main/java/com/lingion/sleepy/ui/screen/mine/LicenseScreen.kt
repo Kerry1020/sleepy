@@ -512,6 +512,10 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     PerSchoolEntry(
         "school-swjtu", "西南交通大学 SWJTU",
         "AmaneSuzuha000/SWJTU_Login (YHXT CAS + ytoken cookie + common API 直接证据)\n1-nuo/swjtu-course-grabber (ytoken 请求头 + JWT sub 学号 + SM2 选课加密)\nArex-lbb/auto-course-grabber (JWT + SM2 + A0422 失效码)\n1837634311/SWJTU-Course-Management-Script (GPL-3.0, TMS/vatuu 反向证据)\nHackSwjtu/Postime (MIT, 老教务网反向证据)\nlpzams/swjtu-course-crawler (旧 vatuu 反向证据)\n949144093/SWJTU-JiaoWuAutoLogin (旧 vatuu 反向证据)\nkakasearch/course_download (旧 vatuu 反向证据)\nzx1411057234/VatuuSpider (旧 vatuu 反向证据)\nkashaku/no-vatuu-evaluation (旧 vatuu 反向证据)\nJoe-create-star/swjtu-dektx-reminder (MIT, OCW/YETHAN 多租户旁证)"
+    ),
+    PerSchoolEntry(
+        "school-wakeup-family", "WakeUp 兼容协议族调研",
+        "Dawn-Course (HF-CYGG, GPL-3.0)\nWakeUp_SHU (ershiyidian)\nCourseHelper (jiangyiqi99, GPL-3.0)\naischedule-lit-kingosoft (icepie, MIT)\nXiaoAISchedule_hebust (web1n)\nai-schedule-chaoxing (moeshin, MIT)\ntzvcst-schedule-chaoxing (Sittymin, AGPL-3.0)\nxiaoai-shuwei-course (ZKJJaker, 反向证据)\njxufe-auto-evaluate (wzj1122, MIT)\nKINGOSOFT-LOGIN (52funny)\nxiaoaiSchedule (xiaxiaoyu8)\nmi-schedule (Kou-JunHao, MIT)\nAISchedule-xjsf (ltxhhz, MIT)\nAIScheduleSCAU (greyovo)\nMI_AI_Course_Schedule (ceresOPA)\nAISchedule-QiangZhi (MyLikeGirl)\nclasspush (sungithub270, GPL-3.0)\nXiaoAiScheduleOfSUOT (trueWangSyutung)\nXiaoAiCurriculumSchedule (LukeJean)\ngetICS (Konata09)\nWITClassScheduleToCalendar (DOROMOLLL, MIT)\nCrawlerCourseTable (canliture)\nSYU_KINGGOClassSel (XTAI9)\nhait_AICourseTable (zzzsq1)\nAIShedule_cqwu (cqwu-ehall, AGPL-3.0)\nWakeUpSchedule (Daydream357, MIT)\nshike-android (sw7943604-del)\nshiguang_Tester (XingHeYuZhuan, MIT)\ndutsso (yuanyuanzijin)\npub-docs (zfman, 青果接口文档)\neduData-GoBack (huhu415)\nNUISTTable (zyc-816)"
     )
 )
 
