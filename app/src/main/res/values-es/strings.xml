@@ -350,6 +350,12 @@
     <string name="n_courses">%1$d</string>
     <string name="action_close">Cerrar</string>
 
+    <string name="import_drafts">Borradores de importación</string>
+    <string name="import_drafts_empty">No hay borradores de importación guardados</string>
+    <string name="import_draft_restore">Restaurar borrador</string>
+    <string name="import_draft_delete">Eliminar borrador</string>
+    <string name="import_draft_saved_at">Guardado %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">Por favor cree un horario primero</string>
     <string name="widget_open_sleepy">Abre Sleepy para agregar</string>
@@ -453,6 +459,11 @@
     <string name="theme_name_slate">Pizarra</string>
 <string name="default_table_with_num">Predeterminado %1$d</string>
     <string name="new_course">Nueva materia</string>
+    <string name="jw_import_exit_title">¿Salir de la importación?</string>
+    <string name="jw_import_exit_message">La importación no ha terminado. Puedes conservar un borrador para continuar más tarde.</string>
+    <string name="jw_import_exit_continue">Continuar importando</string>
+    <string name="jw_import_exit_keep_draft">Salir y conservar borrador</string>
+    <string name="jw_import_exit_delete_draft">Salir y eliminar borrador</string>
     <string name="jw_import_title">Importar - %1$s</string>
     <string name="month_day_format">%1$d/%2$d</string>
     <string name="section_short">%1$d</string>

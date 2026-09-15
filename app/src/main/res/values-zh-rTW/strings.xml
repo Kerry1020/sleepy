@@ -350,6 +350,12 @@
     <string name="n_courses">%1$d 門</string>
     <string name="action_close">關閉</string>
 
+    <string name="import_drafts">匯入草稿</string>
+    <string name="import_drafts_empty">目前沒有已儲存的匯入草稿</string>
+    <string name="import_draft_restore">恢復草稿</string>
+    <string name="import_draft_delete">刪除草稿</string>
+    <string name="import_draft_saved_at">儲存於 %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">請先建立課表</string>
     <string name="widget_open_sleepy">開啟 Sleepy 開始新增</string>
@@ -453,6 +459,11 @@
     <string name="theme_name_slate">石板灰</string>
 <string name="default_table_with_num">預設%1$d</string>
     <string name="new_course">新課程</string>
+    <string name="jw_import_exit_title">退出匯入？</string>
+    <string name="jw_import_exit_message">目前匯入尚未完成，退出後可以保留草稿供稍後繼續。</string>
+    <string name="jw_import_exit_continue">繼續匯入</string>
+    <string name="jw_import_exit_keep_draft">退出並保留草稿</string>
+    <string name="jw_import_exit_delete_draft">退出並刪除草稿</string>
     <string name="jw_import_title">教務匯入 - %1$s</string>
     <string name="month_day_format">%1$d月%2$d日</string>
     <string name="section_short">%1$d</string>
