@@ -284,6 +284,12 @@ fun JwWebViewLoginScreen(
                         evaluateFetchWithTimeout(wv, NEU_FETCH_JS)
                         return@CaptureBar
                     }
+                    // SWJTU YETHAN 逐专平台：CAS 登录后从 localStorage 取 ytoken，
+                    // 同源 GET 课表 JSON；不发送采集包中的真实 token。
+                    if (school.type == JwProtocol.TYPE_YETHAN) {
+                        evaluateFetchWithTimeout(wv, YETHAN_FETCH_JS)
+                        return@CaptureBar
+                    }
                     // CQU（重庆大学门户）：同走 JS 桥 fetch 四个 REST API，Bearer token 取自 localStorage
                     if (school.type == JwProtocol.TYPE_CQU) {
                         evaluateFetchWithTimeout(wv, CQU_FETCH_JS)
@@ -760,9 +766,56 @@ const val NEU_FETCH_JS = """
  *
  * 接口形状外部佐证：时光课程表 cqu.js（茵符草）、321CQU/pymycqu course/tools.py。
  */
-private const val CQU_FETCH_JS = """
+private const val YETHAN_FETCH_JS = """
 (function(){
   try {
+    if (location.hostname !== 'yhxt.swjtu.edu.cn') {
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'请先登录西南交通大学逐专平台后再点导入'}));
+      return;
+    }
+    var token = '';
+    try { token = localStorage.getItem('ytoken') || ''; } catch(e) {}
+    if (!token) {
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'未取到登录凭据，请先登录逐专平台后再点导入'}));
+      return;
+    }
+    var headers = {Accept:'application/json', 'ytoken':token};
+    var get = function(path) {
+      return fetch(path, {method:'GET', credentials:'include', headers:headers}).then(function(r) {
+        return r.text().then(function(txt) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return txt;
+        });
+      });
+    };
+    Promise.all([
+      get('/yethan/common/course-schedule/student-course-schedule'),
+      get('/yethan/common-config')
+    ]).then(function(values){
+      var schedule = JSON.parse(values[0]);
+      var config = JSON.parse(values[1]);
+      if (!schedule || (schedule.code !== '00000' && schedule.code !== 0)) {
+        var code = schedule && schedule.code ? String(schedule.code) : 'unknown';
+        throw new Error('课表接口返回 ' + code + '（登录态可能已过期，请刷新重登）');
+      }
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({
+        ok:true,
+        data:values[0],
+        yethanConfig:config
+      }));
+    }).catch(function(e){
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:String(e)}));
+    });
+  } catch(err) {
+    window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:String(err)}));
+  }
+})();
+"""
+
+/**
+ * CQU（重庆大学门户）fetch 脚本：Bearer token 取自 localStorage。
+ */
+private const val CQU_FETCH_JS = """
     if (location.hostname.indexOf('cqu.edu.cn') < 0) {
       window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'请先登录并进入重庆大学门户后再点导入'}));
       return;

@@ -2383,6 +2383,14 @@
   },
   {
     "sortKey": "X",
+    "name": "西南交通大学",
+    "url": "https://yhxt.swjtu.edu.cn/",
+    "type": "yethan",
+    "aliases": ["swjtu", "yethan"],
+    "sortKeyFull": "xinanjiaotongdaxue"
+  },
+  {
+    "sortKey": "X",
     "name": "西南交通大学希望学院",
     "url": "http://119.6.110.75:9007",
     "type": "urp",
