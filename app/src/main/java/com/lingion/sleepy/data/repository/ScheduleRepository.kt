@@ -21,6 +21,7 @@ class ScheduleRepository(private val db: AppDatabase) {
 
     private val courseDao = db.courseDao()
     private val tableDao = db.timeTableDao()
+    private val periodTableDao = db.periodTableDao()
 
     // ========== v7.10.16 单级撤回 ==========
 
@@ -34,11 +35,12 @@ class ScheduleRepository(private val db: AppDatabase) {
         UndoManager.capture(
             tables = tableDao.getAll(),
             courses = courseDao.getAll(),
-            defaultTableId = tableDao.getDefault()?.id
+            defaultTableId = tableDao.getDefault()?.id,
+            periodTables = periodTableDao.getAll()
         )
     }
 
-    /** 撤回最近一次改动: 事务内清两表→重插快照→恢复 default → 刷 widget/通知。false = 无可撤回 */
+    /** 撤回最近一次改动: 事务内清三表→按外键顺序重插快照→恢复 default → 刷 widget/通知。false = 无可撤回 */
     suspend fun restoreLastSnapshot(): Boolean {
         val snap = UndoManager.poll() ?: return false
         UndoManager.restoring = true
@@ -46,8 +48,11 @@ class ScheduleRepository(private val db: AppDatabase) {
             db.withTransaction {
                 courseDao.deleteAll()
                 tableDao.deleteAll()
-                // 先插 tables 再插 courses — courses.tableId 有外键指向 time_tables.id,
-                // 顺序颠倒(先课程后课表)会触发外键约束 SQLiteConstraintException 闪退
+                // issue#40: 恢复顺序 period_tables → time_tables → courses。
+                // time_tables.periodTableId 指向 period_tables.id — 先插 periodTables
+                // 保证引用目标先存在; 先课程后课表会触发外键约束闪退。
+                periodTableDao.deleteAll()
+                periodTableDao.insertAll(snap.periodTables)
                 tableDao.insertAll(snap.tables)
                 courseDao.insertAll(snap.courses)
                 snap.defaultTableId?.let { tableDao.setDefault(it) }
@@ -140,6 +145,90 @@ class ScheduleRepository(private val db: AppDatabase) {
         // 导入建新表路径的快照由同批内的 insertTable/insertCourses 捕获, 不受影响。
         tableDao.setDefault(id)
         onDataChanged()
+    }
+
+    // ========== PeriodTable (issue#40 独立时间节次表) ==========
+
+    fun observeAllPeriodTables(): Flow<List<com.lingion.sleepy.data.entity.PeriodTableEntity>> =
+        periodTableDao.observeAll()
+
+    suspend fun getAllPeriodTables(): List<com.lingion.sleepy.data.entity.PeriodTableEntity> =
+        periodTableDao.getAll()
+
+    suspend fun getPeriodTable(id: Long): com.lingion.sleepy.data.entity.PeriodTableEntity? =
+        periodTableDao.getById(id)
+
+    /** 某时间节次表被多少张课程表绑定 — 管理页"已绑定 N 张课表"与删除守卫共用 */
+    suspend fun periodTableBoundCount(id: Long): Int = periodTableDao.boundTableCount(id)
+
+    /**
+     * 有效时间节次表解析(设计 §5.1): 绑定表存在 → 返回它;
+     * 绑定指向已删除的 id(悬空引用, 仅可能来自旧数据/导入)或未绑定 → null, 调用方回退旧兼容列。
+     */
+    suspend fun effectivePeriodTable(tableId: Long): com.lingion.sleepy.data.entity.PeriodTableEntity? {
+        val table = tableDao.getById(tableId) ?: return null
+        val boundId = table.periodTableId ?: return null
+        return periodTableDao.getById(boundId)
+    }
+
+    /** 新建时间节次表, 返回新 id。独立写动作 = 独立撤回单元。 */
+    suspend fun insertPeriodTable(table: com.lingion.sleepy.data.entity.PeriodTableEntity): Long {
+        captureForUndo()
+        val now = System.currentTimeMillis()
+        val withStamp = if (table.createdAt == 0L) table.copy(createdAt = now, updatedAt = now) else table
+        return periodTableDao.insert(withStamp)
+    }
+
+    /**
+     * 复制时间节次表(设计 §4.2): 生成新实体, 原表与原绑定关系零改动。返回新副本 id。
+     */
+    suspend fun copyPeriodTable(sourceId: Long): Long {
+        val src = periodTableDao.getById(sourceId) ?: return -1L
+        captureForUndo()
+        val copy = src.copy(
+            id = 0,
+            name = src.name,   // 名称原样保留, UI 层决定是否加"副本"后缀
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        return periodTableDao.insert(copy)
+    }
+
+    /**
+     * 换绑(设计 §5.3): 只写 time_tables.periodTableId, 课程行零改动。
+     * periodTableId=null = 解绑(回退旧兼容列)。
+     * 悬空目标(periodTableId 不存在)拒绝 — 禁止制造悬空引用。
+     */
+    suspend fun bindPeriodTable(timeTableId: Long, periodTableId: Long?) {
+        // 守卫先行 — 课表不存在/目标悬空时不写库也不拍快照(无效动作不得点亮撤回键)
+        val table = tableDao.getById(timeTableId) ?: return
+        if (periodTableId != null && periodTableDao.getById(periodTableId) == null) return
+        captureForUndo()
+        tableDao.update(table.copy(periodTableId = periodTableId))
+        onDataChanged()
+    }
+
+    /**
+     * 修改时间节次表内容(设计 §5.2): 更新实体+updatedAt。
+     * 所有绑定课表经 effectivePeriodTable 立即读到新作息, 课程行不重算。
+     */
+    suspend fun updatePeriodTable(table: com.lingion.sleepy.data.entity.PeriodTableEntity) {
+        captureForUndo()
+        periodTableDao.update(table.copy(updatedAt = System.currentTimeMillis()))
+        onDataChanged()
+    }
+
+    /**
+     * 删除守卫(设计 §7): 被引用的时间节次表禁止删除(返回 false), 无绑定才真删。
+     * 禁止产生悬空引用。
+     */
+    suspend fun deletePeriodTable(id: Long): Boolean {
+        // 删除守卫先行 — 被引用时不动库也不拍快照, 禁止产生悬空引用
+        if (periodTableDao.boundTableCount(id) > 0) return false
+        captureForUndo()
+        periodTableDao.deleteById(id)
+        onDataChanged()
+        return true
     }
 
     suspend fun tableCount(): Int = tableDao.count()

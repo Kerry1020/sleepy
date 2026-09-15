@@ -1,5 +1,6 @@
 package com.lingion.sleepy.data.undo
 
+import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.TimeTableEntity
 import org.junit.Test
 
@@ -85,5 +86,27 @@ class UndoManagerTest {
         UndoManager.capture(listOf(TimeTableEntity(id = 1, name = "A", startDate = "")), emptyList(), 1L)
         UndoManager.capture(listOf(TimeTableEntity(id = 1, name = "A", startDate = ""), TimeTableEntity(id = 3, name = "B", startDate = "")), emptyList(), 1L)
         check(UndoManager.poll()?.tables?.any { it.id == 3L } == true)
+    }
+
+    @Test
+    fun `snapshot carries periodTables for issue40 undo`() {
+        // issue#40: 撤回快照必须含独立时间节次表, 否则撤回建时间表类动作后
+        // period_tables 残留/绑定丢失
+        UndoManager.clear()
+        val p1 = PeriodTableEntity(id = 5, name = "春季作息")
+        UndoManager.capture(emptyList(), emptyList(), null, listOf(p1))
+        val snap = UndoManager.poll()
+        check(snap?.periodTables?.single()?.id == 5L)
+        check(snap.periodTables.single().name == "春季作息")
+    }
+
+    @Test
+    fun `legacy three-arg capture still compiles with empty periodTables`() {
+        // 兼容: 旧三参数位置调用不得因新参数破坏
+        UndoManager.clear()
+        UndoManager.capture(listOf(TimeTableEntity(id = 1, name = "T", startDate = "")), emptyList(), 1L)
+        val snap = UndoManager.poll()
+        check(snap?.periodTables?.isEmpty() == true)
+        check(snap.defaultTableId == 1L)
     }
 }
