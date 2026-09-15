@@ -20,6 +20,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  *   v5 → v6: 加 courses.alias (issue#26 课程别名)
  *     - 列: TEXT NOT NULL DEFAULT ''
  *     - 旧库所有行 alias='' → 处处显示原名, 行为不变
+ *   v6 → v7: 独立时间节次表 (issue#40)
+ *     - 新表 period_tables (id/name/nodesPerDay/timeJson/smartConfigJson/createdAt/updatedAt)
+ *     - 加 time_tables.periodTableId (INTEGER, 可空)
+ *     - 迁移: 每张旧课表生成一张独立时间节次表(继承 timeJson/smartConfigJson/nodesPerDay),
+ *       periodTableId 指过去 — 旧用户课表不意外共享同一份作息
+ *     - 旧 timeJson/smartConfigJson/nodesPerDay 保留为兼容列(异常回退)
  */
 val MIGRATION_3_4: Migration = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -44,10 +50,70 @@ val MIGRATION_5_6: Migration = object : Migration(5, 6) {
     }
 }
 
+val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_6_7_SCHEMA_STATEMENTS.forEach { db.execSQL(it) }
+
+        // Keep the old timetable ids in the new table. This makes the backfill
+        // deterministic and lets the following UPDATE be checked row by row.
+        db.query(
+            """
+            SELECT id, name, nodesPerDay, timeJson, smartConfigJson, createdAt
+            FROM time_tables
+            ORDER BY id
+            """.trimIndent()
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+                val name = cursor.getString(1)
+                val nodesPerDay = cursor.getInt(2)
+                val timeJson = cursor.getString(3)
+                val smartConfigJson = cursor.getString(4)
+                val createdAt = cursor.getLong(5)
+                db.execSQL(
+                    """
+                    INSERT INTO period_tables
+                      (id, name, nodesPerDay, timeJson, smartConfigJson, createdAt, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                    arrayOf(id, name, nodesPerDay, timeJson, smartConfigJson, createdAt, createdAt)
+                )
+                db.execSQL(
+                    "UPDATE time_tables SET periodTableId = ? WHERE id = ?",
+                    arrayOf(id, id)
+                )
+            }
+        }
+    }
+}
+
 /** 当前已注册的全部 Migration — AppDatabase.Companion.get() 链入 */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+    MIGRATION_3_4,
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7
+)
 
 /** issue#26: v5→v6 逐条 SQL — 单一事实来源, CourseAliasMigrationTest 用 sqlite-jdbc 直接执行同一份 */
+
 internal val MIGRATION_5_6_STATEMENTS: List<String> = listOf(
     "ALTER TABLE courses ADD COLUMN alias TEXT NOT NULL DEFAULT ''"
+)
+
+/** v6→v7 的静态 schema SQL — 迁移测试与 Room 共用同一份 SQL。 */
+internal val MIGRATION_6_7_SCHEMA_STATEMENTS: List<String> = listOf(
+    """
+    CREATE TABLE period_tables (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        name TEXT NOT NULL,
+        nodesPerDay INTEGER NOT NULL,
+        timeJson TEXT NOT NULL,
+        smartConfigJson TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+    )
+    """.trimIndent(),
+    "CREATE INDEX index_period_tables_createdAt ON period_tables(createdAt)",
+    "ALTER TABLE time_tables ADD COLUMN periodTableId INTEGER"
 )

@@ -40,5 +40,12 @@ data class TimeTableEntity(
      */
     @ColumnInfo(name = "smartConfigJson") val smartConfigJson: String = "",
 
-    @ColumnInfo(name = "createdAt") val createdAt: Long = System.currentTimeMillis()
+    @ColumnInfo(name = "createdAt") val createdAt: Long = System.currentTimeMillis(),
+
+    /**
+     * issue#40 绑定的独立时间节次表 (period_tables.id)。null = 未绑定(用旧 timeJson 兼容列)。
+     * 课程表 → 时间节次表的单向引用; 一张时间节次表可被多张课程表引用。
+     * 修改所绑时间表 = 本表立即按新作息解释节次; 课程行 startNode/step 不重算。
+     */
+    @ColumnInfo(name = "periodTableId") val periodTableId: Long? = null
 )
