@@ -53,8 +53,8 @@ class WidgetSection9FixesTest {
     @Test
     fun `weeklist gate measures compact face for small variant`() {
         val s = src("WeekListWidget.kt")
-        // §9.1 (2026-09-14 改版): compact 脸闸门 = 今天邻域 ≤3 列实际列集, 仅非 forceScroll
-        assertTrue(s.contains("weekViewCompactColumns("))
+        // §9.1 (2026-09-15 改版): compact 脸闸门 = compactShownDays 单一口径 (三天窗口优先)
+        assertTrue(s.contains("compactShownDays("))
         assertTrue(s.contains("if (!forceScroll && compactFace)"))
         assertFalse("两行纯文本闸门禁回流", s.contains("weekListCompactTexts"))
     }
@@ -62,8 +62,8 @@ class WidgetSection9FixesTest {
     @Test
     fun `weekview gate caliber split face vs strip`() {
         val s = src("WeekViewWidget.kt")
-        // §9.1: compact 脸按 weekViewCompactColumns 实际列集测量
-        assertTrue(s.contains("weekViewCompactColumns("))
+        // §9.1 (2026-09-15 改版): compact 脸按 compactShownDays 实际列集测量 (三天窗口优先)
+        assertTrue(s.contains("compactShownDays("))
         // §9.5: 静态脸闸门 take(5) 封顶; 条带全量口径 (无参=Int.MAX_VALUE) 仅 forceScroll 分支
         assertTrue(
             "§9.5: 闸门两处静态口径必须 maxCoursesPerDay = 5",

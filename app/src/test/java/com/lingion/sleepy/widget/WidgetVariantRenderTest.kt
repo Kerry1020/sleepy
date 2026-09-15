@@ -196,7 +196,8 @@ class WidgetVariantRenderTest {
             dir = dir.parentFile
         }
         val fn = r.substringAfter("private fun renderWeekListCompact").substringBefore("fun renderWeekList(")
-        assertTrue("compact 档必须复用 compact 列选取", fn.contains("weekViewCompactColumns("))
+        // 2026-09-15: 列选取升级为 compactShownDays (compactWindow 优先, 回退 weekViewCompactColumns)
+        assertTrue("compact 档必须复用 compact 列选取单一口径", fn.contains("compactShownDays("))
         assertTrue("compact 档必须走 Regular 渲染器", fn.contains("renderWeekListRegular("))
         assertFalse("纯文本脸 weekListCompactTexts 禁回流", r.contains("weekListCompactTexts"))
         // 列选取本身 (今天邻域 ≤3 列) 由 weekViewCompactColumns 既有单测锁定
@@ -264,6 +265,76 @@ class WidgetVariantRenderTest {
     fun `weekView small receiver declares SMALL variant`() {
         assertEquals(WidgetVariant.SMALL, WeekViewSmallWidgetReceiver().variantHint)
         assertEquals(WidgetVariant.REGULAR, com.lingion.sleepy.widget.WeekViewWidgetReceiver().variantHint)
+    }
+
+    // ── 最小档三天窗口 (2026-09-15 用户令): 今日居第一位/第二位, 上下周打通 ──
+
+    @Test
+    fun `compact window today first is today plus two`() {
+        val wed = LocalDate.of(2026, 9, 2)
+        assertEquals(
+            listOf(wed, wed.plusDays(1), wed.plusDays(2)),
+            WidgetBitmapRenderers.compactWindowDates(wed, todayFirst = true)
+        )
+    }
+
+    @Test
+    fun `compact window today first sunday rolls into next week`() {
+        // 周日(2026-09-06)居第一位 → 日、一、二 — 下周一二顺上来
+        val sun = LocalDate.of(2026, 9, 6)
+        assertEquals(
+            listOf(sun, sun.plusDays(1), sun.plusDays(2)),
+            WidgetBitmapRenderers.compactWindowDates(sun, todayFirst = true)
+        )
+    }
+
+    @Test
+    fun `compact window today second monday includes last sunday`() {
+        // 周一(2026-08-31)居第二位 → 上周日、周一、周二 — 窗口越出本周
+        val mon = LocalDate.of(2026, 8, 31)
+        assertEquals(
+            listOf(mon.minusDays(1), mon, mon.plusDays(1)),
+            WidgetBitmapRenderers.compactWindowDates(mon, todayFirst = false)
+        )
+    }
+
+    @Test
+    fun `compact shown days prefers window in date order across weeks`() {
+        // 跨周窗口 [周日(7),周一(1),周二(2)] 必须按日期升序, 不得按 dayOfWeek 重排
+        val mon = LocalDate.of(2026, 8, 31)
+        val win = listOf(
+            DayData(mon.minusDays(1), 7, listOf(testCourse(name = "上周日课", startNode = 1)), TimeTableUtils.DEFAULT_TIME_JSON),
+            DayData(mon, 1, listOf(testCourse(name = "周一课", startNode = 1)), TimeTableUtils.DEFAULT_TIME_JSON),
+            DayData(mon.plusDays(1), 2, listOf(testCourse(name = "下周二课", startNode = 1)), TimeTableUtils.DEFAULT_TIME_JSON),
+        )
+        val data = weekDataAllDays().copy(compactWindow = win)
+        val shown = WidgetBitmapRenderers.compactShownDays(data, visibleDays = (1..7).toSet(), todayDow = 1)
+        assertEquals(listOf(mon.minusDays(1), mon, mon.plusDays(1)), shown.map { it.date })
+    }
+
+    @Test
+    fun `compact shown days window respects visibleDays and defends empty filter`() {
+        val mon = LocalDate.of(2026, 8, 31)
+        val win = listOf(
+            DayData(mon.minusDays(1), 7, emptyList(), TimeTableUtils.DEFAULT_TIME_JSON),
+            DayData(mon, 1, emptyList(), TimeTableUtils.DEFAULT_TIME_JSON),
+            DayData(mon.plusDays(1), 2, emptyList(), TimeTableUtils.DEFAULT_TIME_JSON),
+        )
+        val data = weekDataAllDays().copy(compactWindow = win)
+        // 隐藏周日 → 只剩周一二
+        assertEquals(
+            listOf(mon, mon.plusDays(1)),
+            WidgetBitmapRenderers.compactShownDays(data, visibleDays = setOf(1, 2), todayDow = 1).map { it.date }
+        )
+        // 过滤后为空 → 回退全窗口 (防御)
+        assertEquals(3, WidgetBitmapRenderers.compactShownDays(data, visibleDays = setOf(5), todayDow = 1).size)
+    }
+
+    @Test
+    fun `compact shown days falls back to legacy columns without window`() {
+        // compactWindow 空 (旧数据源/预览) → 回退今天邻域 ≤3 列旧口径
+        val shown = WidgetBitmapRenderers.compactShownDays(weekDataAllDays(), visibleDays = (1..7).toSet(), todayDow = 3)
+        assertEquals(listOf(2, 3, 4), shown.map { it.dayOfWeek })
     }
 
     @Test
