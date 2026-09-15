@@ -594,8 +594,8 @@ class JwImportViewModel(application: Application) : AndroidViewModel(application
         tableName: String,
         startDate: String? = null,
         timeJson: String = "",
-        nodesPerDay: Int = 0
-    ): Long = withContext(Dispatchers.IO) {
+        nodesPerDay: Int = 0,
+        smartConfigJson: String = ""    ): Long = withContext(Dispatchers.IO) {
         if (courses.isEmpty()) throw IllegalArgumentException("课程列表为空，请确认已到达课表页面")
 
         val db = AppDatabase.get(getApplication())
@@ -615,7 +615,8 @@ class JwImportViewModel(application: Application) : AndroidViewModel(application
                 startDate = resolvedStartDate,
                 timeJson = timeJson.ifBlank { TimeTableUtils.DEFAULT_TIME_JSON },
                 nodesPerDay = maxNode,
-                isDefault = true  // 导入的课表设为默认，widget 直接展示
+                isDefault = true,  // 导入的课表设为默认，widget 直接展示
+                smartConfigJson = smartConfigJson
             )
             val generatedId = tableDao.insert(newTable)
             // 把其他表设为非 default，确保只有当前表是 default

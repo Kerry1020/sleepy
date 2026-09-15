@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lingion.sleepy.R
+import com.lingion.sleepy.ui.screen.imports.ImportDraft
 import com.lingion.sleepy.ui.screen.imports.ImportSheet
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -53,6 +54,9 @@ fun ManagementPage(
     onEditCurrentTable: () -> Unit,
     onExportRequested: () -> Unit = {},
     onImported: () -> Unit,
+    drafts: List<ImportDraft> = emptyList(),
+    onRestoreDraft: (String) -> Unit = {},
+    onDeleteDraft: (String) -> Unit = {},
     viewModel: ScheduleViewModel = viewModel(),
     autoShowImportSheet: Boolean = false
 ) {
