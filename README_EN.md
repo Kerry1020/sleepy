@@ -53,7 +53,7 @@
 | ABIs | arm64-v8a / armeabi-v7a / x86_64 |
 | Languages | zh-CN · zh-TW · en · ja · es |
 
-Sleepy is an Android timetable app built around three principles: **light, fast, accurate**. It supports direct import from university academic systems (JW), multi-format parsing, five home-screen widget types, daily course notifications, dark mode, and multiple theme presets. The version and supported-school catalogue are maintained in the app's About page and on GitHub Releases.
+Sleepy is an Android timetable app built around three principles: **light, fast, accurate**. It supports direct import from 337 Chinese university academic systems (JW), multi-format parsing, five home-screen widget types in 13 fixed-size variants, daily course notifications, dark mode, and multiple theme presets. The version and supported-school catalogue are maintained in the app's About page and on GitHub Releases.
 
 ---
 
@@ -154,6 +154,8 @@ The protocol catalogue grows with school integrations. The table below shows pro
 
 The school catalogue changes with each release. Choose a listed university for the maintained path, or enter a JW URL in the search field when your university is not listed. Sleepy will try to detect a protocol from the URL and open it for login and import. Success still depends on the university page, its login flow, and a compatible parser.
 
+All supported universities (337) with their JW login URLs and protocol types are listed in **[Supported Schools List](docs/schools-list.md)** — searchable by full name, abbreviation, or pinyin initials; also useful for verifying JW addresses and school renames.
+
 If URL detection or parsing does not work, file an adaptation request with the JW URL and the observed failure. Use the **[collection guide](docs/adapt-kit/README.md)** only when more page or network data is needed. Never include an account, password, verification code, or other personal data in an issue. You can [open an adaptation request](https://github.com/lingion/sleepy/issues/new?template=school_adaptation.yml) directly.
 
 ### Supported Text Formats
@@ -207,23 +209,26 @@ The existing WakeUp share text format remains importable.
 
 ---
 
-## Home-screen Widgets (5 types)
+## Home-screen Widgets (5 types, 13 variants)
 
-Five widget types, refreshed by WorkManager. Layouts adapt to launcher sizing.
+Five widget types across 13 fixed-size variants: Today / TwoDay / WeekList each in regular / small / wide; WeekView / WeekGrid each in regular / small. Layouts adapt to launcher sizing.
 
-| Widget | Default size | Shows | Screenshot |
+| Widget | Variants | Shows | Screenshot |
 |---|---|---|---|
-| **Today** | 4×3 cell (250×180dp) | Today's course list | <p align="left"><img src="docs/screenshots/widget-today.png" width="240"></p> |
-| **TwoDay** | 5×3 cell (320×220dp) | Today + tomorrow, two columns | <p align="left"><img src="docs/screenshots/widget-twoday.png" width="240"></p> |
-| **WeekList** | 5×4 cell (320×200dp) | 7-day course summary + names | <p align="left"><img src="docs/screenshots/widget-weeklist.png" width="240"></p> |
-| **WeekView** | 5×4 cell (320×200dp) | Week-view thumbnail (theme-colored, no capsules) | no separate screenshot |
-| **WeekGrid** | 4×5 cell (250×360dp) | Full time grid + course blocks | <p align="left"><img src="docs/screenshots/widget-weekgrid.png" width="200"></p> |
+| **Today** | regular / small / wide | Today's course list | <p align="left"><img src="docs/screenshots/widget-today.png" width="240"></p> |
+| **TwoDay** | regular / small / wide | Today + tomorrow, two columns | <p align="left"><img src="docs/screenshots/widget-twoday.png" width="240"></p> |
+| **WeekList** | regular / small / wide | 7-day course summary + names | <p align="left"><img src="docs/screenshots/widget-weeklist.png" width="240"></p> |
+| **WeekView** | regular / small | Week-view thumbnail (theme-colored, no capsules) | no separate screenshot |
+| **WeekGrid** | regular / small | Full time grid + course blocks | <p align="left"><img src="docs/screenshots/widget-weekgrid.png" width="200"></p> |
 
 Implementation notes:
 - All five use synchronous RemoteViews + Canvas rendering (since v1.0.29). Heavily customized launchers like OPPO freeze Glance's async SessionWorker, leaving stale cards — hence the port.
+- **v1.0.55: fixed-size layout tiers** — each variant picks a layout for its own size bucket instead of stretching one layout
+- **v1.0.55: experimental scrolling on some variants** (today / twoday / weeklist / weekview) when content exceeds the card height
+- **v1.0.55: refresh at class start/end boundaries** — cards update as period boundaries are crossed
 - Colors sync with the app theme in real time (dark mode + 5 presets)
 - **Three render paths (main app / WeekGrid / screenshot renderer) share identical color logic**: course colors are distributed by golden-angle (137.508°) HSL hue from a hash of the course group — evenly spread and stable per course
-- Refresh: `APPWIDGET_UPDATE` broadcast to all 5 receivers (system-level) + WorkManager every 15 minutes
+- Refresh: `APPWIDGET_UPDATE` broadcast to all receivers (system-level) + WorkManager periodic refresh + class-boundary refresh
 
 ---
 
@@ -349,12 +354,12 @@ sleepy/                                    # Repository root
 │   │   │   │   ├── AppDatabase.kt        # Room database
 │   │   │   │   ├── dao/                  # CourseDao / TimeTableDao
 │   │   │   │   ├── entity/               # CourseEntity / TimeTableEntity / SmartPeriodConfig
-│   │   │   │   ├── jw/                   # 33 JW parsers + JwImportViewModel + JwParity
+│   │   │   │   ├── jw/                   # 43 JW parsers + JwImportViewModel + JwParity
 │   │   │   │   ├── parser/               # ScheduleParser + SleepyNativeParser/Exporter/Format
 │   │   │   │   ├── repository/           # ScheduleRepository
 │   │   │   │   └── undo/                 # UndoManager
 │   │   │   ├── ui/
-│   │   │   │   ├── component/            # 11: CourseTableView / CourseDetailSheet /
+│   │   │   │   ├── component/            # 12: CourseTableView / CourseDetailSheet /
 │   │   │   │   │                         # SmartPeriodEditor / TimeSlotEditor /
 │   │   │   │   │                         # PillNavigationBar / SegmentedSwitcher /
 │   │   │   │   │                         # ConflictCard / DateTimePickers / SettingsCards /
@@ -367,14 +372,14 @@ sleepy/                                    # Repository root
 │   │   │   │   │   ├── manage/           # Course management
 │   │   │   │   │   └── mine/             # Mine / all timetables / edit / theme / export
 │   │   │   │   └── theme/                # Theme + ThemePresets + NoRippleClickable
-│   │   │   ├── util/                     # 17: AppPrefs / DateUtils / LocaleHelper /
+│   │   │   ├── util/                     # 19: AppPrefs / DateUtils / LocaleHelper /
 │   │   │   │                             # TimeTableUtils / CourseColorUtil /
 │   │   │   │                             # ConflictLayoutEngine / ConflictDetailReporter /
 │   │   │   │                             # WeekRangeOverlap / HolidayManager / HolidayRange /
 │   │   │   │                             # HighRefreshRate / PinyinMatcher / MarkdownBlocks /
 │   │   │   │                             # FeedbackComposer / UpdateManager / UpdateInfo /
 │   │   │   │                             # UpdateNotifier / VersionUtils
-│   │   │   └── widget/                   # 21 widget files + notification/ subdirectory
+│   │   │   └── widget/                   # 46 widget Kotlin files + notification/ subdirectory
 │   │   │                                 # (Today/WeekList/WeekView/TwoDay/WeekGrid × Provider + Receiver)
 │   │   │                                 # + WidgetRenderActivity + RemoteViewsWidgetHelper +
 │   │   │                                 # WidgetContent / WidgetBitmapRenderers /
@@ -393,7 +398,7 @@ sleepy/                                    # Repository root
 │   │       ├── values-en/                # English
 │   │       ├── values-ja/                # Japanese
 │   │       ├── values-es/                # Spanish
-│   │       └── xml/                      # 5 widget_info + network/backup rules
+│   │       └── xml/                      # 13 widget_info + network/backup rules
 │   └── libs/                             # seedling-support-lite-3.0.7.aar (dependency not declared)
 ├── docs/
 │   ├── screenshots/                      # 19 screenshots referenced by README
@@ -480,7 +485,7 @@ Prefer to stay on GitHub? [Discussions](https://github.com/lingion/sleepy/discus
 ## Documentation
 
 - **[Try Online](https://sleepy.qdp.qzz.io)** — Web timetable, opens in the browser with no install; supports multi-format import (WakeUp share text / ICS / CSV / Excel), data stays local
-- **[Wiki](https://github.com/lingion/sleepy/wiki)** — 54-page deep manual: every screen, all import/export formats, the five widget families, reminder internals, architecture and codebase map, all cross-linked from the sidebar
+- **[Wiki](https://github.com/lingion/sleepy/wiki)** — per-screen guides, all import/export formats, widget families, reminder internals, architecture and codebase map, all cross-linked from the sidebar
 - **[Operation Guide](https://blog.qdp.qzz.io/docs/sleepy/overview)** — step-by-step user manual covering installation, import, widgets, themes, and troubleshooting
 - **[Technical Write-up](https://blog.qdp.qzz.io/sleepy-material-you-schedule)** — architecture deep-dive: schedule parser engine, gold-angle HSL, Wisedu reverse-engineering, widget rendering pipeline
 

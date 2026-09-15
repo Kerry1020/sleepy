@@ -59,7 +59,7 @@ class WidgetScrollToggleTest {
         val vm = src("widget/WidgetEditViewModel.kt")
         assertTrue("翻转未写本实例位", vm.contains("WidgetScrollStore.setScrollEnabled(ctx, widgetId, v)"))
         assertTrue("状态未读本实例位", vm.contains("WidgetScrollStore.isScrollEnabled(ctx, widgetId)"))
-        assertTrue("族信息未注入", vm.contains("getAppWidgetInfo(widgetId)?.configure?.className"))
+        assertTrue("族信息未注入", vm.contains("info?.provider?.className ?: info?.configure?.className"))
         val body = vm.substringAfter("fun setScrollEnabled")
         assertTrue("setScrollEnabled 未调 notifyDataChanged",
             body.contains("WidgetUpdater.notifyDataChanged(ctx)"))

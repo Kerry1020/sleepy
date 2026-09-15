@@ -46,14 +46,11 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
         // 与渲染器 renderWeekListCompact 同口径 — 旧两行纯文本脸已废);
         // forceScroll 比条带全量 (regular 口径 = 条带口径, WeekList 无 5 门封顶)
         val contentH = if (!forceScroll && compactFace) {
-            val pool = if (visibleDays.isEmpty()) data.days
-                else data.days.filter { it.dayOfWeek in visibleDays }
-            val dows = WidgetBitmapRenderers.weekViewCompactColumns(
-                data.copy(days = pool), LocalDate.now().dayOfWeek.value
-            )
             WidgetBitmapRenderers.weekListContentHeightDp(
                 context,
-                data.copy(days = data.days.filter { it.dayOfWeek in dows }.sortedBy { it.dayOfWeek })
+                data.copy(days = WidgetBitmapRenderers.compactShownDays(
+                    data, visibleDays, LocalDate.now().dayOfWeek.value
+                ))
             )
         } else WidgetBitmapRenderers.weekListContentHeightDp(context, data)
         val shownDays = if (visibleDays.isEmpty()) data.days
@@ -119,7 +116,7 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id) }
+        for (id in appWidgetIds) { WidgetBindingStore.remove(context, id); WidgetScrollStore.remove(context, id); WidgetCompactWindowStore.remove(context, id) }
     }
 
     companion object {
@@ -181,7 +178,12 @@ open class WeekListWidgetReceiver : AppWidgetProvider() {
                                 all.filter { it.inWeek(week) }.sortedBy { it.startNode }
                             DayData(date = date, dayOfWeek = dayOfWeek, courses = visible, timeJson = table.timeJson)
                         }
-                        WeekData(days = days, hasTable = true, isDark = isDark, themeKey = themeKey, semesterStatus = status)
+                        // 最小档三天窗口 (2026-09-15 用户令): 真实日期, 上下周打通
+                        val compactWindow = WidgetCompactWindow.build(
+                            repo, table.id, table.timeJson, table.startDate, table.maxWeek,
+                            today, WidgetCompactWindowStore.isTodayFirst(context, appWidgetId)
+                        )
+                        WeekData(days = days, hasTable = true, isDark = isDark, themeKey = themeKey, semesterStatus = status, compactWindow = compactWindow)
                     }
                 }
             } catch (_: Throwable) {

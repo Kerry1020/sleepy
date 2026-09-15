@@ -36,6 +36,31 @@ object JwProtocol {
     /** 金智 Wisedu jwapp 微应用平台（JSON API 直连，非 HTML 解析）。如：哈尔滨工程大学 jwgl.hrbeu.edu.cn */
     const val TYPE_WISEDU = "wisedu"
 
+    /** WakeUp Kingosoft 新协议，覆盖新青果/金智门户系列。 */
+    const val TYPE_KINGO_NEW = "kingo_new"
+
+    /** WakeUp 金智课程表回退族。 */
+    const val TYPE_JZ = "jz"
+
+    /** WakeUp 南软/研究生课表 HTML 变体。 */
+    const val TYPE_SOUTH_SOFT = "south_soft"
+
+    /** WakeUp 超星旧 JSON/分享变体。 */
+    const val TYPE_CHAOXING_LEGACY = "login_chaoxing"
+
+    /** WakeUp 数维共享课表变体。 */
+    const val TYPE_SHUWEI = "shuwei_json"
+
+    /** WakeUp 苏大 POST/HTML 变体。 */
+    const val TYPE_SUDA_POST = "suda_post"
+
+    /** WakeUp EAMS5 中国矿业大学北京变体。 */
+    const val TYPE_CUMTB = "cumtb"
+
+    /** WakeUp 西交/新疆大学 POST 课表变体。 */
+    const val TYPE_XJU_POST = "xju_post"
+
+
     /**
      * 重庆大学自建统一门户 my.cqu.edu.cn（REST API + Bearer token，非 HTML 解析）。
      * WebView 登录统一身份认证（2026-06 起需动态验证码双因素，人工登录不受影响）后，
@@ -94,6 +119,22 @@ object JwProtocol {
      * 上游协议形态: HFDLYS/BJTUselfService (MIT) + wan300/bjtu_mis_Android (MIT) — 算法自写。
      */
     const val TYPE_BJTU = "bjtu"
+
+    /**
+     * 西南交通大学本部 yhxt.swjtu.edu.cn（YETHAN/以专 逐专平台，自建 JSON API，非 HTML 解析）。
+     * WebView 登录 CAS 后从 localStorage 取 `ytoken`（JWT，同时落 .swjtu.edu.cn cookie），
+     * 请求头 `ytoken: <JWT>`，fetch 接口：
+     *   GET /yethan/common/course-schedule/student-course-schedule（零参数，纯 JSON 无 SM2）
+     *   GET /yethan/public/sys/config/web（TermStart + TermLessonStr 节次时间）
+     * 包络 {"code":"00000","data":[…]}；失效码 401/A0230/A0422（Arex 跨仓验证）。
+     * classTime{N} "7、10-12、14-15周 星期三 5节"（顿号枚举只作用于周次列表，共享一个
+     * 「星期X 节」后缀）；classTime{N}/classPlace{N} 成对槽位 1..40。
+     * SM2 `_j` 加密只在 /register/…、/sport/…（选课），课表接口无 SM2，Sleepy 不需要。
+     * 协议证据：docs/swjtu-cross-verify-2026-09-15/（11 仓，2026-09-15 采集包实锤）。
+     * 外部佐证：AmaneSuzuha000/SWJTU_Login、1-nuo/swjtu-course-grabber、
+     * Arex-lbb/auto-course-grabber（失效码）。
+     */
+    const val TYPE_YETHAN = "yethan"
 
     /**
      * 合肥工业大学教务 (金智 EAMS5, eams5-student 系列, jxglstu.hfut.edu.cn)。
@@ -211,25 +252,36 @@ object JwProtocol {
         TYPE_WISEDU, TYPE_CQU, TYPE_CHAOXING, TYPE_BOYA_PP, TYPE_EAMS5, TYPE_CLASSIC_EAMS, TYPE_PKU, TYPE_BNUZ,
         TYPE_CF, TYPE_HNUST, TYPE_HNIU,
         TYPE_SEU, TYPE_ZJU, TYPE_USTC, TYPE_SCU, TYPE_NEU, TYPE_WHUT,
-        TYPE_BJTU,
+        TYPE_BJTU, TYPE_YETHAN,
         TYPE_ZF, TYPE_ZF_1, TYPE_URP, TYPE_URP_NEW, TYPE_ZF_NEW,
         TYPE_QZ, TYPE_QZ_CRAZY, TYPE_QZ_BR, TYPE_QZ_WITH_NODE, TYPE_QZ_IEAS, TYPE_QZ_APP, TYPE_UCAS, TYPE_QZ_OLD,
     )
 
-    /**
-     * 协议显示名（用于 UI 提示）
-     */
+    /** WakeUp-derived types routed by the compatibility layer; kept separate from legacy UI ordering. */
+    val WAKEUP_COMPAT_TYPES: List<String> = listOf(
+        TYPE_KINGO_NEW, TYPE_JZ, TYPE_SOUTH_SOFT, TYPE_CHAOXING_LEGACY,
+        TYPE_SHUWEI, TYPE_SUDA_POST, TYPE_CUMTB, TYPE_XJU_POST,
+    )
+
     fun displayName(type: String?): String = when (type) {
-        TYPE_QZ, TYPE_QZ_OLD, TYPE_QZ_CRAZY, TYPE_QZ_BR, TYPE_QZ_WITH_NODE -> "强智教务"
         TYPE_QZ_APP -> "强智移动教务"
         TYPE_QZ_IEAS -> "强智教务（iEAS 网络版）"
         TYPE_UCAS -> "国科大选课系统"
         TYPE_BJTU -> "北京交通大学"
+        TYPE_YETHAN -> "西南交通大学 (逐专平台)"
         TYPE_ZF, TYPE_ZF_1, TYPE_ZF_NEW -> "正方教务"
         TYPE_URP, TYPE_URP_NEW -> "URP 教务"
         TYPE_CF -> "青果教务"
         TYPE_PKU -> "北京大学"
         TYPE_BNUZ -> "北师珠"
+        TYPE_KINGO_NEW -> "新青果/金智教务"
+        TYPE_JZ -> "金智教务（WakeUp 兼容）"
+        TYPE_SOUTH_SOFT -> "南软研究生教务"
+        TYPE_CHAOXING_LEGACY -> "超星教务（旧版）"
+        TYPE_SHUWEI -> "数维教务"
+        TYPE_SUDA_POST -> "苏大教务"
+        TYPE_CUMTB -> "矿大 EAMS5"
+        TYPE_XJU_POST -> "西交/新疆大学教务"
         TYPE_WISEDU -> "金智教务（直连）"
         TYPE_CQU -> "重庆大学门户"
         TYPE_CHAOXING -> "超星综合教务"
@@ -259,6 +311,8 @@ object JwProtocol {
         TYPE_UCAS -> "other"
         TYPE_ZF, TYPE_ZF_1, TYPE_ZF_NEW -> "zf"
         TYPE_URP, TYPE_URP_NEW -> "urp"
+        TYPE_KINGO_NEW, TYPE_JZ, TYPE_SOUTH_SOFT, TYPE_CHAOXING_LEGACY,
+        TYPE_SHUWEI, TYPE_SUDA_POST, TYPE_CUMTB, TYPE_XJU_POST -> "other"
         TYPE_WISEDU -> "wisedu"
         TYPE_CQU -> "cqu"
         TYPE_CHAOXING -> "chaoxing"
@@ -267,6 +321,7 @@ object JwProtocol {
         TYPE_CLASSIC_EAMS -> "other"
         TYPE_SEU, TYPE_ZJU, TYPE_USTC, TYPE_SCU, TYPE_NEU, TYPE_WHUT -> "other"
         TYPE_BJTU -> "other"
+        TYPE_YETHAN -> "other"
         TYPE_HNUST, TYPE_HNIU -> "hnust"
         TYPE_CF -> "cf"
         TYPE_PKU, TYPE_BNUZ -> "other"
