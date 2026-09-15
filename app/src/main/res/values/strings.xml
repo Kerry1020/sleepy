@@ -467,10 +467,9 @@
     <string name="widget_manage_title">管理桌面小组件</string>
     <string name="widget_edit_title">编辑小组件</string>
     <string name="widget_manage_empty">暂未在桌面添加 Sleepy 小组件。长按桌面空白处 → 小组件 → 选 Sleepy 即可添加。</string>
-    <string name="widget_manage_compact_title">最小档三天窗口</string>
-    <string name="widget_manage_compact_detail">仅「· 小」变体; 窗口可跨上下周, 拖大能显示整周就不轮换</string>
-    <string name="widget_manage_compact_today_first">今日居于第一位</string>
-    <string name="widget_manage_compact_today_second">今日居于第二位</string>
+    <string name="widget_edit_compact_title">三天窗口</string>
+    <string name="widget_edit_compact_today_first">今日居于第一位</string>
+    <string name="widget_edit_compact_today_second">今日居于第二位</string>
     <string name="widget_manage_entry">管理桌面小组件</string>
     <string name="more_sections">还有 %1$d 节…</string>
     <string name="tomorrow">明天</string>

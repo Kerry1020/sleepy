@@ -365,10 +365,9 @@
     <string name="widget_manage_title">ホームウィジェットを管理</string>
     <string name="widget_edit_title">ウィジェットを編集</string>
     <string name="widget_manage_empty">ホーム画面に Sleepy ウィジェットが追加されていません。空いているスペースを長押し → ウィジェット → Sleepy を選択してください。</string>
-    <string name="widget_manage_compact_title">最小サイズの日数ウィンドウ</string>
-    <string name="widget_manage_compact_detail">「·小」変体のみ。ウィンドウは前後の週をまたげ、全週が表示できる場合は切り替わりません</string>
-    <string name="widget_manage_compact_today_first">今日を1番目に</string>
-    <string name="widget_manage_compact_today_second">今日を2番目に</string>
+    <string name="widget_edit_compact_title">3日間ウィンドウ</string>
+    <string name="widget_edit_compact_today_first">今日を1番目に</string>
+    <string name="widget_edit_compact_today_second">今日を2番目に</string>
     <string name="widget_manage_entry">ホームウィジェットを管理</string>
     <string name="more_sections">他に %1$d コマ…</string>
     <string name="tomorrow">明日</string>

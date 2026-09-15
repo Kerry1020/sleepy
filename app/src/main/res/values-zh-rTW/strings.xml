@@ -365,10 +365,9 @@
     <string name="widget_manage_title">管理桌面小工具</string>
     <string name="widget_edit_title">編輯小工具</string>
     <string name="widget_manage_empty">桌面上尚未加入 Sleepy 小工具。長按桌面空白處 → 小工具 → 選擇 Sleepy 即可新增。</string>
-    <string name="widget_manage_compact_title">最小檔三天視窗</string>
-    <string name="widget_manage_compact_detail">僅「· 小」變體; 視窗可跨上下週, 拖大能顯示整週就不輪換</string>
-    <string name="widget_manage_compact_today_first">今日居於第一位</string>
-    <string name="widget_manage_compact_today_second">今日居於第二位</string>
+    <string name="widget_edit_compact_title">三天視窗</string>
+    <string name="widget_edit_compact_today_first">今日居於第一位</string>
+    <string name="widget_edit_compact_today_second">今日居於第二位</string>
     <string name="widget_manage_entry">管理桌面小工具</string>
     <string name="more_sections">還有 %1$d 節…</string>
     <string name="tomorrow">明天</string>

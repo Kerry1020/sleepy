@@ -365,10 +365,9 @@
     <string name="widget_manage_title">Administrar widgets del escritorio</string>
     <string name="widget_edit_title">Editar widget</string>
     <string name="widget_manage_empty">Aún no se ha añadido ningún widget de Sleepy al escritorio. Mantén pulsado un espacio vacío → Widgets → elige Sleepy para añadir.</string>
-    <string name="widget_manage_compact_title">Ventana de 3 días (tamaño mínimo)</string>
-    <string name="widget_manage_compact_detail">Solo variantes · Pequeño; la ventana puede cruzar de semana; si cabe la semana completa, no rota</string>
-    <string name="widget_manage_compact_today_first">Hoy primero</string>
-    <string name="widget_manage_compact_today_second">Hoy segundo</string>
+    <string name="widget_edit_compact_title">Ventana de 3 días</string>
+    <string name="widget_edit_compact_today_first">Hoy primero</string>
+    <string name="widget_edit_compact_today_second">Hoy segundo</string>
     <string name="widget_manage_entry">Administrar widgets del escritorio</string>
     <string name="more_sections">%1$d más...</string>
     <string name="tomorrow">Mañana</string>

@@ -49,10 +49,10 @@ fun WidgetEditScreen(
     // To add a new section later, append here — the screen picks it up
     // automatically. Each section must implement WidgetEditSection.
     val sections: List<WidgetEditSection> = remember {
-        listOf(WidgetEditScheduleSection, WidgetEditAliasSection, WidgetEditScrollSection)
+        listOf(WidgetEditScheduleSection, WidgetEditAliasSection, WidgetEditScrollSection, WidgetEditCompactWindowSection)
     }
     val scope = remember(state.currentBinding, state.availableTables, state.useAlias,
-        state.receiverSimpleName, state.scrollEnabled) {
+        state.receiverSimpleName, state.scrollEnabled, state.compactTodayFirst) {
         WidgetEditScope(
             widgetId = widgetId,
             currentBinding = state.currentBinding,
@@ -62,7 +62,9 @@ fun WidgetEditScreen(
             onUseAliasChange = { vm.setUseAlias(it) },
             receiverSimpleName = state.receiverSimpleName,
             scrollEnabled = state.scrollEnabled,
-            onScrollEnabledChange = { vm.setScrollEnabled(it) }
+            onScrollEnabledChange = { vm.setScrollEnabled(it) },
+            compactTodayFirst = state.compactTodayFirst,
+            onCompactTodayFirstChange = { vm.setCompactTodayFirst(it) }
         )
     }
 
