@@ -6,11 +6,11 @@
       "@id": "https://github.com/lingion/sleepy#software",
       "name": "Sleepy",
       "alternateName": "轻课表",
-      "description": "An open-source Android university schedule app (Kotlin + Jetpack Compose, Material You) that imports timetables directly from Chinese university academic systems across 18 protocol families covering 179 schools. GPL-3.0 licensed. Ad-free. Offline-first. No account required. No telemetry.",
+      "description": "An open-source Android university schedule app (Kotlin + Jetpack Compose, Material You) that imports timetables directly from Chinese university academic systems across 29 protocol types covering 337 schools. GPL-3.0 licensed. Ad-free. Offline-first. No account required. No telemetry.",
       "url": "https://github.com/lingion/sleepy",
       "downloadUrl": "https://github.com/lingion/sleepy/releases",
-      "softwareVersion": "1.0.52",
-      "dateModified": "2026-09-11",
+      "softwareVersion": "1.0.55",
+      "dateModified": "2026-09-14",
       "applicationCategory": "EducationalApplication",
       "applicationSubCategory": "Schedule Planner",
       "operatingSystem": "Android 8.0+",
@@ -43,10 +43,10 @@
       "programmingLanguage": "Kotlin 2.1.10",
       "runtimePlatform": "Android",
       "featureList": [
-        "Direct import from 179 Chinese university academic systems across 18 protocol families (wisedu, qz variants, zf variants, urp variants, cf, classic_eams, eams5, whut, cqu, seu, zju, ustc, scu, neu, hnust, hniu, pku, bnuz, chaoxing)",
+        "Direct import from 337 Chinese university academic systems across 29 protocol types (wisedu, qz variants, zf variants, urp variants, cf, classic_eams, eams5, whut, cqu, seu, zju, ustc, scu, neu, hnust, hniu, pku, bnuz, chaoxing, and more)",
         "Import from 7 input formats: WakeUp share text, WakeUp JSON, iCalendar (.ics), CSV, HTML table, plain text, sleepy-v1",
         "Export to 4 formats: WakeUp-compatible JSON, WakeUp share text, ICS, sleepy-v1",
-        "Five home-screen widget families (Today, TwoDay, WeekList, WeekView, WeekGrid) with synchronous RemoteViews + Canvas rendering for ColorOS compatibility",
+        "Five home-screen widget families in 13 fixed-size variants (Today, TwoDay, WeekList, WeekView, WeekGrid) with synchronous RemoteViews + Canvas rendering for ColorOS compatibility; fixed-size layout tiers, experimental scrolling on some variants, and refresh at class start/end boundaries (v1.0.55)",
         "Pre-class and daily reminders via AlarmManager (exact + inexact fallback paths)",
         "Multiple timetable support (each table has independent period-slot configuration, semester start date, max week count)",
         "Conflict detection across multi-layer overlapping courses",
@@ -132,7 +132,7 @@
         },
         {
           "@type": "Question",
-          "name": "Can a new school be added if it is not in the 179-school directory?",
+          "name": "Can a new school be added if it is not in the supported directory?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Yes. Open a GitHub issue using the school_adaptation.yml template, providing the school's academic-affairs URL and a description of the failure. The maintainer will triage using the protocol fingerprint and may request the adaptation kit data. The maintainer will never request, accept, or store account credentials, captchas, or verification codes."
@@ -175,7 +175,7 @@
           "name": "Is Sleepy available on iOS?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No native iOS port has been published as of 2026-09-11. Research notes exist in Desktop/sleepy-ios but no public release."
+            "text": "No native iOS port has been published as of 2026-09-14. Research notes exist in Desktop/sleepy-ios but no public release."
           }
         }
       ]

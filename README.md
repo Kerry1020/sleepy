@@ -55,9 +55,9 @@
 
 **学校教务系统在维护?** WakeUp / 课程格子要登录云端?**想看下一节课却要点开 App?**
 
-Sleepy 把课表存在本地,默认不联网,只有按「同步教务」时才访问学校教务;没有任何第三方分析 SDK(Firebase / Crashlytics / Sentry / Bugsnag 全部未集成),所有数据只存本机。支持 179 所中国高校教务系统直连导入,另兼容 iCalendar (ICS)、WakeUp 课程包、超级课程表、课程格子 CSV 等格式。导出标准 ICS,macOS Calendar / Google Calendar / Outlook 都能直接订阅。
+Sleepy 把课表存在本地,默认不联网,只有按「同步教务」时才访问学校教务;没有任何第三方分析 SDK(Firebase / Crashlytics / Sentry / Bugsnag 全部未集成),所有数据只存本机。支持 337 所中国高校教务系统直连导入,另兼容 iCalendar (ICS)、WakeUp 课程包、超级课程表、课程格子 CSV 等格式。导出标准 ICS,macOS Calendar / Google Calendar / Outlook 都能直接订阅。
 
-桌面 5 种小组件(Today / TwoDay / WeekList / WeekView / WeekGrid),跨厂商兼容,放在首屏不用点开 App。GPL-3.0 开源,谁都能审计谁都能 fork。
+桌面 5 种小组件、13 个固定尺寸变体(Today / TwoDay / WeekList / WeekView / WeekGrid × 常规 / 小 / 宽),跨厂商兼容,放在首屏不用点开 App。GPL-3.0 开源,谁都能审计谁都能 fork。
 
 版本号与当前支持的学校目录以应用内「关于」和 GitHub Releases 为准。AI 引擎可同时抓取仓库根的 [`llms.txt`](./llms.txt) 与 [`FAQ.md`](./FAQ.md)。
 
@@ -161,6 +161,8 @@ v1.0.16 引入智能节次编辑器。手动模式逐节设起止；自动模式
 
 学校目录会随版本更新。已收录学校可以直接选择；如果学校暂时不在目录中，也可以在搜索框输入教务系统 URL，Sleepy 会尝试根据 URL 识别协议，再打开该地址进行登录和导入。能否成功取到课表取决于学校页面、登录方式和对应解析器。
 
+全部已收录学校（337 所）的名字、教务登录地址和协议类型见 **[已收录学校名单](docs/schools-list.md)**，支持 Ctrl+F 按全名 / 简称 / 拼音缩写检索，也用于核实教务地址和学校改名。
+
 如果 URL 识别或解析仍不成功，再提交适配申请。优先提供教务 URL 和失败现象；需要进一步定位时，再按 **[适配采集教程](docs/adapt-kit/README.md)** 提供页面或网络数据。不要在 issue 中提交账号、密码、验证码或其他个人信息。也可以直接 [开一个适配申请](https://github.com/lingion/sleepy/issues/new?template=school_adaptation.yml)。
 
 ### 支持的文本格式
@@ -218,23 +220,26 @@ v1.0.16 引入智能节次编辑器。手动模式逐节设起止；自动模式
 
 ---
 
-## 桌面 Widget（5 类）
+## 桌面 Widget（5 类 13 变体）
 
-五类 Widget，WorkManager 定时刷新。布局尺寸与各 launcher 自适应。
+5 类 Widget × 13 个固定尺寸变体：Today / TwoDay / WeekList 各 常规/小/宽 三档，WeekView / WeekGrid 各 常规/小 两档。布局尺寸与各 launcher 自适应。
 
-| Widget | 默认尺寸 | 用途 | 截图 |
+| Widget | 变体 | 用途 | 截图 |
 |---|---|---|---|
-| **Today** | 4×3 cell（250×180dp） | 今日课程列表 | <p align="left"><img src="docs/screenshots/widget-today.png" width="240"></p> |
-| **TwoDay** | 5×3 cell（320×220dp） | 今天 + 明天（左右双栏） | <p align="left"><img src="docs/screenshots/widget-twoday.png" width="240"></p> |
-| **WeekList** | 5×4 cell（320×200dp） | 7 日课程统计 + 名称 | <p align="left"><img src="docs/screenshots/widget-weeklist.png" width="240"></p> |
-| **WeekView** | 5×4 cell（320×200dp） | 周视图缩略（无彩色胶囊，纯主题色） | 无独立截图 |
-| **WeekGrid** | 4×5 cell（250×360dp） | 完整时间网格 + 课程块 | <p align="left"><img src="docs/screenshots/widget-weekgrid.png" width="200"></p> |
+| **Today** | 常规 / 小 / 宽 | 今日课程列表 | <p align="left"><img src="docs/screenshots/widget-today.png" width="240"></p> |
+| **TwoDay** | 常规 / 小 / 宽 | 今天 + 明天（左右双栏） | <p align="left"><img src="docs/screenshots/widget-twoday.png" width="240"></p> |
+| **WeekList** | 常规 / 小 / 宽 | 7 日课程统计 + 名称 | <p align="left"><img src="docs/screenshots/widget-weeklist.png" width="240"></p> |
+| **WeekView** | 常规 / 小 | 周视图缩略（无彩色胶囊，纯主题色） | 无独立截图 |
+| **WeekGrid** | 常规 / 小 | 完整时间网格 + 课程块 | <p align="left"><img src="docs/screenshots/widget-weekgrid.png" width="200"></p> |
 
 实现要点：
 - 全部 5 类：v1.0.29 起为同步 RemoteViews + Canvas 渲染（OPPO 等深度定制 launcher 会冻结 Glance 的异步 SessionWorker，导致卡片不刷新，故整体移植）
+- **v1.0.55：固定尺寸布局分档**——每个变体按自身尺寸档位选布局，不再单布局拉伸
+- **v1.0.55：部分变体提供实验性滚动**（内容超出卡片高度时可滚动查看）
+- **v1.0.55：上课/下课边界触发刷新**，跨过节次边界时卡片内容自动更新
 - 配色与 app 主题实时同步（深色模式 + 5 主题预设）
 - **三条渲染路径（主 app / WeekGrid / 截图渲染器）配色完全统一**：课程色按黄金角 (137.508°) HSL 分布，以课程所属分组哈希映射色相，均匀铺开且每门课稳定唯一
-- 刷新机制：对全部 5 个 receiver 广播 `APPWIDGET_UPDATE`（系统级）+ WorkManager 每 15 分钟定时刷新
+- 刷新机制：对全部 receiver 广播 `APPWIDGET_UPDATE`（系统级）+ WorkManager 定时刷新 + 上课/下课边界刷新
 
 ---
 
@@ -360,12 +365,12 @@ sleepy/                                    # 仓库根目录
 │   │   │   │   ├── AppDatabase.kt        # Room 数据库
 │   │   │   │   ├── dao/                  # CourseDao / TimeTableDao
 │   │   │   │   ├── entity/               # CourseEntity / TimeTableEntity / SmartPeriodConfig
-│   │   │   │   ├── jw/                   # 33 个 教务 parser + JwImportViewModel + JwParity
+│   │   │   │   ├── jw/                   # 43 个 教务 parser + JwImportViewModel + JwParity
 │   │   │   │   ├── parser/               # ScheduleParser + SleepyNativeParser/Exporter/Format
 │   │   │   │   ├── repository/           # ScheduleRepository
 │   │   │   │   └── undo/                 # UndoManager
 │   │   │   ├── ui/
-│   │   │   │   ├── component/            # 11 个: CourseTableView / CourseDetailSheet /
+│   │   │   │   ├── component/            # 12 个: CourseTableView / CourseDetailSheet /
 │   │   │   │   │                         # SmartPeriodEditor / TimeSlotEditor /
 │   │   │   │   │                         # PillNavigationBar / SegmentedSwitcher /
 │   │   │   │   │                         # ConflictCard / DateTimePickers / SettingsCards /
@@ -378,14 +383,14 @@ sleepy/                                    # 仓库根目录
 │   │   │   │   │   ├── manage/           # 课程管理
 │   │   │   │   │   └── mine/             # 我的 / 所有课表 / 编辑课表 / 主题 / 导出
 │   │   │   │   └── theme/                # Theme + ThemePresets + NoRippleClickable
-│   │   │   ├── util/                     # 17 个: AppPrefs / DateUtils / LocaleHelper /
+│   │   │   ├── util/                     # 19 个: AppPrefs / DateUtils / LocaleHelper /
 │   │   │   │                             # TimeTableUtils / CourseColorUtil /
 │   │   │   │                             # ConflictLayoutEngine / ConflictDetailReporter /
 │   │   │   │                             # WeekRangeOverlap / HolidayManager / HolidayRange /
 │   │   │   │                             # HighRefreshRate / PinyinMatcher / MarkdownBlocks /
 │   │   │   │                             # FeedbackComposer / UpdateManager / UpdateInfo /
 │   │   │   │                             # UpdateNotifier / VersionUtils
-│   │   │   └── widget/                   # 21 个 widget 文件 + notification/ 子目录
+│   │   │   └── widget/                   # 46 个 widget Kotlin 文件 + notification/ 子目录
 │   │   │                                 # (Today/WeekList/WeekView/TwoDay/WeekGrid × Provider + Receiver)
 │   │   │                                 # + WidgetRenderActivity + RemoteViewsWidgetHelper +
 │   │   │                                 # WidgetContent / WidgetBitmapRenderers /
@@ -404,7 +409,7 @@ sleepy/                                    # 仓库根目录
 │   │       ├── values-en/                # English
 │   │       ├── values-ja/                # 日本語
 │   │       ├── values-es/                # Español
-│   │       └── xml/                      # 5 个 widget_info + 网络/备份规则
+│   │       └── xml/                      # 13 个 widget_info + 网络/备份规则
 │   └── libs/                             # seedling-support-lite-3.0.7.aar (未声明依赖)
 ├── docs/
 │   ├── screenshots/                      # README 引用的 19 张截图
@@ -491,7 +496,7 @@ Bug 反馈和新学校适配走 [Issues](https://github.com/lingion/sleepy/issue
 ## Documentation
 
 - **[在线体验](https://sleepy.qdp.qzz.io)** — Web 版课表，浏览器打开即用，无需安装；支持多格式导入（WakeUp 分享文本 / ICS / CSV / Excel），数据仅存本地
-- **[Wiki](https://github.com/lingion/sleepy/wiki)** — 54-page deep manual: every screen, all import/export formats, the five widget families, reminder internals, architecture and codebase map, all cross-linked from the sidebar
+- **[Wiki](https://github.com/lingion/sleepy/wiki)** — 每屏逐一说明、导入/导出全格式、widget 家族、提醒内部实现、架构与代码地图，侧栏全互链
 - **[Operation Guide](https://blog.qdp.qzz.io/docs/sleepy/overview)** — step-by-step user manual covering installation, import, widgets, themes, and troubleshooting
 - **[Technical Write-up](https://blog.qdp.qzz.io/sleepy-material-you-schedule)** — architecture deep-dive: schedule parser engine, gold-angle HSL, Wisedu reverse-engineering, widget rendering pipeline
 

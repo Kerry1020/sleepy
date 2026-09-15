@@ -214,8 +214,17 @@ fun ScheduleScreen(
             var syncingFromState by remember { mutableStateOf(false) }
 
             // Pager 滑动（用户手势）→ 更新 ViewModel
+            // 2026-09-14: 回调必须经恢复闸 — 条件组合(overlay/tab 往返)使
+            // ScheduleScreen 整页离开组合树再回来, pagerState 按离开时的 page
+            // 恢复而 syncingFromState (普通 remember) 恢复帧归零 false,
+            // LaunchedEffect(pagerState.currentPage) 立即以恢复的 page 回调
+            // changeWeek → 与 selectedWeek effect 的 scrollToPage 双打 → 返回后
+            // 多周之间反复跳变闪烁 (无需用户操作)。恢复帧两个条件都不成立:
+            // !syncingFromState 刚初始化 (拦不住首回调), isScrollInProgress=false
+            // (无手势) → 恢复帧写路径静默丢弃, 环断; 手势拖动时 isScrollInProgress
+            // =true 放行, 行为不变。
             LaunchedEffect(pagerState.currentPage) {
-                if (!syncingFromState) {
+                if (!syncingFromState && pagerState.isScrollInProgress) {
                     viewModel.changeWeek(pagerState.currentPage + 1)
                 }
             }

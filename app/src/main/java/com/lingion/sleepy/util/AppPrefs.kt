@@ -58,6 +58,7 @@ object AppPrefs {
     const val KEY_START_VIEW = "start_view" // "full" / "cards" — 启动默认视图（仅通用设置里设置；手动切换课表顶部视图不写入；出厂默认 cards）
     const val KEY_SHOW_DATE = "show_date"       // boolean — 网格视图表头显示当前日期（出厂默认 true，用户反馈找不到开关）
     const val KEY_VISIBLE_DAYS = "visible_days" // "1,2,3,4,5,6,7"
+    const val KEY_COMPACT_WINDOW_TODAY_FIRST = "compact_window_today_first" // boolean — 最小档三天窗口锚点(2026-09-15 用户令)
     const val KEY_VERT_PUNCT_REPLACE = "vert_punct_replace" // bool default false (方案B开关)
     const val KEY_WIDGET_COLORLESS = "widget_colorless" // bool default false
     const val KEY_COURSE_COLORLESS = "course_colorless" // bool default false (App 课程胶囊专用)
@@ -411,6 +412,16 @@ object AppPrefs {
 
     fun setVisibleDays(ctx: Context, days: Set<Int>) {
         sp(ctx).edit().putString(KEY_VISIBLE_DAYS, days.sorted().joinToString(",")).apply()
+    }
+
+    // ===== 最小档三天窗口 (「· 小」变体 compact 脸) =====
+
+    /** true=今日居于第一位(今天/明天/后天); false=今日居于第二位(昨天/今天/明天)。默认 true */
+    fun isCompactWindowTodayFirst(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_COMPACT_WINDOW_TODAY_FIRST, true)
+
+    fun setCompactWindowTodayFirst(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_COMPACT_WINDOW_TODAY_FIRST, v).apply()
     }
 
     // ===== 竖排标点优化(方案B: 标点替换为 Unicode Vertical Forms) — 默认 false =====

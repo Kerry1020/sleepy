@@ -21,9 +21,12 @@ data class WidgetEditScope(
     val onUseAliasChange: (Boolean) -> Unit = {},
     /** 设计 §6: receiver simpleName (如 TodaySmallWidgetReceiver), 供族判断; null=未知 */
     val receiverSimpleName: String? = null,
-    /** 强制滚动(实验) — 全局一档, 默认 false = FIXED 固定窗口 */
+    /** 强制滚动(实验) — 本实例一档, 默认 false = FIXED 固定窗口 */
     val scrollEnabled: Boolean = false,
-    val onScrollEnabledChange: (Boolean) -> Unit = {}
+    val onScrollEnabledChange: (Boolean) -> Unit = {},
+    /** 最小档三天窗口 — 本实例一档 (仅「· 小」变体显示); true=今日居第一位 */
+    val compactTodayFirst: Boolean = true,
+    val onCompactTodayFirstChange: (Boolean) -> Unit = {}
 )
 
 /**

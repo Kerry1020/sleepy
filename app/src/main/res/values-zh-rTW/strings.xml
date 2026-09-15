@@ -365,6 +365,9 @@
     <string name="widget_manage_title">管理桌面小工具</string>
     <string name="widget_edit_title">編輯小工具</string>
     <string name="widget_manage_empty">桌面上尚未加入 Sleepy 小工具。長按桌面空白處 → 小工具 → 選擇 Sleepy 即可新增。</string>
+    <string name="widget_edit_compact_title">三天視窗</string>
+    <string name="widget_edit_compact_today_first">今日居於第一位</string>
+    <string name="widget_edit_compact_today_second">今日居於第二位</string>
     <string name="widget_manage_entry">管理桌面小工具</string>
     <string name="more_sections">還有 %1$d 節…</string>
     <string name="tomorrow">明天</string>
@@ -527,6 +530,12 @@
     <string name="about_feedback_detail">透過 GitHub Issue 回報問題或提出想法，或以電子郵件聯絡作者</string>
     <string name="about_feedback_github">GitHub Issue</string>
     <string name="about_feedback_email">電子郵件</string>
+    <string name="about_qq_title">QQ 交流群</string>
+    <string name="about_qq_group_number">1063407652</string>
+    <string name="about_qq_detail">群號 %1$s · 點擊複製並拉起 QQ 申請加入</string>
+    <string name="about_qq_copied">群號已複製,請在 QQ 中申請加入</string>
+    <string name="about_qq_copy_action">複製群號</string>
+    <string name="about_qq_no_qq">群號已複製,未偵測到 QQ,請手動打開 QQ 搜尋加入</string>
     <string name="about_feedback_email_subject">[Sleepy 回饋]</string>
     <string name="about_feedback_email_body">請描述你遇到的問題或建議：\n\n— 環境 —\n（選填）\n</string>
     <string name="about_feedback_no_mail_app">找不到可用的電子郵件應用，請改用 GitHub Issue</string>
