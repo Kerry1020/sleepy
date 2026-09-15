@@ -39,6 +39,22 @@ class JwWakeUpCompatParserTest {
     }
 
     @Test
+    fun `cumtb unknown lesson falls back to placeholder not dropped`() {
+        // WakeUp oo000o.java:45 — lessonList 缺失的 lessonId → "未知", 行不丢
+        val source = """
+            {"result":{"lessonList":[],"scheduleList":[{"lessonId":99,"personName":"王老师","weekday":2,"weekIndex":3,"startTime":1400,"endTime":1535,"room":{"nameZh":"教1-102"}}]}}
+        """.trimIndent()
+
+        val courses = JwCumtbParser(source).generateCourseList()
+
+        assertEquals(1, courses.size)
+        assertEquals("未知", courses.single().name)
+        assertEquals(2, courses.single().day)
+        assertEquals(5, courses.single().startNode)
+        assertEquals("教1-102", courses.single().room)
+    }
+
+    @Test
     fun `south soft parses xq key and odd-even week tokens`() {
         val source = """
             [{"KCWZSM":"线性代数","KEY":"xq3_jc2","SKSJ":"[数学][周1-16单][张老师][A-101][第2-3节]"}]
@@ -114,7 +130,8 @@ class JwWakeUpCompatParserTest {
 
         assertTrue(courses.isNotEmpty())
         assertEquals("高等代数", courses[0].name)
-        assertEquals(3, courses[0].day)
+        // 跨仓 4 源一致 (WakeUp o0000OO0/CourseHelper Swift/shiguang HUNNU+UESTC): index 首因子 0-based, day=D+1
+        assertEquals(4, courses[0].day)
         assertEquals(3, courses[0].startNode)
         assertEquals("博学楼A-302", courses[0].room)
         assertEquals("孙老师", courses[0].teacher)
@@ -169,6 +186,26 @@ class JwWakeUpCompatParserTest {
         assertEquals("博远楼-101", courses[0].room)
         assertEquals(2, courses[1].day)
         assertEquals(2, courses[1].type)
+    }
+
+    @Test
+    fun `suda rowspan cell extends end node`() {
+        // WakeUp dex L00e9 rowspan 折叠: 连堂课单元格占 2 节
+        val source = """
+            <html><body><table id="MainWork_DataGrid1">
+            <tr align="center"><td>星期一</td><td>星期二</td></tr>
+            <tr><td>高等数学<br>课程:高等数学<br>(张老师)<br>第1-16周<br>博远楼-101</td><td rowspan="2">数据结构<br>课程:数据结构<br>(钱老师)<br>第1-16周<br>教2-301</td></tr>
+            <tr><td>&nbsp;</td></tr>
+            </table></body></html>
+        """.trimIndent()
+
+        val courses = JwSudaParser(source).generateCourseList()
+
+        assertTrue(courses.isNotEmpty())
+        val ds = courses.single { it.name == "数据结构" }
+        assertEquals(2, ds.day)
+        assertEquals(1, ds.startNode)
+        assertEquals(2, ds.endNode)
     }
 
     @Test

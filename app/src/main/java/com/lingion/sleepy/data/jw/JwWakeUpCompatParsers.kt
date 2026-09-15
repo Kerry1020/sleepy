@@ -117,12 +117,13 @@ private object WakeUpCompat {
         return buildList {
             for (i in 0 until schedules.length()) {
                 val row = schedules.optJSONObject(i) ?: continue
-                val name = names[row.optInt("lessonId", -1)].orEmpty()
+                // WakeUp oo000o.java:45 未知 lesson → "未知" 仍导入, 不丢行
+                val name = names[row.optInt("lessonId", -1)].orEmpty().ifBlank { "未知" }
                 val day = row.optInt("weekday", 0)
                 val week = row.optInt("weekIndex", 0)
                 val startTime = row.optInt("startTime", 0)
                 val start = timeToNode(startTime)
-                if (name.isBlank() || day !in 1..7 || week < 1 || start < 1) continue
+                if (day !in 1..7 || week < 1 || start < 1) continue
                 val count = durationToNodes(startTime, row.optInt("endTime", 0))
                 add(JwCourse(name, row.optJSONObject("room")?.optString("nameZh").orEmpty(), row.optString("personName"), day, start, start + count - 1, week, week))
             }
@@ -178,7 +179,9 @@ private object WakeUpCompat {
                     }
                 }
                 Regex("index[\\s]*=[\\s]*(\\d+)[\\s]*\\*[\\s]*unitCount[\\s]*\\+[\\s]*(\\d+)").find(stmt)?.let { m ->
-                    val day = m.groupValues[1].toInt()
+                    // 跨仓 4 源一致: WakeUp o0000OO0.java i10=parseInt(g1)+1 / CourseHelper Swift dayOfWeek=match[1]
+                    // / shiguang HUNNU+UESTC day=D+1 — index 首因子是 0-based day, +1 才是星期几
+                    val day = m.groupValues[1].toInt() + 1
                     val node = m.groupValues[2].toInt().let { if (it == 13) 10 else if (it < 9) it + 1 else it + 2 }
                     pending.removeLastOrNull()?.let { p ->
                         var i = 0
@@ -284,7 +287,10 @@ private object WakeUpCompat {
                     }
                     if (name.isBlank()) name = lines.first()
                     if (weeks.isEmpty()) weeks += Triple(1, 20, 0)
-                    weeks.forEach { (from, to, type) -> add(JwCourse(name, room, teacher, day, node, node, from, to, type)) }
+                    // WakeUp dex L00e9 rowspan: 纵向合并单元格占多节 — endNode = node + rowspan - 1
+                    val rowspan = td.attr("rowspan").toIntOrNull() ?: 1
+                    val endNode = node + (rowspan - 1).coerceAtLeast(0)
+                    weeks.forEach { (from, to, type) -> add(JwCourse(name, room, teacher, day, node, endNode, from, to, type)) }
                 }
             }
         }
