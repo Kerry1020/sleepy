@@ -249,6 +249,7 @@
     <string name="color_auto">自动</string>
     <string name="color_custom">自定义</string>
     <string name="color_custom_switch">自定义颜色</string>
+    <string name="course_group_color">组色</string>
     <string name="color_refresh">换自动色</string>
     <string name="color_toast_last_group">最后一节将跟随组色</string>
     <string name="import_multi_location_warning">部分课程存在多个上课地点</string>

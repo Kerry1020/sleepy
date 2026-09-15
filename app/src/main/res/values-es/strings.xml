@@ -549,6 +549,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="action_confirm">Aceptar</string>
     <string name="course_color">Color</string>
     <string name="color_custom_switch">Color personalizado</string>
+    <string name="course_group_color">Color del grupo</string>
     <string name="export_copied_hint">Panel de compartir abierto</string>
     <string name="export_course_count">%1$d cursos</string>
     <string name="export_failed">Error al exportar, reintenta</string>

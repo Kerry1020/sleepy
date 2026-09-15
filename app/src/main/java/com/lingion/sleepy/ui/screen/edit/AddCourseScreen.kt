@@ -585,11 +585,10 @@ fun AddCourseScreen(
                             shape = fieldShape,
                             colors = fieldColors
                         )
-                        // 颜色 — 2026-09-15 用户令: 回归基础信息卡原位 (issue#22 前的布局),
-                        // 课程级一档, 变更同步全部时段块; 改组色弹层/全组确认不变
+                        // 组色 — 前置课程级色源 (2026-09-15 用户令二次修正): 基础信息卡
+                        // 只放整组组色编辑; 各时段卡保留自己的颜色行(见 ColorSection)
                         if (meetingBlocks.isNotEmpty()) {
-                            ColorSection(
-                                blocks = meetingBlocks,
+                            GroupColorSection(
                                 groupSourceColorHex = groupSourceColorHex,
                                 onChangeGroupColor = { showGroupColorPicker = true }
                             )
@@ -669,6 +668,7 @@ fun AddCourseScreen(
                 MeetingBlockEditor(
                     title = stringResource(R.string.slot_n, index + 1),
                     block = block,
+                    groupSourceColorHex = groupSourceColorHex,
                     canRemove = meetingBlocks.size > 1,
                     issues = blockIssues,
                     fieldShape = fieldShape,
@@ -708,12 +708,6 @@ fun AddCourseScreen(
                                 weekType = 0
                             )
                         )
-                        // 颜色课程级一档 (2026-09-15): 新块继承现有颜色态, 不与基础信息卡脱节
-                        meetingBlocks.firstOrNull()?.let { f ->
-                            val nb = meetingBlocks.last()
-                            nb.colorModeState = f.colorModeState
-                            nb.colorState = f.colorState
-                        }
                         nextBlockId += 1
                     },
                     modifier = Modifier.fillMaxWidth().height(SleepyTheme.Buttons.regularHeight),
@@ -1109,6 +1103,7 @@ private fun SwitchRow(
 private fun MeetingBlockEditor(
     title: String,
     block: MeetingBlockDraft,
+    groupSourceColorHex: String,
     canRemove: Boolean,
     issues: List<String>,
     fieldShape: CornerBasedShape,
@@ -1289,7 +1284,13 @@ private fun MeetingBlockEditor(
             colors = fieldColors
         )
 
-        // 2026-09-15: 颜色回归课程级 — ColorSection 上移基础信息卡, 逐卡不再有颜色节
+        // 颜色 — 三态(GROUP 跟组 / AUTO 自动 / CUSTOM 自定义); 改组色入口在
+        // 基础信息卡组色节, 逐卡 OFF 态仅显示组色
+        ColorSection(
+            block = block,
+            groupSourceColorHex = groupSourceColorHex
+        )
+
         if (issues.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 issues.forEach { issue ->
@@ -1663,23 +1664,54 @@ private fun SlotEditDialog(
     )
 }
 
-/** 颜色三态 — 开关 OFF = 跟组色(GROUP);开关 ON 后可切 AUTO/CUSTOM
- *  - GROUP(默认): colorState 留空,渲染按组色源取统一色
- *  - AUTO: 同 GROUP 但色相按块序号 + 黄金角(137.508°)发散,自动换色
- *  - CUSTOM: 用户在 ColorPickerDialog 里挑的固定 hex
- *  2026-09-15 用户令: 整节回归「课程基础信息」卡原位 (issue#22 前的布局) —
- *  课程级一档, 开关/圆点变更同步 [blocks] 全部块; 开关左侧文案固定为
- *  「自定义颜色」(只描述开=什么, 不随开关态变)。GROUP 模式行仍显示
- *  组色色块 + [改组色](弹调色盘+全组确认, 只写组色源)。 */
+/** 组色 — 课程级色源(基础信息卡): 整组统一色的唯一编辑入口
+ *  (弹调色盘+全组确认, 只写组色源; 跟随组色的节次渲染随之更新)。
+ *  2026-09-15 用户令二次修正: 前面放组色一档, 各节次卡保留自己的颜色行。 */
 @Composable
-private fun ColorSection(
-    blocks: List<MeetingBlockDraft>,
+private fun GroupColorSection(
     groupSourceColorHex: String,
     onChangeGroupColor: () -> Unit
 ) {
     val colors = SleepyTheme.colors
-    // 课程级一档 (2026-09-15 用户令: 组色回归基础信息卡原位) — 首块为显示源, 变更同步全部块
-    val block = blocks.first()
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.course_group_color),
+            style = MaterialTheme.typography.labelLarge,
+            color = colors.onSurfaceVariant
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            GroupColorSwatch(hex = groupSourceColorHex)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (CourseColorUtil.hasCustomColorHex(groupSourceColorHex)) groupSourceColorHex
+                else stringResource(R.string.color_group_auto),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            TextButton(onClick = onChangeGroupColor) {
+                Text(stringResource(R.string.change_group_color))
+            }
+        }
+    }
+}
+
+/** 颜色三态 — 开关 OFF = 跟组色(GROUP);开关 ON 后可切 AUTO/CUSTOM
+ *  - GROUP(默认): colorState 留空,渲染按组色源取统一色
+ *  - AUTO: 同 GROUP 但色相按块序号 + 黄金角(137.508°)发散,自动换色
+ *  - CUSTOM: 用户在 ColorPickerDialog 里挑的固定 hex
+ *  2026-09-15 用户令二次修正: 每张节次卡保留自己的颜色行; 改组色入口
+ *  上移基础信息卡 GroupColorSection, OFF 态仅显示组色色块+hex。
+ *  开关左侧文案固定「自定义颜色」(只描述开=什么, 不随开关态变)。 */
+@Composable
+private fun ColorSection(
+    block: MeetingBlockDraft,
+    groupSourceColorHex: String
+) {
+    val colors = SleepyTheme.colors
     val useDifferent = block.colorModeState != com.lingion.sleepy.data.entity.CourseColorMode.GROUP
     var showColorPicker by remember { mutableStateOf(false) }
 
@@ -1705,19 +1737,18 @@ private fun ColorSection(
                 Switch(
                     checked = useDifferent,
                     onCheckedChange = { on ->
-                        val mode = if (on) {
+                        block.colorModeState = if (on) {
                             // 第一次打开: 落 AUTO(自动散色), 用户可再切自定义
                             com.lingion.sleepy.data.entity.CourseColorMode.AUTO
                         } else {
                             com.lingion.sleepy.data.entity.CourseColorMode.GROUP
                         }
-                        blocks.forEach { it.colorModeState = mode }
                     }
                 )
             }
         }
         if (!useDifferent) {
-            // spec §6.1 GROUP 模式行: 跟随组色 [色块] [改组色]
+            // OFF = 跟随组色: 仅显示组色 (改组色入口在基础信息卡组色节)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -1730,10 +1761,6 @@ private fun ColorSection(
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = onChangeGroupColor) {
-                    Text(stringResource(R.string.change_group_color))
-                }
             }
         }
         if (useDifferent) {
@@ -1746,10 +1773,8 @@ private fun ColorSection(
                 AutoColorDot(
                     selected = block.colorModeState == com.lingion.sleepy.data.entity.CourseColorMode.AUTO,
                     onClick = {
-                        blocks.forEach {
-                            it.colorModeState = com.lingion.sleepy.data.entity.CourseColorMode.AUTO
-                            it.colorState = ""
-                        }
+                        block.colorModeState = com.lingion.sleepy.data.entity.CourseColorMode.AUTO
+                        block.colorState = ""
                     }
                 )
                 // 自定义 — 弹出调色盘选固定色
@@ -1774,10 +1799,8 @@ private fun ColorSection(
         ColorPickerDialog(
             initialHex = block.colorState.ifBlank { "#FF6750A4" },
             onConfirm = { hex ->
-                blocks.forEach {
-                    it.colorState = hex
-                    it.colorModeState = com.lingion.sleepy.data.entity.CourseColorMode.CUSTOM
-                }
+                block.colorState = hex
+                block.colorModeState = com.lingion.sleepy.data.entity.CourseColorMode.CUSTOM
                 showColorPicker = false
             },
             onDismiss = { showColorPicker = false }

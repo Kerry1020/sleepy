@@ -241,6 +241,7 @@
     <string name="color_auto">自动</string>
     <string name="color_custom">自定义</string>
     <string name="color_custom_switch">自定义颜色</string>
+    <string name="course_group_color">组色</string>
     <string name="color_refresh">换自动色</string>
     <string name="week_range">周次范围</string>
     <string name="week_range_sub">整门课的默认周次；用「应用到所有时段」批量覆盖各时段</string>
