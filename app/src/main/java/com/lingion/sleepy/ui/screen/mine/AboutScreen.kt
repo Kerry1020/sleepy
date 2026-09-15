@@ -23,8 +23,10 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Switch
@@ -112,6 +114,28 @@ fun AboutScreen(onBack: () -> Unit, onOpenLicense: () -> Unit = {}) {
             context.startActivity(intent)
         } else {
             scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.about_feedback_no_mail_app)) }
+        }
+    }
+
+    fun joinQqGroup() {
+        val group = context.getString(R.string.about_qq_group_number)
+        context.getSystemService(android.content.ClipboardManager::class.java)
+            ?.setPrimaryClip(android.content.ClipData.newPlainText("qq_group", group))
+        // 先试拉起 QQ 加群页; 失败退 QQ 首页; 都失败只提示已复制
+        val joinUrl = "http://qm.qq.com/cgi-bin/qm/qr?from=app&app=fingerprint&join_group=&$group"
+        val launched = runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("mqqopensdkapi://bizAgent/qm/qr?url=${Uri.encode(joinUrl)}"))
+            )
+        }.isSuccess || runCatching {
+            val qq = context.packageManager.getLaunchIntentForPackage("com.tencent.mobileqq")
+                ?: error("qq not installed")
+            context.startActivity(qq)
+        }.isSuccess
+        scope.launch {
+            snackbarHostState.showSnackbar(
+                context.getString(if (launched) R.string.about_qq_copied else R.string.about_qq_no_qq)
+            )
         }
     }
 
@@ -414,6 +438,46 @@ fun AboutScreen(onBack: () -> Unit, onOpenLicense: () -> Unit = {}) {
                         Icon(
                             imageVector = Icons.Outlined.Email,
                             contentDescription = stringResource(R.string.about_feedback_email),
+                            tint = colors.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // QQ 群入口: 点卡复制群号并拉起 QQ(加群页 → 首页 → 仅提示 三级降级)
+            InfoCard {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .noRippleClickable { joinQqGroup() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Groups,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.about_qq_title),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.about_qq_detail, stringResource(R.string.about_qq_group_number)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { joinQqGroup() }) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = stringResource(R.string.about_qq_copy_action),
                             tint = colors.primary,
                             modifier = Modifier.size(20.dp)
                         )

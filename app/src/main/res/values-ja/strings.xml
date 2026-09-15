@@ -527,6 +527,12 @@
     <string name="about_feedback_detail">GitHub Issue でバグやアイデアを報告するか、メールで作者に連絡できます</string>
     <string name="about_feedback_github">GitHub Issue</string>
     <string name="about_feedback_email">メール</string>
+    <string name="about_qq_title">QQ グループ</string>
+    <string name="about_qq_group_number">1063407652</string>
+    <string name="about_qq_detail">グループ番号 %1$s · タップでコピーして QQ を開く</string>
+    <string name="about_qq_copied">グループ番号をコピーしました。QQ で参加してください</string>
+    <string name="about_qq_copy_action">グループ番号をコピー</string>
+    <string name="about_qq_no_qq">グループ番号をコピーしました。QQ が見つかりません</string>
     <string name="about_feedback_email_subject">[Sleepy フィードバック]</string>
     <string name="about_feedback_email_body">問題やアイデアを説明してください：\n\n— 環境 —\n（任意）\n</string>
     <string name="about_feedback_no_mail_app">メールアプリが見つかりません。GitHub Issue を使用してください。</string>

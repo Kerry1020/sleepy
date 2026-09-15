@@ -650,6 +650,12 @@
     <string name="about_feedback_detail">提交 Bug 或新想法到 GitHub Issue，或通过邮件联系作者</string>
     <string name="about_feedback_github">GitHub Issue</string>
     <string name="about_feedback_email">邮件反馈</string>
+    <string name="about_qq_title">QQ 交流群</string>
+    <string name="about_qq_group_number">1063407652</string>
+    <string name="about_qq_detail">群号 %1$s · 点击复制并拉起 QQ 申请加入</string>
+    <string name="about_qq_copied">群号已复制,请在 QQ 中申请加入</string>
+    <string name="about_qq_copy_action">复制群号</string>
+    <string name="about_qq_no_qq">群号已复制,未检测到 QQ,请手动打开 QQ 搜索加入</string>
     <string name="about_feedback_email_subject">[Sleepy 反馈]</string>
     <string name="about_feedback_email_body">请描述你遇到的问题或建议：\n\n— 环境 —\n（选填）\n</string>
     <string name="about_feedback_no_mail_app">未找到可用的邮件应用，请改用 GitHub Issue</string>
