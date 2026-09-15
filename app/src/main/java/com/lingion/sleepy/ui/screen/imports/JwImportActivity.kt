@@ -199,6 +199,12 @@ class JwImportActivity : ComponentActivity() {
                         ExitDraftOutcome.FinishDirectly -> Unit
                     }
                 }
+                // 学校选择 stage 的系统返回键与顶栏返回同路 — 否则系统返回直接 finish Activity
+                // 绕过退出确认(activeImport 已置位时用户误触返回=静默丢进度,issue#39 痛点本体)
+                BackHandler(enabled = exitDraftState.activeImport && stage is Stage.SelectSchool) {
+                    requestExit()
+                }
+
                 LaunchedEffect(incomingDraftId) {
                     val id = incomingDraftId ?: return@LaunchedEffect
                     val snapshot = withContext(Dispatchers.IO) { draftRepository.get(id) }
