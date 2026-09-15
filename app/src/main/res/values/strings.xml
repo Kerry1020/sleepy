@@ -111,6 +111,11 @@
     <string name="read_failed">读取失败: %1$s</string>
     <string name="cannot_read_file">无法读取文件</string>
     <string name="import_preview_sub">先预览，再导入，不让课表被一把覆盖</string>
+    <string name="import_drafts">导入草稿</string>
+    <string name="import_drafts_empty">暂无保存的导入草稿</string>
+    <string name="import_draft_restore">恢复草稿</string>
+    <string name="import_draft_delete">删除草稿</string>
+    <string name="import_draft_saved_at">保存于 %1$s</string>
     <string name="format_wakeup_share">WakeUp 分享文本</string>
     <string name="format_wakeup_desc">【来自WakeUp课程表】开头</string>
     <string name="format_wakeup_json">WakeUp JSON</string>

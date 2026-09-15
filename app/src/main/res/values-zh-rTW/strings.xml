@@ -350,6 +350,12 @@
     <string name="n_courses">%1$d 門</string>
     <string name="action_close">關閉</string>
 
+    <string name="import_drafts">匯入草稿</string>
+    <string name="import_drafts_empty">目前沒有已儲存的匯入草稿</string>
+    <string name="import_draft_restore">恢復草稿</string>
+    <string name="import_draft_delete">刪除草稿</string>
+    <string name="import_draft_saved_at">儲存於 %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">請先建立課表</string>
     <string name="widget_open_sleepy">開啟 Sleepy 開始新增</string>

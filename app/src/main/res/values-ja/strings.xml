@@ -350,6 +350,12 @@
     <string name="n_courses">%1$d</string>
     <string name="action_close">閉じる</string>
 
+    <string name="import_drafts">インポート下書き</string>
+    <string name="import_drafts_empty">保存されたインポート下書きはありません</string>
+    <string name="import_draft_restore">下書きを復元</string>
+    <string name="import_draft_delete">下書きを削除</string>
+    <string name="import_draft_saved_at">保存日時: %1$s</string>
+
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">最初に時間割を作成してください</string>
     <string name="widget_open_sleepy">Sleepyを開いて追加</string>
