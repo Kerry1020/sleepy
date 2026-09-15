@@ -46,6 +46,14 @@ class JwParserRegistryTest {
     }
 
     @Test
+    fun `WakeUp compatibility types are routable without changing legacy UI order`() {
+        for (type in JwProtocol.WAKEUP_COMPAT_TYPES) {
+            assertTrue("type $type must be routable", JwImportViewModel.isRoutable(type))
+            assertNotNull("type $type must have a parser factory", JwParserRegistry.parserFor(type, ""))
+        }
+        assertTrue(JwProtocol.WAKEUP_COMPAT_TYPES.none { it in JwProtocol.ALL_TYPES })
+    }
+    @Test
     fun `parserFor throws IllegalArgumentException for unknown type`() {
         try {
             JwParserRegistry.parserFor("unknown_type", "<html></html>")

@@ -253,7 +253,16 @@ fun ExportScreen(
                                     // MIME 用 text/plain 规避 ImportReceiverActivity MIME 收窄问题(调查报告 P3)
                                     content = SleepyNativeExporter.exportFile(
                                         table.name, table.startDate, table.maxWeek, table.nodesPerDay,
-                                        table.timeJson, courses
+                                        table.timeJson, courses,
+                                        // issue#40 §6: 绑定了独立时间节次表时携带 P 区块(共享关系可往返)
+                                        periodTable = state.effectivePeriodTable
+                                            ?.takeIf { table.periodTableId == it.id }
+                                            ?.let {
+                                                SleepyNativeExporter.PeriodTableExport(
+                                                    id = it.id, name = it.name,
+                                                    nodesPerDay = it.nodesPerDay, timeJson = it.timeJson
+                                                )
+                                            }
                                     ),
                                     displayName = table.name,
                                     onResult = { msg -> snackbarHostState.showSnackbar(msg) }

@@ -235,6 +235,42 @@ class ScheduleRepository(private val db: AppDatabase) {
     }
 
     /**
+     * 保存时间节次表内容的完整链路(设计 §5.2 步骤 1-4):
+     * 快照 → 事务内写 period_tables + 同步全部兼容列 → 全部绑定课表立即生效。
+     *
+     * 兼容列同步 = 每张绑定课表的 timeJson/nodesPerDay/smartConfigJson 拷贝一份新值,
+     * 旧版本导入导出与渲染回退才有正确数据(设计 §3.2)。课程行零改动(§9.1)。
+     * 调用方须先用 [com.lingion.sleepy.util.TimeTableUtils.previewPeriodTableChange]
+     * 出预览并取得用户确认; 本函数不重复预览。
+     * 返回受影响的绑定课表数(预览文案/错误提示用)。
+     */
+    suspend fun savePeriodTable(
+        table: com.lingion.sleepy.data.entity.PeriodTableEntity
+    ): Int {
+        // 守卫先行: 目标不存在(已删)时不写库也不拍快照
+        if (periodTableDao.getById(table.id) == null) return 0
+        captureForUndo()
+        val boundIds = periodTableDao.boundTableIds(table.id)
+        val stamped = table.copy(updatedAt = System.currentTimeMillis())
+        db.withTransaction {
+            periodTableDao.update(stamped)
+            for (id in boundIds) {
+                tableDao.getById(id)?.let { bound ->
+                    tableDao.update(
+                        bound.copy(
+                            timeJson = stamped.timeJson,
+                            nodesPerDay = stamped.nodesPerDay,
+                            smartConfigJson = stamped.smartConfigJson
+                        )
+                    )
+                }
+            }
+        }
+        onDataChanged()
+        return boundIds.size
+    }
+
+    /**
      * 删除守卫(设计 §7): 被引用的时间节次表禁止删除(返回 false), 无绑定才真删。
      * 禁止产生悬空引用。
      */

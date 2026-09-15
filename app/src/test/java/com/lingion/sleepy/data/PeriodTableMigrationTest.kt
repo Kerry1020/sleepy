@@ -7,7 +7,7 @@ import org.junit.Test
 import java.sql.Connection
 import java.sql.DriverManager
 
-/** v6 -> v7 独立时间节次表迁移契约。 */
+/** v7 -> v8 独立时间节次表迁移契约(v6→v7 已被 issue#39 import_drafts 占用)。 */
 class PeriodTableMigrationTest {
 
     private fun openInMemory(): Connection =
@@ -49,7 +49,7 @@ class PeriodTableMigrationTest {
         val conn = openInMemory()
         try {
             createV6Schema(conn)
-            MIGRATION_6_7_SCHEMA_STATEMENTS.forEach { sql ->
+            MIGRATION_7_8_SCHEMA_STATEMENTS.forEach { sql ->
                 conn.createStatement().use { statement -> statement.execute(sql) }
             }
             conn.createStatement().use { st ->
@@ -107,8 +107,8 @@ class PeriodTableMigrationTest {
     }
 
     @Test
-    fun migration_chain_reaches_database_version_seven() {
-        assertEquals(7, ALL_MIGRATIONS.last().endVersion)
-        assertTrue(ALL_MIGRATIONS.any { it.startVersion == 6 && it.endVersion == 7 })
+    fun migration_chain_reaches_database_version_eight() {
+        assertEquals(8, ALL_MIGRATIONS.last().endVersion)
+        assertTrue(ALL_MIGRATIONS.any { it.startVersion == 7 && it.endVersion == 8 })
     }
 }

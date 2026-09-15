@@ -601,6 +601,64 @@ object TimeTableUtils {
         )
     }
 
+    // ------------------------------------------------------------------
+    // issue#40 §5.2/§5.3 保存前预览(纯函数) — 新旧两份 timeJson 对同一批节次
+    // 编号解析出 旧时间→新时间; 课程行零改动(§9.1 节次绑定不重算);
+    // 自定义时间(ownTime)课程不参与解释(§2-7), 既不算变化也不算无变化。
+    // ------------------------------------------------------------------
+
+    /** 预览里单门课程的时间变化行 */
+    data class CourseTimeChange(
+        val courseId: Long,
+        val courseName: String,
+        val startNode: Int,
+        val step: Int,
+        /** 旧表解释的 "HH:mm-HH:mm"; 旧表缺该节次行 = null(无法解释) */
+        val oldTime: String?,
+        /** 新表解释的 "HH:mm-HH:mm"; 新表缺该节次行 = null */
+        val newTime: String?
+    )
+
+    /** 预览结果: 有时间变化的课程 + 无变化课程数(供"共 N 门, M 门受影响"文案) */
+    data class PeriodTablePreview(
+        val changedCourses: List<CourseTimeChange>,
+        val unchangedCount: Int
+    )
+
+    /**
+     * 对一批课程, 用 oldTimeJson/newTimeJson 各自解释节次编号(§5.2:
+     * "按新旧两份 timeJson 对同一批节次编号解析"), 产出逐课时间变化。
+     * 纯函数 — 不触库不写库; 取消保存时丢弃结果即可, 数据库零改动。
+     */
+    fun previewPeriodTableChange(
+        oldTimeJson: String,
+        newTimeJson: String,
+        courses: List<com.lingion.sleepy.data.entity.CourseEntity>
+    ): PeriodTablePreview {
+        val changed = mutableListOf<CourseTimeChange>()
+        var unchanged = 0
+        for (c in courses) {
+            if (c.ownTime || c.isIrregularTime) continue  // 自定义时间: 起止照旧, 不参与解释
+            val oldParts = courseTimeParts(c.startNode, c.step, oldTimeJson)
+            val newParts = courseTimeParts(c.startNode, c.step, newTimeJson)
+            if (oldParts == newParts) {
+                unchanged++
+            } else {
+                changed.add(
+                    CourseTimeChange(
+                        courseId = c.id,
+                        courseName = c.courseName,
+                        startNode = c.startNode,
+                        step = c.step,
+                        oldTime = oldParts?.let { "${it.first}-${it.second}" },
+                        newTime = newParts?.let { "${it.first}-${it.second}" }
+                    )
+                )
+            }
+        }
+        return PeriodTablePreview(changed, unchanged)
+    }
+
     private fun smartStartDefault(node: Int): String = when {
         node <= 2 -> "08:00"
         node <= 4 -> "10:00"

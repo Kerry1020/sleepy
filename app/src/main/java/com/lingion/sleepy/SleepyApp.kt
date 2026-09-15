@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.res.Configuration
 import com.lingion.sleepy.data.AppDatabase
 import com.lingion.sleepy.data.repository.ScheduleRepository
+import com.lingion.sleepy.data.repository.ImportDraftRepository
 import com.lingion.sleepy.util.HolidayManager
 import com.lingion.sleepy.widget.WidgetUpdater
 import com.lingion.sleepy.widget.notification.CourseNotificationScheduler
@@ -25,6 +26,7 @@ class SleepyApp : Application() {
 
     val database: AppDatabase by lazy { AppDatabase.get(this) }
     val repository: ScheduleRepository by lazy { ScheduleRepository(database) }
+    val importDraftRepository: ImportDraftRepository by lazy { ImportDraftRepository(database) }
     val notificationScheduler: CourseNotificationScheduler by lazy {
         CourseNotificationScheduler(this)
     }

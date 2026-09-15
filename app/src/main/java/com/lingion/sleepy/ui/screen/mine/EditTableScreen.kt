@@ -82,6 +82,8 @@ fun EditTableScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    // issue#40: 全部时间节次表(换绑选择器数据源 §4.3)
+    val allPeriodTables by viewModel.allPeriodTables.collectAsState()
     val colors = SleepyTheme.colors
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -107,6 +109,10 @@ fun EditTableScreen(
     var timeSlotsExpanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    // issue#40: 换绑选择(§5.3) — null 起始 = 未动过; 确认时才写 periodTableId。
+    // pendingBind != table.periodTableId 时保存流程走换绑分支。
+    var pendingBind by remember(table.id, table.periodTableId) { mutableStateOf<Long?>(table.periodTableId) }
+    var bindExpanded by remember { mutableStateOf(false) }
 
     // issue#40: 编辑的就是"有效时间表" — 绑定了独立时间节次表时, 节次编辑区
     // 展示/修改的是该时间节次表(多张绑定课表同享), 保存写回 period_tables;
@@ -210,6 +216,67 @@ fun EditTableScreen(
                 }
             }
 
+            // issue#40 §4.3: 时间节次表选择项 — 选择只改 periodTableId, 课程行不复制不搬移
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(SleepyTheme.shapes.extraLarge)
+                        .background(colors.surfaceContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .noRippleClickable { bindExpanded = !bindExpanded }
+                            .padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.period_table_bind_label),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = colors.onSurface
+                            )
+                            Text(
+                                text = allPeriodTables.find { it.id == pendingBind }?.name
+                                    ?: stringResource(R.string.period_table_unbound),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = colors.onSurfaceVariant,
+                            modifier = Modifier.rotate(if (bindExpanded) 180f else 0f)
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = bindExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                            // 未绑定选项 = 解绑(回退本表兼容列)
+                            BindOptionRow(
+                                title = stringResource(R.string.period_table_unbound),
+                                selected = pendingBind == null,
+                                onClick = { pendingBind = null }
+                            )
+                            allPeriodTables.forEach { pt ->
+                                BindOptionRow(
+                                    title = pt.name,
+                                    selected = pendingBind == pt.id,
+                                    onClick = { pendingBind = pt.id }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // 节次时间表（可折叠）
             item {
                 Column(
@@ -302,8 +369,8 @@ fun EditTableScreen(
                         )
                         scope.launch {
                             if (effectivePeriodTable != null) {
-                                // issue#40: 节次编辑区改的是共享时间节次表 — 写回 period_tables,
-                                // 全部绑定课表立即生效; 课程行零改动(设计 §9.1 节次绑定不重算)
+                                // issue#40: 节次编辑区改的是共享时间节次表 — 写回 period_tables +
+                                // 同步全部绑定课表兼容列(§5.2); 课程行零改动(§9.1)
                                 viewModel.updatePeriodTableContent(
                                     effectivePeriodTable.copy(
                                         timeJson = newTimeJson,
@@ -311,6 +378,9 @@ fun EditTableScreen(
                                         nodesPerDay = slotRows.size.coerceAtLeast(1)
                                     )
                                 )
+                            } else if (pendingBind != table.periodTableId) {
+                                // issue#40 §5.3: 换绑 — 只写 periodTableId, 课程行零改动
+                                viewModel.bindPeriodTable(table.id, pendingBind)
                             } else {
                                 // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
                                 // 课程不能再停在 13-16 节)
@@ -396,6 +466,37 @@ private fun CardSection(title: String, subtitle: String, content: @Composable ()
             if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         }
         content()
+    }
+}
+
+/** issue#40 §4.3: 换绑下拉的选项行 — 选中态=primaryContainer 色块+对勾(UI 纯色块禁描边规则) */
+@Composable
+private fun BindOptionRow(title: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = SleepyTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(SleepyTheme.shapes.medium)
+            .background(if (selected) colors.primaryContainer else colors.surface)
+            .noRippleClickable(onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (selected) colors.onPrimaryContainer else colors.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        if (selected) {
+            Icon(
+                Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.onPrimaryContainer,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 

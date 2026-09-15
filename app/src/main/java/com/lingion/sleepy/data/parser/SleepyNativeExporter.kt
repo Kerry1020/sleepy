@@ -17,9 +17,10 @@ object SleepyNativeExporter {
         maxWeek: Int,
         nodesPerDay: Int,
         timeJson: String,
-        courses: List<CourseEntity>
+        courses: List<CourseEntity>,
+        periodTable: PeriodTableExport? = null
     ): String {
-        val body = buildBody(tableName, startDate, maxWeek, nodesPerDay, timeJson, courses)
+        val body = buildBody(tableName, startDate, maxWeek, nodesPerDay, timeJson, courses, periodTable)
         val withChk = body + "\nz|chk=crc32:" + SleepyNativeFormat.crc32(body.toByteArray(Charsets.UTF_8))
         return withChk
     }
@@ -31,9 +32,10 @@ object SleepyNativeExporter {
         maxWeek: Int,
         nodesPerDay: Int,
         timeJson: String,
-        courses: List<CourseEntity>
+        courses: List<CourseEntity>,
+        periodTable: PeriodTableExport? = null
     ): String {
-        val body = buildBody(tableName, startDate, maxWeek, nodesPerDay, timeJson, courses)
+        val body = buildBody(tableName, startDate, maxWeek, nodesPerDay, timeJson, courses, periodTable)
         return "【来自Sleepy】\n课程分享：\n\n<<<SLEEPY-BEGIN>>>\n$body\n<<<SLEEPY-END>>>"
     }
 
@@ -43,7 +45,8 @@ object SleepyNativeExporter {
         maxWeek: Int,
         nodesPerDay: Int,
         timeJson: String,
-        courses: List<CourseEntity>
+        courses: List<CourseEntity>,
+        periodTable: PeriodTableExport? = null
     ): String {
         val sb = StringBuilder()
         sb.append("#sleepy-v1\n")
@@ -62,7 +65,27 @@ object SleepyNativeExporter {
         sb.append('|').append("n=").append(partitionedCount)
         sb.append('\n')
 
-        // ---- 作息 (Nd 或逐节 N 行) (§5) ----
+        // ---- issue#40: P 行(独立时间节次表, §6 新格式可选区块) ----
+        // 携带绑定关系(periodTableId 非空)时输出; 旧版本读到 P 行走"未知行类型→dropped+warning"通道, 不硬拒。
+        periodTable?.let { pt ->
+            sb.append("P")
+            sb.append(SleepyNativeFormat.escape(pt.name))
+            sb.append('|').append(pt.id)
+            sb.append('|').append(pt.nodesPerDay)
+            sb.append('\n')
+            if (SleepyNativeFormat.matchesNdPreset(pt.timeJson)) {
+                sb.append("Pd\n")
+            } else if (pt.timeJson.isNotBlank()) {
+                for (n in TimeTableUtils.parseNodes(pt.timeJson)) {
+                    sb.append("Pn").append(n.node)
+                    sb.append('|').append(SleepyNativeFormat.fmtTime(n.start))
+                    sb.append('|').append(SleepyNativeFormat.fmtTime(n.end))
+                    sb.append('\n')
+                }
+            }
+        }
+
+        // ---- 作息 (Nd 或逐节 N 行) (§5) — 兼容列永远保留(§6 旧版本至少读到 timeJson) ----
         if (SleepyNativeFormat.matchesNdPreset(timeJson)) {
             sb.append("Nd\n")
         } else if (timeJson.isNotBlank()) {
@@ -84,6 +107,18 @@ object SleepyNativeExporter {
         val s = sb.toString().trimEnd('\n')
         return s
     }
+
+    /**
+     * issue#40 §6: 新格式可选 periodTable 区块的数据载体。
+     * id = 导出时该课程表绑定的 period_tables.id(导入端恢复共享关系的键);
+     * id 空 = 未绑定, 不写 P 区块。
+     */
+    data class PeriodTableExport(
+        val id: Long,
+        val name: String,
+        val nodesPerDay: Int,
+        val timeJson: String
+    )
 
     /**
      * 按 §4 散周 partition 拆行: 把每个课程的上课周集合按"极大连续段"拆为多条 C 行, 每行 type 重新判定:

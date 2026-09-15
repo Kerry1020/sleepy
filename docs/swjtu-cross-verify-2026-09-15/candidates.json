@@ -1,0 +1,31 @@
+{
+  "generated": "2026-09-15",
+  "school": "西南交通大学 (SWJTU) 本部教学服务平台 yhxt.swjtu.edu.cn (YETHAN/以专)",
+  "queries": ["西南交通大学 教务", "西南交通大学 课表", "Southwest Jiaotong University", "SWJTU", "SWJTU course OR jwgl OR timetable OR schedule", "yethan"],
+  "candidates": [
+    {"full_name": "lpzams/swjtu-course-crawler", "stars": 1, "lang": "Python", "updated": "2025-09-25", "archived": false, "license": null, "default_branch": "main", "desc": "爬取西南交通大学教务网课程表"},
+    {"full_name": "AmaneSuzuha000/SWJTU_Login", "stars": 1, "lang": "Python", "updated": "2026-09-10", "archived": false, "license": null, "default_branch": "request", "desc": "SWJTU CAS + academic system login toolkit; dual-system: legacy JWC (vatuu) + YHXT (yethan) ytoken JWT"},
+    {"full_name": "949144093/SWJTU-JiaoWuAutoLogin", "stars": 2, "lang": "Python", "updated": "2026-04-16", "archived": false, "license": null, "default_branch": "master", "desc": "西南交通大学教务验证码自动识别登录系统"},
+    {"full_name": "HackSwjtu/Postime", "stars": 30, "lang": "JavaScript", "updated": "2026-09-10", "archived": false, "license": "MIT", "default_branch": "master", "desc": "西南交通大学教务网系统一键评课 & 自动登录 chrome 插件 (2016-17, 老教务网)"},
+    {"full_name": "kakasearch/course_download", "stars": 0, "lang": "Python", "updated": "2020-11-21", "archived": false, "license": null, "default_branch": "main", "desc": "下载西南交通大学的教务网教学资源"},
+    {"full_name": "zx1411057234/VatuuSpider", "stars": 3, "lang": null, "updated": "2025-03-15", "archived": false, "license": null, "default_branch": "master", "desc": "利用Python爬取西南交通大学教务网 模拟学生登录 百度AI识别验证码"},
+    {"full_name": "1837634311/SWJTU-Course-Management-Script", "stars": 3, "lang": "Python", "updated": "2026-09-10", "archived": false, "license": "GPL-3.0", "default_branch": "main", "desc": "西南交通大学课程管理脚本，支持选课/抢课、课程查询及退课 (README 称换新系统)"},
+    {"full_name": "Arex-lbb/auto-course-grabber", "stars": 0, "lang": "TypeScript", "updated": "2026-07-11", "archived": false, "license": null, "default_branch": "main", "desc": "西南交大自动抢课系统 - Electron + React 桌面应用 (JWT+SM2)"},
+    {"full_name": "1-nuo/swjtu-course-grabber", "stars": 1, "lang": "JavaScript", "updated": "2026-07-08", "archived": false, "license": null, "default_branch": "master", "desc": "SWJTU 自动抢课工具 (ytoken cookie + JWT 学号解析)"},
+    {"full_name": "kashaku/no-vatuu-evaluation", "stars": 4, "lang": "JavaScript", "updated": "2026-07-27", "archived": false, "license": null, "default_branch": "main", "desc": "西南交通大学教务网 课程自动评分脚本 (VATUU 评教 MV3 插件)"},
+    {"full_name": "Joe-create-star/swjtu-dektx-reminder", "stars": 1, "lang": "Python", "updated": "2026-09-08", "archived": false, "license": "MIT", "default_branch": "main", "desc": "西南交通大学第二课堂提醒助手 (ocw.swjtu.edu.cn VATUU/YETHAN 系)"}
+  ],
+  "touched_non_protocol": [
+    {"full_name": "swjtuhub/swjtu-wiki", "stars": 40, "note": "wiki, 检索触达, 无协议证据需求"},
+    {"full_name": "swjtuhub/SWJTU-Courses", "stars": 333, "note": "课程资料分享, 非协议"},
+    {"full_name": "NaroZeol/GetNoticeFromSWJTU", "stars": 5, "note": "通知聚合(教务网/计院/扬华), 检索触达"},
+    {"full_name": "Sophie10001b/swjtuThesisV3.0", "stars": 81, "note": "LaTeX 模板"},
+    {"full_name": "Studio513/swjtuThesis", "stars": 39, "note": "LaTeX 模板"},
+    {"full_name": "abwuge/SWJTU_Bachelor_Thesis", "stars": 38, "note": "LaTeX 模板"},
+    {"full_name": "Pungjay/swjtuReport", "stars": 6, "note": "课程报告 LaTeX 模板"},
+    {"full_name": "ExploitSWJTU/SWJTUNSA-Wiki", "stars": 5, "note": "网安协会 wiki"},
+    {"full_name": "misc course-work repos (SWJTU-MATH / FGPA-For-SWJTU / fpga-car-re0 等)", "note": "课程作业/科研仓, 非教务协议"}
+  ],
+  "rejection_rule": "archived + pushed > 10 年前; 无命中归档仓",
+  "notes": "yethan 查询无 YETHAN 厂商学生仓 (yethangul 韩文字体系误命中); AutoCourseGrabber 同名仓为西北农大非 SWJTU; 11 个教务候选全量派单, 不手削。"
+}

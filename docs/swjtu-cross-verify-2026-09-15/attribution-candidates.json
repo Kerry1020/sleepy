@@ -1,0 +1,17 @@
+{
+  "generated": "2026-09-15",
+  "rule": "所有 11 个候选均触达并纳入致谢；license 优先使用 GitHub API 返回值，缺失记为 None。",
+  "candidates": [
+    {"project":"lpzams/swjtu-course-crawler","author":"lpzams","license_or_None":null,"role_in_verification":"旧 VATUU 反向证据"},
+    {"project":"AmaneSuzuha000/SWJTU_Login","author":"AmaneSuzuha000","license_or_None":null,"role_in_verification":"YHXT CAS、ytoken cookie、common API 直接证据"},
+    {"project":"949144093/SWJTU-JiaoWuAutoLogin","author":"949144093","license_or_None":null,"role_in_verification":"旧 VATUU 反向证据"},
+    {"project":"HackSwjtu/Postime","author":"HackSwjtu","license_or_None":"MIT","role_in_verification":"老教务网反向证据"},
+    {"project":"kakasearch/course_download","author":"kakasearch","license_or_None":null,"role_in_verification":"旧 VATUU 反向证据"},
+    {"project":"zx1411057234/VatuuSpider","author":"zx1411057234","license_or_None":null,"role_in_verification":"旧 VATUU 反向证据"},
+    {"project":"1837634311/SWJTU-Course-Management-Script","author":"1837634311","license_or_None":"GPL-3.0","role_in_verification":"TMS/VATUU 与 YHXT 边界反向证据"},
+    {"project":"Arex-lbb/auto-course-grabber","author":"Arex-lbb","license_or_None":null,"role_in_verification":"YHXT JWT、SM2、A0422 直接证据"},
+    {"project":"1-nuo/swjtu-course-grabber","author":"1-nuo","license_or_None":null,"role_in_verification":"YHXT ytoken、JWT sub、SM2 直接证据"},
+    {"project":"kashaku/no-vatuu-evaluation","author":"kashaku","license_or_None":null,"role_in_verification":"旧 VATUU 反向证据"},
+    {"project":"Joe-create-star/swjtu-dektx-reminder","author":"Joe-create-star","license_or_None":"MIT","role_in_verification":"OCW/YETHAN 多租户旁证"}
+  ]
+}

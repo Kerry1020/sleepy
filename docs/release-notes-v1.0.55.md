@@ -1,12 +1,39 @@
 # Sleepy v1.0.55
 
-> Courses grouped into a section can now have their shared color changed from the course editor; the direct-import desktop mode now really switches to the desktop layout on UCAS; the schedule pager stops fighting itself after switching timetables; custom theme cards match the presets in size; following-system dark mode reacts instantly; the Honor widget family gets seven fixes; 华东政法大学 imports via its real EAMS portal.
+> The app now opens in grid view with the date shown in the header, and course times read as real clock times out of the box. Every widget has been rebuilt around fixed-size windows — resizing a widget switches it to a matching layout instead of stretching or clipping it. Widgets now refresh themselves at class boundaries, and scrolling is now a per-widget choice.
 
 ## What's New
 
+### Widgets rebuilt on fixed-size windows
+
+- Thirteen widget sizes to place: five forms (Today, Two-Day, Week List, Week View, Week Grid) in small and regular sizes, plus three new wide layouts — Today, Two-Day and Week List now come in a short-and-wide shape that fits a single home-screen row.
+- A widget now draws for its own size tier. Dragging it from a tall shape to a short one swaps in the compact layout instead of squeezing the tall one, so nothing is stretched, clipped or left half-visible.
+- The Today and Two-Day widgets move their day navigation to a fixed bar at the bottom: previous day / back to today / next day, with the date and weekday in the header. A small "+N" pill sits at the bottom-left and counts the classes that didn't fit — per column on the Two-Day widget, so "today +2, tomorrow +1" reads as two separate numbers. Classes you've already attended don't count; a finished day shows "+0"; a day without classes shows no pill at all.
+- Tighter spacing: at the same size, the Today widget now shows as many classes as the Two-Day widget does — two when they fit, three when there's room.
+- The small Week List widget now shows the next three days in the same compact layout as the small Week View widget.
+
+### Scrolling is now per-widget (experimental)
+
+Scrolling is no longer one switch for all widgets. Each widget's edit page has its own "Force scroll (experimental)" toggle, off by default. Off means the widget shows what fits and reports the rest with the "+N" pill; on means that one widget scrolls its content. A scroll-enabled widget squeezed to its smallest size shows only today's classes.
+
+### Widgets refresh at class boundaries
+
+Each widget schedules an alarm for the next class start and end, so the in-progress highlight and the "+N" count stay accurate the moment a class changes — no waiting for a periodic refresh.
+
+### New factory defaults
+
+- The app opens in grid view (it used to open in week view).
+- The grid header shows each day's date by default — no more hunting for where the date is.
+- Course times display as clock times (08:00–09:35) by default instead of period numbers.
+- These are factory defaults only: anything you've changed in settings stays exactly as you set it.
+
+### 172 more schools for direct import
+
+Added 172 schools surveyed from the WakeUp community's dedicated-school library, after verifying each school's portal is alive and routable. The 温州医科大学 entry now points at the school's new academic-system address.
+
 ### Change a group's shared color
 
-Editing any course in a group (courses that share the same name and are colored together) now offers a "跟随组色" (follow group color) row with a change-color entry. Picking a color opens the palette and a confirmation dialog (changing the group color applies to every session in the group that follows it), and sessions with their own manual color keep it. Without a custom group color the row shows "自动(黄金角)" (auto, golden-angle) and a neutral swatch.
+Editing any course in a group (courses that share the same name and are colored together) now offers a "follow group color" row with a change-color entry. Picking a color opens the palette and a confirmation dialog (changing the group color applies to every session in the group that follows it), and sessions with their own manual color keep it. Without a custom group color the row shows "auto (golden-angle)" and a neutral swatch.
 
 ### UCAS desktop mode actually switches (issue #18)
 
@@ -22,57 +49,68 @@ A custom theme card used to be taller than the five preset cards, because the ed
 
 ### Following-system dark mode reacts instantly
 
-With appearance mode set to "跟随系统" (follow system), switching the system between light and dark didn't change the app until restart, because the Compose snapshot froze at launch. The app now follows the switch immediately within the same session. This also fixes a startup crash introduced by an intermediate test build (versionCode 60) that read resources before they were attached.
-
-### Honor widget fixes (issue #31)
-
-- The back-to-today control on the 2×2 today widget is now a real refresh-icon button, the same size as the prev/next arrows, and tapping it returns to today. The old text label was cut off on narrow sizes and could not be tapped; on the 2×2 the header now shows the three buttons (prev / refresh / next) instead.
-- The 2×2 today widget no longer draws bare ‹ › glyphs in its header; on MagicOS they looked like buttons that did nothing when tapped.
-- On MagicOS, tapping the prev/next arrows opened the app instead of switching; the tap intents are rebound so the arrows switch again.
-- When the header can't fit the whole nav row, the entire row is hidden instead of shrinking into an unreadable strip.
-- Content taller than the widget now scrolls inside the 4×5 weekly widget instead of being cut off.
-- Changing the system font size re-pushes widget layouts immediately, and the top-bar layout and large text now match the same scale.
-
-### 华东政法大学 import fixed
-
-The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系统. The entry now points at the real academic system jwxt.ecupl.edu.cn (EAMS, classic_eams type).
+With appearance mode set to "follow system", switching the system between light and dark didn't change the app until restart, because the Compose snapshot froze at launch. The app now follows the switch immediately within the same session. This also fixes a startup crash introduced by an intermediate test build that read resources before they were attached.
 
 ## Fixes
 
-- Replaced the back-to-today text on the 2×2 today widget with a real refresh-icon button that returns to today (issue #31).
-- On faces without buttons (a 2×2 widget squeezed below the nav row's minimum width while not on today, or content taller than the widget), the back-to-today text is no longer drawn — an element that can't be tapped doesn't belong on screen. When squeezed below the minimum width, the back-to-today button itself stays and remains tappable.
-- Removed the bare ‹ › glyphs from the 2×2 today widget header (issue #31).
-- Rebound the prev/next tap intents so arrows switch weeks on MagicOS instead of opening the app (issue #31).
-- Hide the whole widget header nav row when it can't fit, instead of shrinking it (issue #31).
-- Made the 4×5 weekly widget scrollable when content overflows (issue #31).
-- Re-push widget layouts immediately when the system font scale changes (issue #31).
+- Widgets no longer report false conflicts: a course with its own time (e.g. a lab running 08:00–09:45) is now compared against real clock times, so it no longer collides with regular periods it doesn't actually overlap (issues #37, #32).
+- The red error banner after a failed academic-system import can now be dismissed, and it clears itself as soon as the import moves to a new stage (issue #27).
+- 温州医科大学 direct import now uses the school's new academic-system domain; the old address no longer resolves (issue #35).
+- 华东政法大学 import fixed: the school entry pointed at a portal site that isn't the academic system; it now points at the real EAMS system.
+- Honor/MagicOS (issue #31): the prev/next arrows switch days instead of opening the app; widget layouts re-render immediately when the system font size changes; a "problem loading widget" error caused by an unsupported view type in the footer is fixed.
 - Fixed the week view flickering across weeks after switching timetables.
-- Made following-system light/dark react within the session, and fixed the startup crash from the intermediate test build.
-- Fixed the UCAS desktop-mode toggle having no effect on the SEP layout (issue #18).
-- Corrected the 华东政法大学 entry to its real EAMS academic system.
+- Following-system light/dark now reacts within the session, and the startup crash from the intermediate test build is fixed.
+- The UCAS desktop-mode toggle now actually switches SEP to its desktop layout (issue #18).
 
 ## Known Limitations
 
+- The per-widget scroll toggle is experimental. With it off, classes that don't fit are counted in the "+N" pill rather than shown; enlarge the widget or enable scrolling to see them.
 - The UCAS desktop layout is applied by pinning the viewport after page load; if a page re-renders late, tapping the in-app refresh button re-applies it.
-- On the 2×2 today widget the date title is hidden on narrow sizes; the three nav buttons (prev / refresh / next) take the row. Squeezed below the nav row's minimum width, the bar shows only the back-to-today button, still a real, tappable way back.
-- Honor/MagicOS behavior was verified on the reporter's device (Win RT, MagicOS 10) via log analysis and layout reasoning, not on a physical device in hand.
+- Honor/MagicOS behavior was verified via the reporter's logs and layout reasoning, not on a physical device in hand.
 
 ## Verification
 
-- Tests: focused (SchedulePagerSyncRace, SepXrw strip/interceptor, ThemeFollowSystem, CustomThemeCardVisualParity, NavHeaderFit, CourseColorUtil) + full suite: 1716 tests / 0 failures / 0 errors
+- Tests: full suite 1792 tests / 0 failures / 0 errors (166 test classes), including widget geometry, fixed-window tiering, "+N" counting, per-widget scroll, date navigation, clock-time conflict clustering, i18n key-lock and school-list contracts.
 - APK SHA-256:
-  - arm64-v8a: 2083ab4db1d9df27f21516f974e8f76d672aa6b3d5cf87d44a7e83ab06eab8bc
-  - armeabi-v7a: f00ebd02c8eda5a081524f46f64f23bba6b61bfd5a8f87abb57f996a33a305f2
-  - x86_64: c69aeca8d7066c484b92cbfb6388a08ae770f81d9b0b445c806900d3e305cd49
+  - arm64-v8a: 12cdc4fe342f8a56edcf1d17da6978392fc6eb422466e1321da10afcf010ba8b
+  - armeabi-v7a: 4fd7e70f88ed9020a96289cf15b031ffc75e3c0828bb9885f8bf242bbf5d3880
+  - x86_64: f122df67949423d964c0a7aadc431cfd2882c0c5986aa30ecbd9c1486841de4c
 - Build: versionName 1.0.55 / versionCode 61
 
 ---
 
 # Sleepy v1.0.55
 
-> 编辑课程现在可以修改整组共享颜色;直连导入的桌面模式在 UCAS 上真正切到桌面布局;课表页切换课表后不再反复跳周;自定义主题卡与预设卡同尺寸;跟随系统深浅色即时生效;荣耀小组件系列七修;华东政法大学改走真教务 EAMS。
+> 应用现在默认以网格视图启动,表头直接显示日期,课程时间出厂即显示真实钟点。所有小组件围绕固定窗口重做:拖拽改变尺寸时切换到对应档位的布局,不再拉伸或裁切内容。小组件会在上课/下课边界自动刷新,滚动也改成了每个组件自己说了算。
 
 ## 新增功能
+
+### 小组件按固定窗口重做
+
+- 可添加的小组件共十三档:今日、最近两天、本周列表、周视图、网格五种形态各有小/常规两档,另新增今日、最近两天、本周列表的「宽档」——矮而宽,正好放下一排手机桌面。
+- 每一档按自己的目标尺寸绘制。把组件从高的形状拖成矮的形状,会换上紧凑布局,不再把高布局压扁、裁切或显示半截。
+- 今日和最近两天组件的翻日期控件移到底部固定条:上一天 / 回到今天 / 下一天,日期和星期在头部显示。左下角有一枚「+N」小胶囊,报的是没显示出来的课节数——最近两天按列各报,「今天 +2、明天 +1」是两个独立的数;已经上完的课不计入,全部上完显示「+0」,没课的那天不出现胶囊。
+- 排布更紧凑:同样大小下,今日组件能和最近两天组件显示一样多的课——放得下两节就两节,放得下三节就三节。
+- 本周列表小组件(小)改为与周视图(小)同构的近三天紧凑布局。
+
+### 滚动改为每个组件独立控制(实验)
+
+滚动不再是全局一刀切。每个组件的编辑页有自己的「强制滚动(实验)」开关,默认关。关闭时组件显示放得下的课、其余用「+N」胶囊报数;打开时仅这一个组件滚动内容。开了滚动的组件被压缩到最小档时,只显示当天的课。
+
+### 小组件在上课边界自动刷新
+
+每个组件会把闹钟排到下一次上课/下课的整点边界,课程进行中高亮和「+N」计数在换课瞬间就准确,不用等周期刷新。
+
+### 出厂默认三处更新
+
+- 应用启动默认进网格视图(以前是周视图)。
+- 网格表头默认显示每天日期——不用再找日期在哪开了。
+- 课程时间默认显示钟点(08:00–09:35),不再默认显示第几节。
+- 以上只是出厂默认:自己在设置里改过的,永远保持你选的。
+
+### 直连导入新增 172 所学校
+
+依据 WakeUp 社区专属库逐校核实(门户存活且可路由),新增收录 172 所。温州医科大学条目改指向学校新的教务域名。
 
 ### 修改整组共享颜色
 
@@ -92,46 +130,30 @@ The school entry pointed at jw.ecupl.edu.cn, a Sudy portal that isn't a教务系
 
 ### 跟随系统深浅色即时生效
 
-外观模式选「跟随系统」时,系统切换深浅色以前要重启 app 才生效,根子是 Compose 快照在启动时冻结。现在会话内切换立即跟随。同时修复了中间测试包(versionCode 60)在资源就绪前读取导致的启动秒崩。
-
-### 荣耀小组件修复(issue #31)
-
-- 2×2 今日小组件的回到今天控制改成真实的刷新图标按钮,与左右箭头同尺寸,点击即回到今天。原来的文字标签在窄档被裁掉点不了;2×2 顶栏现在显示三颗按钮(prev/刷新/next)。
-- 2×2 今日小组件头部不再画裸 ‹ › 字形,在 MagicOS 上它们看起来像点了没反应的按钮。
-- MagicOS 上点 prev/next 箭头会打开 app 而不是翻周;点按意图已重绑,箭头恢复翻周。
-- 头部放不下整条导航行时,整行隐藏,不再缩成一排看不清的字。
-- 内容超高时,4×5 每周小组件内可滚动,不再截断。
-- 系统字号变化后立即重推小组件布局,顶栏布局与大字同一比例。
-
-### 华东政法大学导入修复
-
-学校条目原来指向 jw.ecupl.edu.cn,那是 Sudy 门户,不是教务系统。条目改指向真教务 jwxt.ecupl.edu.cn(EAMS,classic_eams 类型)。
+外观模式选「跟随系统」时,系统切换深浅色以前要重启 app 才生效,根子是 Compose 快照在启动时冻结。现在会话内切换立即跟随。同时修复了中间测试包在资源就绪前读取导致的启动秒崩。
 
 ## 修复
 
-- 2×2 今日小组件的回到今天文字换成真实刷新图标按钮,点击回到今天(issue #31)。
-- 无按钮的面上(2×2 小组件缩到导航行最小宽度以下且不在今天)不再画「回到今天」文字——点不了的元素不该出现在屏幕上。缩到最小宽度以下时,回到今天按钮本身保留,依然可点。
-- 删除 2×2 今日小组件头部的裸 ‹ › 字形(issue #31)。
-- 重绑 prev/next 点按意图,MagicOS 上箭头翻周不再打开 app(issue #31)。
-- 头部导航行放不下时整行隐藏,不再缩小(issue #31)。
-- 4×5 每周小组件内容超高时内部可滚动(issue #31)。
-- 系统字号变化立即重推小组件布局(issue #31)。
+- 小组件不再误报课程冲突:带自己时间的课(如 08:00–09:45 的实验课)现在按真实钟点比对,不再和实际不重叠的常规节次撞在一起(issue #37、#32)。
+- 教务导入失败后的红色报错条现在可以手动清除,且导入进入新阶段时会自动消失(issue #27)。
+- 温州医科大学直连导入改用学校新的教务域名,旧地址已无法解析(issue #35)。
+- 华东政法大学导入修复:原条目指向的不是教务系统门户,已改指向真正的 EAMS 教务系统。
+- 荣耀/MagicOS(issue #31):翻页箭头恢复翻日期而不再打开应用;系统字号变化后组件布局立即重绘;修复页脚使用了启动器不支持的视图类型导致的「载入窗口小部件时出现问题」。
 - 修复切换课表后周视图跨周反复跳变。
-- 跟随系统深浅色会话内生效,修复中间测试包的启动崩溃。
-- 修复 UCAS 桌面模式开关对 SEP 布局无效(issue #18)。
-- 华东政法大学条目改指向真教务 EAMS。
+- 跟随系统深浅色会话内即时生效,并修复中间测试包的启动崩溃。
+- UCAS 桌面模式按钮现在真正切换 SEP 桌面布局(issue #18)。
 
 ## 已知限制
 
-- UCAS 桌面布局靠页面加载后钳视口实现;个别页面若重排较晚,点应用内刷新按钮会重新应用。
-- 2×2 今日小组件在窄档隐藏日期标题,三颗导航按钮(prev/刷新/next)占满这一行。缩到导航行最小宽度以下时只显示回到今天一颗按钮,依然是真实可点的回程。
-- 荣耀/MagicOS 行为通过报告人机型(Win RT,MagicOS 10)的日志分析与布局推演验证,未在手上真机完成验证。
+- 每组件滚动开关为实验性质。关闭时放不下的课以「+N」胶囊报数而非直接显示;放大组件或打开滚动即可看到全部。
+- UCAS 桌面布局靠页面加载后钳视口实现;若页面延迟重渲染,点应用内刷新按钮可重新应用。
+- 荣耀/MagicOS 行为依据反馈者日志与布局推演核实,非实机复现。
 
 ## 验证
 
-- 测试:定向(SchedulePagerSyncRace / SepXrw 拦截器 / ThemeFollowSystem / CustomThemeCardVisualParity / NavHeaderFit / CourseColorUtil)+ 全量 1716 例:0 失败 / 0 错误
+- 测试:全量套件 1792 用例 / 0 失败 / 0 错误(166 个测试类),覆盖小组件几何、固定窗口归档、「+N」计数、每组件滚动、日期导航、真实钟点冲突分簇、多语言 key 锁与学校列表契约。
 - APK SHA-256:
-  - arm64-v8a: 2083ab4db1d9df27f21516f974e8f76d672aa6b3d5cf87d44a7e83ab06eab8bc
-  - armeabi-v7a: f00ebd02c8eda5a081524f46f64f23bba6b61bfd5a8f87abb57f996a33a305f2
-  - x86_64: c69aeca8d7066c484b92cbfb6388a08ae770f81d9b0b445c806900d3e305cd49
+  - arm64-v8a: 12cdc4fe342f8a56edcf1d17da6978392fc6eb422466e1321da10afcf010ba8b
+  - armeabi-v7a: 4fd7e70f88ed9020a96289cf15b031ffc75e3c0828bb9885f8bf242bbf5d3880
+  - x86_64: f122df67949423d964c0a7aadc431cfd2882c0c5986aa30ecbd9c1486841de4c
 - 构建:versionName 1.0.55 / versionCode 61

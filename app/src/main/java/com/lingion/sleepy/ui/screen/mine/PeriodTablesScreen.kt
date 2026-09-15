@@ -1,0 +1,196 @@
+package com.lingion.sleepy.ui.screen.mine
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lingion.sleepy.R
+import com.lingion.sleepy.data.entity.PeriodTableEntity
+import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
+import com.lingion.sleepy.ui.theme.SleepyTheme
+import kotlinx.coroutines.launch
+
+/**
+ * 独立时间节次表管理页(issue#40 设计 §4.1) — 我的页入口, 只管时间表增删改查,
+ * 不混入课程编辑。列表显示各时间表 + "已绑定 N 张课表"(§4.1 树形图)。
+ *
+ * @param onOpenEdit 进入某张时间表的编辑页(periodTableId 指定; null = 新建后进入)
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun PeriodTablesScreen(
+    onBack: () -> Unit,
+    onOpenEdit: (Long) -> Unit,
+    viewModel: ScheduleViewModel = viewModel()
+) {
+    val colors = SleepyTheme.colors
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val periodTables by viewModel.allPeriodTables.collectAsState()
+    val tables by viewModel.state.collectAsState()
+
+    var deleteTarget by remember { mutableStateOf<PeriodTableEntity?>(null) }
+    var deleteBlockedMsg by remember { mutableStateOf<String?>(null) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.period_tables_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colors.background,
+                    titleContentColor = colors.onBackground,
+                    navigationIconContentColor = colors.onBackground
+                )
+            )
+        },
+        containerColor = colors.background
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
+        ) {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item { Spacer(modifier = Modifier.height(2.dp)) }
+                items(periodTables, key = { it.id }) { pt ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(SleepyTheme.shapes.extraLarge)
+                            .background(colors.surfaceContainer)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = pt.name,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = colors.onSurface
+                            )
+                            Text(
+                                text = stringResource(R.string.period_table_bound_count, pt.boundCount(tables.tables)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { onOpenEdit(pt.id) }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit_table_title), tint = colors.onSurfaceVariant)
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                val newId = viewModel.copyPeriodTable(pt.id)
+                                if (newId > 0) onOpenEdit(newId)
+                            }
+                        }) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = stringResource(R.string.period_table_copy), tint = colors.onSurfaceVariant)
+                        }
+                        IconButton(onClick = { deleteTarget = pt }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete), tint = colors.onSurfaceVariant)
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(80.dp)) }
+            }
+            Button(
+                onClick = {
+                    scope.launch {
+                        val newId = viewModel.insertPeriodTable(
+                            name = context.getString(R.string.period_table_new)
+                        )
+                        if (newId > 0) onOpenEdit(newId)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).height(SleepyTheme.Buttons.ctaHeight),
+                shape = SleepyTheme.Buttons.shape
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.period_table_new))
+            }
+        }
+    }
+
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(stringResource(R.string.period_table_delete_msg_body, target.name), color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteTarget = null
+                    scope.launch {
+                        val ok = viewModel.deletePeriodTable(target.id)
+                        if (!ok) {
+                            val bound = tables.tables.count { it.periodTableId == target.id }
+                            deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
+                        }
+                    }
+                }) { Text(stringResource(R.string.delete), color = colors.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    deleteBlockedMsg?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { deleteBlockedMsg = null },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(msg, color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
+            }
+        )
+    }
+}
+
+/** 绑定数 = time_tables 里 periodTableId 指向本表的行数(与 DAO boundTableCount 同口径, 用已加载列表算免额外查询) */
+private fun PeriodTableEntity.boundCount(tables: List<com.lingion.sleepy.data.entity.TimeTableEntity>): Int =
+    tables.count { it.periodTableId == id }
