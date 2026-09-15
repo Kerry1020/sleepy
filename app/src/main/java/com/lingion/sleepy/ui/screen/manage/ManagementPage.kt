@@ -167,6 +167,9 @@ fun ManagementPage(
                 onJwImportRequested()
             },
             onImported = onImported,
+            drafts = drafts,
+            onRestoreDraft = onRestoreDraft,
+            onDeleteDraft = onDeleteDraft,
             viewModel = viewModel
         )
     }
