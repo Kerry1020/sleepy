@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarHost
@@ -102,6 +104,9 @@ fun ImportSheet(
     onDismiss: () -> Unit,
     onJwImportRequested: () -> Unit,
     onImported: () -> Unit,
+    drafts: List<ImportDraft> = emptyList(),
+    onRestoreDraft: (String) -> Unit = {},
+    onDeleteDraft: (String) -> Unit = {},
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -120,6 +125,7 @@ fun ImportSheet(
     var confirmedStartDate by remember { mutableStateOf("") }
     var confirmedTimeJson by remember { mutableStateOf("") }
     var importJustApplied by remember { mutableStateOf(false) }
+    var showDrafts by remember { mutableStateOf(false) }
     val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
 
     // 外部 app (文件管理器 / 其他课表 app) 通过 Intent 打开 json 时,
@@ -204,13 +210,33 @@ fun ImportSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 标题
-            Text(
-                text = stringResource(R.string.import_title),
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.onSurface,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
+            // 标题与草稿入口
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.import_title),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = { showDrafts = true },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(colors.primaryContainer)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.BookmarkBorder,
+                        contentDescription = stringResource(R.string.import_drafts),
+                        tint = colors.onPrimaryContainer
+                    )
+                }
+            }
             Text(
                 text = stringResource(R.string.import_preview_sub),
                 style = MaterialTheme.typography.bodyMedium,
@@ -361,6 +387,18 @@ fun ImportSheet(
             }
         }
         }
+    }
+
+    if (showDrafts) {
+        ImportDraftSheet(
+            drafts = drafts,
+            onDismiss = { showDrafts = false },
+            onRestore = { id ->
+                showDrafts = false
+                onRestoreDraft(id)
+            },
+            onDelete = onDeleteDraft
+        )
     }
 
     // 格式详情弹窗 ("支持格式"每行 ⓘ 点开)
