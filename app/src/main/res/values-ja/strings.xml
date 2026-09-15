@@ -450,6 +450,11 @@
     <string name="theme_name_slate">スレート</string>
 <string name="default_table_with_num">デフォルト%1$d</string>
     <string name="new_course">新規授業</string>
+    <string name="jw_import_exit_title">インポートを終了しますか？</string>
+    <string name="jw_import_exit_message">インポートはまだ完了していません。下書きを保存して後で続行できます。</string>
+    <string name="jw_import_exit_continue">インポートを続ける</string>
+    <string name="jw_import_exit_keep_draft">終了して下書きを保存</string>
+    <string name="jw_import_exit_delete_draft">終了して下書きを削除</string>
     <string name="jw_import_title">インポート - %1$s</string>
     <string name="month_day_format">%1$d/%2$d</string>
     <string name="section_short">%1$d</string>
