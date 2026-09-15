@@ -11,6 +11,7 @@ import com.lingion.sleepy.util.AppPrefs
 import com.lingion.sleepy.util.ConflictLayoutEngine
 import com.lingion.sleepy.widget.WidgetUpdater
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 
 /**
  * 课表仓库 — 业务数据访问的唯一入口。
@@ -170,6 +171,21 @@ class ScheduleRepository(private val db: AppDatabase) {
         val boundId = table.periodTableId ?: return null
         return periodTableDao.getById(boundId)
     }
+
+    /**
+     * 绑定时间节次表的观察流 — 绑定切换/时间表内容修改都会 emit 新值,
+     * 上游(如 ScheduleViewModel)合并此流实现"立即全部同步"(设计 §5.2)。
+     */
+    fun observeEffectivePeriodTable(tableId: Long): Flow<com.lingion.sleepy.data.entity.PeriodTableEntity?> =
+        tableDao.observeById(tableId)
+            .flatMapLatest { table ->
+                val boundId: Long? = table?.periodTableId
+                if (boundId == null) {
+                    kotlinx.coroutines.flow.flowOf<com.lingion.sleepy.data.entity.PeriodTableEntity?>(null)
+                } else {
+                    periodTableDao.observeById(boundId)
+                }
+            }
 
     /** 新建时间节次表, 返回新 id。独立写动作 = 独立撤回单元。 */
     suspend fun insertPeriodTable(table: com.lingion.sleepy.data.entity.PeriodTableEntity): Long {

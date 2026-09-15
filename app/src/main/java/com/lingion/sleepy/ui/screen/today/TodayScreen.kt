@@ -71,7 +71,7 @@ fun TodayScreen(
     }.let { list ->
         // 用户报障 2026-09-10: ownTime 课渲染前按真实时间归一化节点(与网格同一预处理),
         // 落库的表单占位节点不再影响今日页分组与显示。
-        val tj = state.currentTable?.timeJson
+        val tj = state.effectiveCurrentTable?.timeJson
         if (tj == null) list else list.map { c -> c.normalizeNode(tj) }
     }.sortedBy { it.startNode }
 
@@ -80,9 +80,9 @@ fun TodayScreen(
     // 分组在 LazyColumn 外 remember(LazyListScope 非 composable 上下文)。
     // 用户报障 2026-09-10: 分组走时间域(带 timeJson), 时间零交集的 ownTime 课对
     // 不再因节点占位值相同被并成假冲突行。
-    val laneRows = remember(todayCourses, state.currentTable?.timeJson) {
+    val laneRows = remember(todayCourses, state.effectiveCurrentTable?.timeJson) {
         com.lingion.sleepy.util.ConflictLayoutEngine.weekLaneRows(
-            todayCourses, state.currentTable?.timeJson
+            todayCourses, state.effectiveCurrentTable?.timeJson
         )
     }
 
@@ -113,7 +113,7 @@ fun TodayScreen(
                     item(key = row.courses[0].id) {
                         TodayCourseCard(
                             course = row.courses[0],
-                            timeJson = state.currentTable?.timeJson,
+                            timeJson = state.effectiveCurrentTable?.timeJson,
                             onClick = { selectedCourse = row.courses[0] },
                             groupRows = todayCourses.filter { it.groupId == row.courses[0].groupId }
                         )
@@ -145,7 +145,7 @@ fun TodayScreen(
                                     laneCourses.forEach { laneCourse ->
                                         TodayCourseCard(
                                             course = laneCourse,
-                                            timeJson = state.currentTable?.timeJson,
+                                            timeJson = state.effectiveCurrentTable?.timeJson,
                                             onClick = { selectedCourse = laneCourse },
                                             groupRows = todayCourses.filter { it.groupId == laneCourse.groupId }
                                         )
@@ -164,7 +164,7 @@ fun TodayScreen(
         course = selectedCourse,
         timeString = selectedCourse?.let { it.nodeString(LocalContext.current) },
         allCourses = todayCourses,
-        timeJson = state.currentTable?.timeJson,
+        timeJson = state.effectiveCurrentTable?.timeJson,
         onDismiss = { selectedCourse = null },
         onEdit = { course ->
             selectedCourse = null

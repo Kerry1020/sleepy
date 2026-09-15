@@ -252,7 +252,7 @@ fun ScheduleScreen(
                 // page 是 0-based 周索引，独立于 state.currentWeek 过滤课程
                 val weekCourses = state.courses.filter { it.inWeek(page + 1) }
                     .let { list ->
-                        val tj = state.currentTable?.timeJson
+                        val tj = state.effectiveCurrentTable?.timeJson
                         if (tj == null) list else list.map { c -> c.normalizeNode(tj) }
                     }
                 // 计算本周哪些天是节假日/周末(灰显用)
@@ -274,7 +274,7 @@ fun ScheduleScreen(
                         courses = weekCourses,
                         visibleDays = visibleDays,
                         displayMode = displayMode,
-                        timeJson = state.currentTable?.timeJson ?: "",
+                        timeJson = state.effectiveCurrentTable?.timeJson ?: "",
                         onCourseClick = { selectedCourse = it },
                         greyDays = greyDays
                     )
@@ -296,7 +296,7 @@ fun ScheduleScreen(
                         },
                         // 用户反馈 2026-09-09: 非常规课跨节次空隙 → 渲染期合成占位节次,
                         // 比例定位与聚簇都基于扩展后的槽位表(真实分钟语义)
-                        timeJson = state.currentTable?.timeJson
+                        timeJson = state.effectiveCurrentTable?.timeJson
                     )
                 }
             }
@@ -313,7 +313,7 @@ fun ScheduleScreen(
             allCourses = state.courses.filter { it.inWeek(state.selectedWeek) },
             // 用户报障 2026-09-10: 详情页聚簇与网格同一时间域 — ownTime 课
             // 按真实分钟判重叠, 节点占位值不再制造假冲突。
-            timeJson = state.currentTable?.timeJson,
+            timeJson = state.effectiveCurrentTable?.timeJson,
             onDismiss = { selectedCourse = null },
             onEdit = { course ->
                 selectedCourse = null
