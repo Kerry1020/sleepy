@@ -237,6 +237,7 @@
     <string name="color_auto">Auto</string>
     <string name="color_custom">Custom</string>
     <string name="color_custom_switch">Custom color</string>
+    <string name="course_group_color">Group color</string>
     <string name="color_refresh">Shuffle auto color</string>
     <string name="week_range">Week Range</string>
     <string name="week_range_sub">Default week range for the course; use \"Apply to all slots\" to overwrite every slot</string>
