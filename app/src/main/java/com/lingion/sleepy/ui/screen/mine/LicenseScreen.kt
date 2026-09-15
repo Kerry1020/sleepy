@@ -508,6 +508,10 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     PerSchoolEntry(
         "school-ysu", "燕山大学 YSU",
         "LzBsA (github.com/LzBsA, boya_pp 协议适配原始提交, PR 复活)\nqnxg/hnu_query (qnxg, AGPL-3.0)\nqnxg/weihuda_backend (qnxg)\nheriec/suda-yjs-shedule (heriec)\ndlutor/chaoxingbook (dlutor, MIT)"
+    ),
+    PerSchoolEntry(
+        "school-swjtu", "西南交通大学 SWJTU",
+        "AmaneSuzuha000/SWJTU_Login (YHXT CAS + ytoken cookie + common API 直接证据)\n1-nuo/swjtu-course-grabber (ytoken 请求头 + JWT sub 学号 + SM2 选课加密)\nArex-lbb/auto-course-grabber (JWT + SM2 + A0422 失效码)\n1837634311/SWJTU-Course-Management-Script (GPL-3.0, TMS/vatuu 反向证据)\nHackSwjtu/Postime (MIT, 老教务网反向证据)\nlpzams/swjtu-course-crawler (旧 vatuu 反向证据)\n949144093/SWJTU-JiaoWuAutoLogin (旧 vatuu 反向证据)\nkakasearch/course_download (旧 vatuu 反向证据)\nzx1411057234/VatuuSpider (旧 vatuu 反向证据)\nkashaku/no-vatuu-evaluation (旧 vatuu 反向证据)\nJoe-create-star/swjtu-dektx-reminder (MIT, OCW/YETHAN 多租户旁证)"
     )
 )
 
