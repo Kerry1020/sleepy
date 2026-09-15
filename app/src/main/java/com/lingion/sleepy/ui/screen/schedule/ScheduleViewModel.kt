@@ -253,6 +253,15 @@ class ScheduleViewModel : ViewModel() {
     /** issue#40: 删除时间节次表(被引用时 false, UI 提示先改绑) */
     suspend fun deletePeriodTable(id: Long): Boolean = repo.deletePeriodTable(id)
 
+    /**
+     * issue#40: 丢弃一个从未保存过的新建时间节次表(创建即落库的残留清理)。
+     * 与课表侧 [discardNewTable] 同语义 — 用户在编辑页点了返回(=放弃), 该空行
+     * 不应遗留在管理页列表里。丢弃不走删除守卫(刚建的表不可能有绑定)。
+     */
+    fun discardNewPeriodTable(id: Long) {
+        viewModelScope.launch { repo.deletePeriodTable(id) }
+    }
+
     /** issue#40: 新建空白时间节次表 */
     suspend fun insertPeriodTable(
         name: String,

@@ -75,6 +75,8 @@ import kotlinx.serialization.json.Json
 @Composable
 fun PeriodTableEditScreen(
     periodTableId: Long,
+    /** issue#40: 本表是否为"新建后直接进入"的未保存表 — 返回(未保存)时整行丢弃, 管理页不留空壳 */
+    isNewUnsaved: Boolean = false,
     onBack: () -> Unit,
     viewModel: ScheduleViewModel = viewModel()
 ) {
@@ -103,6 +105,8 @@ fun PeriodTableEditScreen(
     // 预览态: 非 null = 显示确认弹窗; 确认才落库, 取消只清 state(§5.2 用户取消权)
     var pendingPreview by remember { mutableStateOf<TimeTableUtils.PeriodTablePreview?>(null) }
     var pendingSave by remember { mutableStateOf<PeriodTableEntity?>(null) }
+    // issue#40: 新建未保存表的丢弃标记 — 用户确认保存后翻 false, 返回不再删行
+    var unsavedNew by remember { mutableStateOf(isNewUnsaved) }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -136,7 +140,12 @@ fun PeriodTableEditScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.period_tables_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        // issue#40: 未保存的新表返回 = 放弃 — 清掉建表残留行, 与
+                        // 课表侧 discardNewTable 同语义(§4.2 新建取消不遗留空壳)
+                        if (unsavedNew) viewModel.discardNewPeriodTable(periodTableId)
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
@@ -337,6 +346,8 @@ fun PeriodTableEditScreen(
                     val toSave = pendingSave!!
                     pendingPreview = null
                     pendingSave = null
+                    // issue#40: 已确认保存 — 新建行的丢弃标记解除, 返回不再清行
+                    unsavedNew = false
                     scope.launch {
                         viewModel.updatePeriodTableContent(toSave)
                         onBack()

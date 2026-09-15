@@ -54,13 +54,16 @@ import kotlinx.coroutines.launch
  * 独立时间节次表管理页(issue#40 设计 §4.1) — 我的页入口, 只管时间表增删改查,
  * 不混入课程编辑。列表显示各时间表 + "已绑定 N 张课表"(§4.1 树形图)。
  *
- * @param onOpenEdit 进入某张时间表的编辑页(periodTableId 指定; null = 新建后进入)
+ * @param onOpenEdit 进入某张时间表的编辑页(编辑/复制既有表)
+ * @param onCreateNew 新建后进入编辑页 — 由调用方以 pendingNewPeriodTableId 标记,
+ *   编辑页未保存返回时丢弃残留行(与课表侧 pendingNewTableId 同款 §4.2 语义)
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodTablesScreen(
     onBack: () -> Unit,
     onOpenEdit: (Long) -> Unit,
+    onCreateNew: (Long) -> Unit = onOpenEdit,
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val colors = SleepyTheme.colors
@@ -143,7 +146,9 @@ fun PeriodTablesScreen(
                         val newId = viewModel.insertPeriodTable(
                             name = context.getString(R.string.period_table_new)
                         )
-                        if (newId > 0) onOpenEdit(newId)
+                        // issue#40: 创建即落库(自增 id), 编辑页把它当"未保存新表" —
+                        // 未保存返回时由 onCreateNew 调用方/编辑页清掉残留行
+                        if (newId > 0) onCreateNew(newId)
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).height(SleepyTheme.Buttons.ctaHeight),

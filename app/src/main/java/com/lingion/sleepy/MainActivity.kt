@@ -242,6 +242,8 @@ private fun AppRoot(
     var widgetEditId by rememberSaveable { mutableStateOf<Int?>(null) }
     // issue#40: 时间节次表编辑页参数 — Long 可 Bundle 化, 旋转恢复同 editTableId 处理
     var editPeriodTableId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // issue#40: 本表是否为"新建后直接进入"的未保存表 — 编辑页返回时丢弃残留行
+    var pendingNewPeriodTableId by rememberSaveable { mutableStateOf<Long?>(null) }
     var autoImportTriggered by remember { mutableStateOf(false) }
     // 底栏形态(贴底/悬浮 Dock): AppRoot 持真值 — 设置页改, 底栏即时切
     val context = LocalContext.current
@@ -274,7 +276,13 @@ private fun AppRoot(
     // 返回键: 只处理"有 overlay 在栈上"或"编辑课程"两种拦截; 主页面留给双击退出
     // (下方 exitBackHandler — enabled 互斥, 栈空时才接管)。
     BackHandler(enabled = hasOverlay() || editingCourse != null) {
-        if (pendingNewTableId != null) {
+        if (pendingNewPeriodTableId != null && topOverlay() == OverlayScreen.PeriodTableEdit) {
+            // issue#40: 新建时间节次表未保存按系统返回 = 放弃, 清残留行
+            val discardId = pendingNewPeriodTableId!!
+            pendingNewPeriodTableId = null; editPeriodTableId = null
+            mainVm.discardNewPeriodTable(discardId)
+            popOverlay()
+        } else if (pendingNewTableId != null) {
             val discardId = pendingNewTableId!!; val fallback = previousDefaultTableId
             pendingNewTableId = null; previousDefaultTableId = null
             mainVm.discardNewTable(discardId, fallback)
@@ -406,7 +414,14 @@ private fun AppRoot(
         saveableStateHolder.SaveableStateProvider("PeriodTables") {
             com.lingion.sleepy.ui.screen.mine.PeriodTablesScreen(
                 onBack = { popOverlay() },
-                onOpenEdit = { periodId -> editPeriodTableId = periodId; pushOverlay(OverlayScreen.PeriodTableEdit) }
+                onOpenEdit = { periodId ->
+                    editPeriodTableId = periodId
+                    // 新建路径由管理页标记 pendingNewPeriodTableId, 编辑页据此丢弃未保存残留
+                    pushOverlay(OverlayScreen.PeriodTableEdit)
+                },
+                onCreateNew = { newId ->
+                    pendingNewPeriodTableId = newId; editPeriodTableId = newId; pushOverlay(OverlayScreen.PeriodTableEdit)
+                }
             )
         }
         return
@@ -415,7 +430,8 @@ private fun AppRoot(
         saveableStateHolder.SaveableStateProvider("PeriodTableEdit") {
             com.lingion.sleepy.ui.screen.mine.PeriodTableEditScreen(
                 periodTableId = editPeriodTableId ?: -1L,
-                onBack = { popOverlay(); editPeriodTableId = null }
+                isNewUnsaved = editPeriodTableId == pendingNewPeriodTableId && pendingNewPeriodTableId != null,
+                onBack = { popOverlay(); editPeriodTableId = null; pendingNewPeriodTableId = null }
             )
         }
         return
