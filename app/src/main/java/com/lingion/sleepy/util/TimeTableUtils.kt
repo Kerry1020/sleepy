@@ -41,13 +41,15 @@ object TimeTableUtils {
 
     internal data class NodeTime(val node: Int, val start: LocalTime, val end: LocalTime)
 
-    /** 解析 timeJson -> 按 node 排序的 list */
+    /** 解析 timeJson -> 按 node 排序的 list。
+     *  兼容无 "node" 键的旧格式([{start,end},...]) — 节点号按数组序号补(1 起)。
+     *  issue#40 预览读旧格式 timeJson(如迁移生成的 period_tables 行)时不再整体解析失败。 */
     internal fun parseNodes(timeJson: String): List<NodeTime> = try {
         val arr = JSONArray(timeJson)
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             NodeTime(
-                node = o.getInt("node"),
+                node = o.optInt("node", i + 1),
                 start = LocalTime.parse(o.getString("start")),
                 end = LocalTime.parse(o.getString("end"))
             )

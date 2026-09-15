@@ -247,6 +247,9 @@ class ScheduleViewModel : ViewModel() {
     /** issue#40: 复制时间节次表, 返回新副本 id (-1 = 源不存在) */
     suspend fun copyPeriodTable(sourceId: Long): Long = repo.copyPeriodTable(sourceId)
 
+    /** issue#40: 全库课程(保存预览用) — 预览须覆盖所有绑定表的课, state.courses 只装当前选中表 */
+    suspend fun getAllCourses(): List<com.lingion.sleepy.data.entity.CourseEntity> = repo.getAllCourses()
+
     /** issue#40: 删除时间节次表(被引用时 false, UI 提示先改绑) */
     suspend fun deletePeriodTable(id: Long): Boolean = repo.deletePeriodTable(id)
 
