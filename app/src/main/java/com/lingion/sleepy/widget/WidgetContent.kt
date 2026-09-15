@@ -156,7 +156,13 @@ data class WeekData(
     val showDate: Boolean = false,
     val visibleDays: Set<Int> = (1..7).toSet(),
     /** 学期状态（v1.0.37）: 学期外时列头加状态行 */
-    val semesterStatus: DateUtils.SemesterStatus = DateUtils.SemesterStatus.IN_RANGE
+    val semesterStatus: DateUtils.SemesterStatus = DateUtils.SemesterStatus.IN_RANGE,
+    /**
+     * 最小档三天窗口 (2026-09-15 用户令): 真实日期日列, 可跨上下周
+     * (周一「今日居第二位」= 上周日/周一/周二, 各按所在周周次过滤课程)。
+     * 空 = 数据源未提供, compact 渲染回退旧 weekViewCompactColumns 口径。
+     */
+    val compactWindow: List<DayData> = emptyList()
 )
 
 /** 两天视图数据 */

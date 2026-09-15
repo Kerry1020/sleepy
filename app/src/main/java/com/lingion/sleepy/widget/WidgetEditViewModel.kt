@@ -25,10 +25,12 @@ data class WidgetEditUiState(
     val availableTables: List<TimeTableEntity> = emptyList(),
     /** issue#26: widget 场景 课程名显示 原名/别名(全局一档, 全部小组件共享) */
     val useAlias: Boolean = false,
-    /** 设计 §6: 本实例 receiver simpleName (getAppWidgetInfo().configure 解析); null=未知 */
+    /** 设计 §6: 本实例 receiver simpleName (getAppWidgetInfo().provider 解析); null=未知 */
     val receiverSimpleName: String? = null,
     /** 强制滚动(实验) — 本实例一档 (2026-09-14: per-widget, 不再全局共享) */
-    val scrollEnabled: Boolean = false
+    val scrollEnabled: Boolean = false,
+    /** 最小档三天窗口 — 本实例一档 (2026-09-15: per-widget; true=今日居第一位) */
+    val compactTodayFirst: Boolean = true
 )
 
 /**
@@ -73,18 +75,23 @@ class WidgetEditViewModel(
                 availableTables = available,
                 useAlias = AppPrefs.isWidgetUseAlias(ctx),
                 receiverSimpleName = resolveReceiverSimpleName(),
-                scrollEnabled = WidgetScrollStore.isScrollEnabled(ctx, widgetId)
+                scrollEnabled = WidgetScrollStore.isScrollEnabled(ctx, widgetId),
+                compactTodayFirst = WidgetCompactWindowStore.isTodayFirst(ctx, widgetId)
             )
         }
     }
 
     /**
-     * 设计 §6: 由 AppWidgetInfo.configure (pin 时写入的 receiver 组件) 解析族信息。
-     * 实例已删除/厂商不回填 configure → null (编辑页仍可用, 仅滚动节按未知=显示)。
+     * 设计 §6: 解析本实例的 receiver simpleName。
+     * 首选 AppWidgetInfo.provider (绑定即有, 就是 receiver 本体);
+     * configure 仅作兜底 (本 app 未声明 android:configure, 恒 null — 2026-09-15 修正,
+     * 此前只读 configure 导致族判断永远走"未知"分支)。
+     * 实例已删除/厂商异常 → null (编辑页仍可用, 仅按族显隐的节按未知=隐藏)。
      */
     private fun resolveReceiverSimpleName(): String? = runCatching {
         val awm = android.appwidget.AppWidgetManager.getInstance(ctx)
-        awm.getAppWidgetInfo(widgetId)?.configure?.className
+        val info = awm.getAppWidgetInfo(widgetId)
+        (info?.provider?.className ?: info?.configure?.className)
             ?.substringAfterLast('.')
     }.getOrNull()
 
@@ -94,6 +101,18 @@ class WidgetEditViewModel(
      */
     fun setScrollEnabled(v: Boolean) {
         WidgetScrollStore.setScrollEnabled(ctx, widgetId, v)
+        reload()
+        viewModelScope.launch {
+            runCatching { WidgetUpdater.notifyDataChanged(ctx) }
+        }
+    }
+
+    /**
+     * 2026-09-15 用户令: 三天窗口档位 (今日居第一位/第二位)。本实例一档,
+     * 写 WidgetCompactWindowStore 后 reload + 全量重推 — 与 setScrollEnabled 同管线。
+     */
+    fun setCompactTodayFirst(v: Boolean) {
+        WidgetCompactWindowStore.setTodayFirst(ctx, widgetId, v)
         reload()
         viewModelScope.launch {
             runCatching { WidgetUpdater.notifyDataChanged(ctx) }
