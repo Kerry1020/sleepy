@@ -29,16 +29,24 @@ data class ScheduleState(
     val nodesPerDay: Int = 12,
     val selectedCourseId: Long? = null,
     val showCourseDialog: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    /** issue#40: 当前表绑定的独立时间节次表(null=未绑定/悬空, 渲染回退旧兼容列) */
+    val effectivePeriodTable: com.lingion.sleepy.data.entity.PeriodTableEntity? = null
 ) {
     val currentWeekCourses: List<CourseEntity>
         get() = courses.filter { it.inWeek(selectedWeek) }
             .let { list ->
-                val tj = currentTable?.timeJson
+                val tj = effectiveCurrentTable?.timeJson
                 if (tj == null) list else list.map { c -> c.normalizeNode(tj) }
             }
+
+    /** 原始行(库内数据, timeJson 兼容列可能过期) */
     val currentTable: TimeTableEntity?
         get() = tables.find { it.id == selectedTableId }
+
+    /** issue#40: 水合后的当前表 — 节次时间域一律从这里读, 不得直接读 currentTable.timeJson */
+    val effectiveCurrentTable: TimeTableEntity?
+        get() = currentTable?.hydratedWith(effectivePeriodTable)
 }
 
 class ScheduleViewModel : ViewModel() {
@@ -91,28 +99,37 @@ class ScheduleViewModel : ViewModel() {
         // 取消旧协程，避免多个 observeCourses 同时写 state.courses 互相覆盖
         coursesJob?.cancel()
         coursesJob = viewModelScope.launch {
-            repo.observeCourses(tableId).collect { courses ->
-                _state.update { st ->
-                    val table = st.tables.find { it.id == tableId }
-                    val week = table?.let { DateUtils.currentWeek(it.startDate) } ?: 1
-                    // v7.10.16s: 只更新真实周(currentWeek, 供"回到本周"), 不再重置 selectedWeek —
-                    // 用户在第 x 周编辑/删课, 保存回来仍停在 x 周(此前被拽回真实周=跳回第一周体验)。
-                    // 首次加载(initial=true)仍落真实周, 保持原行为
-                    st.copy(
-                        courses = courses,
-                        currentWeek = week,
-                        selectedWeek = if (st.initialWeekSettled) st.selectedWeek else week,
-                        initialWeekSettled = true,
-                        nodesPerDay = table?.nodesPerDay ?: 12
-                    )
+            // issue#40: 课程流与绑定时间节次表流合并 — 时间节次表改动会 emit 新值,
+            // 所有绑定课表立即按新作息解释节次(设计 §5.2 立即全部同步), 课程行不重算
+            combine(
+                repo.observeCourses(tableId),
+                repo.observeEffectivePeriodTable(tableId)
+            ) { courses, periodTable -> courses to periodTable }
+                .collect { (courses, periodTable) ->
+                    _state.update { st ->
+                        val rawTable = st.tables.find { it.id == tableId }
+                        // 水合: 绑定存在时 nodesPerDay/timeJson/smartConfigJson 以时间节次表为准
+                        val table = rawTable?.hydratedWith(periodTable)
+                        val week = table?.let { DateUtils.currentWeek(it.startDate) } ?: 1
+                        // v7.10.16s: 只更新真实周(currentWeek, 供"回到本周"), 不再重置 selectedWeek —
+                        // 用户在第 x 周编辑/删课, 保存回来仍停在 x 周(此前被拽回真实周=跳回第一周体验)。
+                        // 首次加载(initial=true)仍落真实周, 保持原行为
+                        st.copy(
+                            courses = courses,
+                            currentWeek = week,
+                            selectedWeek = if (st.initialWeekSettled) st.selectedWeek else week,
+                            initialWeekSettled = true,
+                            nodesPerDay = table?.nodesPerDay ?: 12,
+                            effectivePeriodTable = periodTable
+                        )
+                    }
+                    // 课程数据变更后刷新所有 widget
+                    try {
+                        com.lingion.sleepy.widget.WidgetUpdater.notifyDataChanged(
+                            com.lingion.sleepy.SleepyApp.get()
+                        )
+                    } catch (_: Exception) {}
                 }
-                // 课程数据变更后刷新所有 widget
-                try {
-                    com.lingion.sleepy.widget.WidgetUpdater.notifyDataChanged(
-                        com.lingion.sleepy.SleepyApp.get()
-                    )
-                } catch (_: Exception) {}
-            }
         }
     }
 

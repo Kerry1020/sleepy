@@ -48,4 +48,19 @@ data class TimeTableEntity(
      * 修改所绑时间表 = 本表立即按新作息解释节次; 课程行 startNode/step 不重算。
      */
     @ColumnInfo(name = "periodTableId") val periodTableId: Long? = null
-)
+) {
+    /**
+     * issue#40 有效时间表水合(设计 §5.1): 绑定存在 → 节次时间/智慧节次/节次数
+     * 全部以所绑 periodTable 为准覆盖本表对应字段(兼容列保留不动, 仅作回退);
+     * 未绑定或传入 null → 原样返回(读旧兼容列, 行为与升级前一致)。
+     *
+     * 渲染/通知/widget 路径统一经此函数取"节次→时间"的真源;
+     * 课程行按 startNode/step 节次绑定, 不因水合而变。
+     */
+    fun hydratedWith(periodTable: PeriodTableEntity?): TimeTableEntity =
+        if (periodTable == null) this else copy(
+            nodesPerDay = periodTable.nodesPerDay,
+            timeJson = periodTable.timeJson,
+            smartConfigJson = periodTable.smartConfigJson
+        )
+}
