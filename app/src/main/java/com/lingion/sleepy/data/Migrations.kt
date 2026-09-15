@@ -20,6 +20,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  *   v5 → v6: 加 courses.alias (issue#26 课程别名)
  *     - 列: TEXT NOT NULL DEFAULT ''
  *     - 旧库所有行 alias='' → 处处显示原名, 行为不变
+ *   v6 → v7: 加 import_drafts 导入草稿快照表
+ *     - 草稿由显式 id 标识, payloadJson 保持导入预览数据的演进空间
  */
 val MIGRATION_3_4: Migration = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -44,10 +46,35 @@ val MIGRATION_5_6: Migration = object : Migration(5, 6) {
     }
 }
 
+val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_6_7_STATEMENTS.forEach { db.execSQL(it) }
+    }
+}
+
 /** 当前已注册的全部 Migration — AppDatabase.Companion.get() 链入 */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+    MIGRATION_3_4,
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7,
+)
 
 /** issue#26: v5→v6 逐条 SQL — 单一事实来源, CourseAliasMigrationTest 用 sqlite-jdbc 直接执行同一份 */
 internal val MIGRATION_5_6_STATEMENTS: List<String> = listOf(
     "ALTER TABLE courses ADD COLUMN alias TEXT NOT NULL DEFAULT ''"
+)
+
+/** v6→v7 SQL is shared with the JVM migration contract test. */
+internal val MIGRATION_6_7_STATEMENTS: List<String> = listOf(
+    """
+    CREATE TABLE IF NOT EXISTS import_drafts (
+        id TEXT NOT NULL PRIMARY KEY,
+        sourceType TEXT NOT NULL DEFAULT '',
+        sourceUrl TEXT NOT NULL DEFAULT '',
+        payloadJson TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+    )
+    """.trimIndent(),
 )
