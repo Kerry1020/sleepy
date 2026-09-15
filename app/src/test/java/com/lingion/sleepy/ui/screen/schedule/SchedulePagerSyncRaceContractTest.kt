@@ -72,14 +72,16 @@ class SchedulePagerSyncRaceContractTest {
         )
     }
 
-    /** 契约 3: LaunchedEffect(pagerState.currentPage) 回调必须检查 !syncingFromState */
+    /** 契约 3: LaunchedEffect(pagerState.currentPage) 回调必须检查 !syncingFromState
+     *  2026-09-14 强化: 守卫扩为 !syncingFromState && pagerState.isScrollInProgress
+     *  (恢复帧无手势 → changeWeek 不回调), 字面 if(!syncingFromState) 模式随之放宽 */
     @Test
     fun pager_current_page_effect_checks_sync_guard() {
         val body = screenSource.substringAfter("LaunchedEffect(pagerState.currentPage)")
             .substringBefore("HorizontalPager")
         assertTrue(
             "LaunchedEffect(pagerState.currentPage) must guard with !syncingFromState",
-            Regex("""if\s*\(\s*!syncingFromState\s*\)""").containsMatchIn(body)
+            Regex("""!syncingFromState""").containsMatchIn(body)
         )
     }
 }

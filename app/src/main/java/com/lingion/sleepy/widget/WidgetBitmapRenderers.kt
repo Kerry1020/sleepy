@@ -738,12 +738,8 @@ object WidgetBitmapRenderers {
     ): Bitmap {
         val todayDow = LocalDate.now().dayOfWeek.value
         val visibleDays = AppPrefs.getVisibleDays(context)
-        val poolDays = if (visibleDays.isEmpty()) data.days
-            else data.days.filter { it.dayOfWeek in visibleDays }
-        val compactDows = weekViewCompactColumns(data.copy(days = poolDays), todayDow)
-        val compactData = data.copy(
-            days = data.days.filter { it.dayOfWeek in compactDows }.sortedBy { it.dayOfWeek }
-        )
+        // compact 脸日列 = compactShownDays 单一口径 (compactWindow 优先, 可跨上下周)
+        val compactData = data.copy(days = compactShownDays(data, visibleDays, todayDow))
         return renderWeekListRegular(context, compactData, wDp, hDp, visibleByCol, footerByCol)
     }
 
@@ -917,6 +913,34 @@ object WidgetBitmapRenderers {
     }
 
     /**
+     * 最小档 compact 脸实际显示日列 — 渲染器与 push() 高度闸门共用单一口径 (§9.1):
+     * compactWindow 非空 → 三天真实日期窗口 (2026-09-15 用户令, 可跨上下周, 按日期升序);
+     * 空 → 回退旧 weekViewCompactColumns 今天邻域 ≤3 列口径(防御: 数据源未提供窗口时)。
+     * visibleDays 过滤后为空集则回退未过滤窗口(防御, 对齐 D5-12 空集回退惯例)。
+     */
+    fun compactShownDays(data: WeekData, visibleDays: Set<Int>, todayDow: Int): List<DayData> {
+        if (data.compactWindow.isNotEmpty()) {
+            val win = if (visibleDays.isEmpty()) data.compactWindow
+                else data.compactWindow.filter { it.dayOfWeek in visibleDays }.ifEmpty { data.compactWindow }
+            return win.sortedBy { it.date }
+        }
+        val pool = if (visibleDays.isEmpty()) data.days
+            else data.days.filter { it.dayOfWeek in visibleDays }
+        val dows = weekViewCompactColumns(data.copy(days = pool), todayDow)
+        return data.days.filter { it.dayOfWeek in dows }.sortedBy { it.dayOfWeek }
+    }
+
+    /**
+     * 最小档三天窗口的真实日期 (2026-09-15 用户令, 渲染与单测共用单一事实来源):
+     * todayFirst=true → 今天/明天/后天(今日居于第一位); false → 昨天/今天/明天(今日居于第二位)。
+     * 固定三天, 不跳空天; 日期可越出本周(上下周打通由数据层按所在周周次过滤课程)。
+     * 纯函数零 LocalDate.now() — today 由调用方注入。
+     */
+    fun compactWindowDates(today: LocalDate, todayFirst: Boolean): List<LocalDate> =
+        if (todayFirst) listOf(today, today.plusDays(1), today.plusDays(2))
+        else listOf(today.minusDays(1), today, today.plusDays(1))
+
+    /**
      * WeekView 小档列选取(渲染与单测共用单一事实来源):
      * 有课的日子优先成池; 今天必保(无课也追加进池, 锚点语义);
      * 按"与今天的距离"取最近 maxColumns 列, 最终按星期升序输出(从左到右绘制顺序)。
@@ -997,14 +1021,9 @@ object WidgetBitmapRenderers {
         maxCoursesPerDay: Int = 5
     ): Bitmap {
         val todayDow = LocalDate.now().dayOfWeek.value
-        // visibleDays 同 Regular 档读法(决策 D5-12): 用户设置决定可选列池, 空集回退全周防御
+        // visibleDays 同 Regular 档读法(决策 D5-12): 空集回退全周防御; 日列走 compactShownDays 单一口径
         val visibleDays = AppPrefs.getVisibleDays(context)
-        val poolDays = if (visibleDays.isEmpty()) data.days
-            else data.days.filter { it.dayOfWeek in visibleDays }
-        val compactDows = weekViewCompactColumns(data.copy(days = poolDays), todayDow)
-        val compactData = data.copy(
-            days = data.days.filter { it.dayOfWeek in compactDows }.sortedBy { it.dayOfWeek }
-        )
+        val compactData = data.copy(days = compactShownDays(data, visibleDays, todayDow))
         return renderWeekViewRegular(context, compactData, wDp, hDp, maxCoursesPerDay)
     }
 

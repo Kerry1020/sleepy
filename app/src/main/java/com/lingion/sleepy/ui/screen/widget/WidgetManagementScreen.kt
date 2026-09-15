@@ -71,34 +71,36 @@ fun WidgetManagementScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (items.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(R.string.widget_manage_empty),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = colors.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(items, key = { it.widgetId }) { item ->
-                        PlacedWidgetRow(item = item, onClick = { onSelect(item.widgetId) })
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (items.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.widget_manage_empty),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(items, key = { it.widgetId }) { item ->
+                            PlacedWidgetRow(item = item, onClick = { onSelect(item.widgetId) })
+                        }
                     }
                 }
             }
