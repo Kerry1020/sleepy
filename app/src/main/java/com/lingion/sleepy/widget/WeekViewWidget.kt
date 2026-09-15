@@ -47,14 +47,11 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
         val contentH = if (forceScroll) {
             WidgetBitmapRenderers.weekViewContentHeightDp(context, data, wDp.toFloat())
         } else if (compactFace) {
-            val pool = if (visibleDays.isEmpty()) data.days
-                else data.days.filter { it.dayOfWeek in visibleDays }
-            val dows = WidgetBitmapRenderers.weekViewCompactColumns(
-                data.copy(days = pool), LocalDate.now().dayOfWeek.value
-            )
             WidgetBitmapRenderers.weekViewContentHeightDp(
                 context,
-                data.copy(days = data.days.filter { it.dayOfWeek in dows }.sortedBy { it.dayOfWeek }),
+                data.copy(days = WidgetBitmapRenderers.compactShownDays(
+                    data, visibleDays, LocalDate.now().dayOfWeek.value
+                )),
                 wDp.toFloat(), maxCoursesPerDay = 5
             )
         } else {
@@ -206,7 +203,12 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
                                 all.filter { it.inWeek(week) }.sortedBy { it.startNode }
                             DayData(date = date, dayOfWeek = dayOfWeek, courses = visible, timeJson = table.timeJson)
                         }
-                        WeekData(days = days, hasTable = true, isDark = isDark, themeKey = themeKey, semesterStatus = status)
+                        // 最小档三天窗口 (2026-09-15 用户令): 真实日期, 上下周打通
+                        val compactWindow = WidgetCompactWindow.build(
+                            repo, table.id, table.timeJson, table.startDate, table.maxWeek,
+                            today, com.lingion.sleepy.util.AppPrefs.isCompactWindowTodayFirst(context)
+                        )
+                        WeekData(days = days, hasTable = true, isDark = isDark, themeKey = themeKey, semesterStatus = status, compactWindow = compactWindow)
                     }
                 }
             } catch (_: Throwable) {
