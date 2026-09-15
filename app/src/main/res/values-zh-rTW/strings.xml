@@ -549,6 +549,7 @@
     <string name="action_confirm">確定</string>
     <string name="course_color">顏色</string>
     <string name="color_custom_switch">自訂顏色</string>
+    <string name="course_group_color">組色</string>
     <string name="export_copied_hint">已叫起分享面板</string>
     <string name="export_course_count">%1$d 門課程</string>
     <string name="export_failed">匯出失敗，請重試</string>
