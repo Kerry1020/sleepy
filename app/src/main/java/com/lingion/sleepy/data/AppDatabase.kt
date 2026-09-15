@@ -5,19 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.lingion.sleepy.data.dao.CourseDao
+import com.lingion.sleepy.data.dao.ImportDraftDao
 import com.lingion.sleepy.data.dao.TimeTableDao
 import com.lingion.sleepy.data.entity.CourseEntity
+import com.lingion.sleepy.data.entity.ImportDraftEntity
 import com.lingion.sleepy.data.entity.TimeTableEntity
 
 @Database(
-    entities = [CourseEntity::class, TimeTableEntity::class],
-    version = 6,                            // 5 → 6: 加 courses.alias (issue#26 课程别名)
+    entities = [CourseEntity::class, TimeTableEntity::class, ImportDraftEntity::class],
+    version = 7,                            // 6 → 7: 持久化导入草稿快照
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
     abstract fun timeTableDao(): TimeTableDao
+    abstract fun importDraftDao(): ImportDraftDao
 
     companion object {
         private const val DB_NAME = "sleepy.db"
