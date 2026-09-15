@@ -50,6 +50,7 @@ class JwImportDraftTest {
         ),
         termStartDate = "2026-09-07",
         tableName = "教务导入 - 哈工程",
+        smartConfigJson = """{"enabled":true,"morningStart":"08:00"}""",
     )
 
     @Test
@@ -57,6 +58,7 @@ class JwImportDraftTest {
         val decoded = JwImportDraftCodec.fromJson(JwImportDraftCodec.toJson(snapshot))
 
         assertEquals(snapshot, decoded)
+        assertEquals(snapshot.smartConfigJson, decoded?.smartConfigJson)
     }
 
     @Test
