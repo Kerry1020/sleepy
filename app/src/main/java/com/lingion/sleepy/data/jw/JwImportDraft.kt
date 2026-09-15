@@ -167,7 +167,10 @@ object JwImportDraftCodec {
             end = json.optString("end", ""),
         )
         return period.takeIf {
-            it.node >= 1 && it.start.isNotBlank() && it.end.isNotBlank()
+            it.node >= 1 &&
+                ((it.start.isBlank() && it.end.isBlank()) ||
+                    (it.start.matches(Regex("^\\d{2}:\\d{2}$")) &&
+                        it.end.matches(Regex("^\\d{2}:\\d{2}$")) && it.start < it.end))
         }
     }
 }

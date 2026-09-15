@@ -46,6 +46,10 @@ import com.lingion.sleepy.SleepyApp
 import com.lingion.sleepy.data.entity.CourseEntity
 import com.lingion.sleepy.data.entity.SmartPeriodConfig
 import com.lingion.sleepy.data.jw.JwCourse
+import com.lingion.sleepy.data.jw.JwImportDraftPhase
+import com.lingion.sleepy.data.jw.JwImportDraftPeriod
+import com.lingion.sleepy.data.jw.JwImportDraftSnapshot
+import com.lingion.sleepy.data.jw.JwImportDraftCodec
 import com.lingion.sleepy.data.jw.JwImportViewModel
 import com.lingion.sleepy.data.jw.JwParseDiagnostics
 import com.lingion.sleepy.data.jw.JwProtocol
@@ -64,6 +68,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import com.lingion.sleepy.R
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 /**
  * 教务直连导入主屏
@@ -73,6 +80,10 @@ import com.lingion.sleepy.R
  * HEU 走 WISEDU 金智教务协议；其他学校按学校配置的协议类型选择 parser。
  */
 class JwImportActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_DRAFT_ID = "extra_import_draft_id"
+    }
 
     // configChanges="uiMode" 不重建 Activity → isSystemInDarkTheme() 不 recomposition。
     // 初始值在 onCreate 赋 — 属性初始化器读 resources 会在构造函数阶段执行,
@@ -101,7 +112,8 @@ class JwImportActivity : ComponentActivity() {
                 val jwViewModel: JwImportViewModel = viewModel()
                 val scheduleViewModel: ScheduleViewModel = viewModel()
                 val scope = rememberCoroutineScope()
-                // 返回恢复精确页面状态: stage 条件组合使被覆盖页(如学校选择页)整体离开
+                val draftRepository = SleepyApp.get().importDraftRepository
+                val incomingDraftId = intent.getStringExtra(EXTRA_DRAFT_ID)
                 // 组合树, 滚动位置/搜索词全部销毁。各 stage 分支内容包独立 key 的
                 // SaveableStateProvider(key = stage 类名), WebView 登录返回学校列表时
                 // 列表滚动位置与 rememberSaveable 态原样恢复。
@@ -115,25 +127,10 @@ class JwImportActivity : ComponentActivity() {
                 LaunchedEffect(stage) { errorMsg = null }
                 var importFinished by remember { mutableStateOf(false) }
                 var exitDraftState by remember { mutableStateOf(ExitDraftState()) }
-                fun requestExit() {
-                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.RequestExit)
-                    exitDraftState = result.state
-                    if (result.outcome == ExitDraftOutcome.FinishDirectly) finish()
-                }
-                fun handleExitChoice(choice: ExitDraftChoice) {
-                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.Choose(choice))
-                    exitDraftState = result.state
-                    when (result.outcome) {
-                        ExitDraftOutcome.KeepDraft,
-                        ExitDraftOutcome.DeleteDraft -> finish()
-                        ExitDraftOutcome.None,
-                        ExitDraftOutcome.FinishDirectly -> Unit
-                    }
-                }
-                BackHandler(enabled = exitDraftState.activeImport) { requestExit() }
                 // 解析后的课程暂存 + 配置确认状态
                 var parsedCourses by remember { mutableStateOf<List<JwCourse>>(emptyList()) }
                 var parsedSchool by remember { mutableStateOf<JwSchoolInfo?>(null) }
+                var draftId by remember { mutableStateOf(incomingDraftId) }
                 var configStartDate by remember { mutableStateOf("") }
                 var configTimeJson by remember { mutableStateOf("") }
                 var configRows by remember { mutableStateOf(emptyList<TimeTableUtils.TimeSlotRow>()) }
@@ -145,6 +142,87 @@ class JwImportActivity : ComponentActivity() {
                     mutableStateOf(
                         parsedSchool?.let { getString(R.string.jw_import_title, it.name) } ?: ""
                     )
+                }
+
+                fun currentDraftSnapshot(): JwImportDraftSnapshot? {
+                    val school = parsedSchool ?: return null
+                    if (parsedCourses.isEmpty()) return null
+                    return JwImportDraftSnapshot(
+                        school = school,
+                        courses = parsedCourses,
+                        periods = configRows.map { JwImportDraftPeriod(it.node, it.start, it.end) },
+                        termStartDate = configStartDate,
+                        tableName = configTableName,
+                        smartConfigJson = Json.encodeToString(configSmartConfig),
+                    )
+                }
+
+                fun checkpointDraft() {
+                    val id = draftId ?: return
+                    val snapshot = currentDraftSnapshot() ?: return
+                    scope.launch { draftRepository.update(id, snapshot) }
+                }
+
+                fun requestExit() {
+                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.RequestExit)
+                    exitDraftState = result.state
+                    if (result.outcome == ExitDraftOutcome.FinishDirectly) finish()
+                }
+                fun handleExitChoice(choice: ExitDraftChoice) {
+                    val result = reduceExitDraftState(exitDraftState, ExitDraftEvent.Choose(choice))
+                    exitDraftState = result.state
+                    when (result.outcome) {
+                        ExitDraftOutcome.KeepDraft -> {
+                            val id = draftId
+                            val snapshot = currentDraftSnapshot()
+                            if (id != null && snapshot != null) {
+                                scope.launch {
+                                    draftRepository.update(id, snapshot)
+                                    finish()
+                                }
+                            } else {
+                                finish()
+                            }
+                        }
+                        ExitDraftOutcome.DeleteDraft -> {
+                            val id = draftId
+                            if (id != null) {
+                                scope.launch {
+                                    draftRepository.delete(id)
+                                    finish()
+                                }
+                            } else {
+                                finish()
+                            }
+                        }
+                        ExitDraftOutcome.None,
+                        ExitDraftOutcome.FinishDirectly -> Unit
+                    }
+                }
+                LaunchedEffect(incomingDraftId) {
+                    val id = incomingDraftId ?: return@LaunchedEffect
+                    val snapshot = withContext(Dispatchers.IO) { draftRepository.get(id) }
+                    if (snapshot == null) {
+                        errorMsg = getString(R.string.import_drafts_empty)
+                        return@LaunchedEffect
+                    }
+                    draftId = id
+                    parsedSchool = snapshot.school
+                    selectedSchool = snapshot.school
+                    parsedCourses = snapshot.courses
+                    configStartDate = snapshot.termStartDate
+                    configTableName = snapshot.tableName.ifBlank {
+                        getString(R.string.jw_import_title, snapshot.school.name)
+                    }
+                    configRows = snapshot.periods.map {
+                        TimeTableUtils.TimeSlotRow(it.node, it.start, it.end)
+                    }
+                    configTimeJson = TimeTableUtils.buildTimeJsonFromRows(configRows)
+                    configSmartConfig = snapshot.smartConfigJson.takeIf { it.isNotBlank() }
+                        ?.let { runCatching { Json.decodeFromString<SmartPeriodConfig>(it) }.getOrNull() }
+                        ?: SmartPeriodConfig()
+                    exitDraftState = exitDraftState.copy(activeImport = true)
+                    stage = Stage.ConfigureConfirm
                 }
 
                 when {
@@ -183,7 +261,7 @@ class JwImportActivity : ComponentActivity() {
                                 ) {
                                     DatePickerField(
                                         value = configStartDate,
-                                        onValueChange = { configStartDate = it },
+                                        onValueChange = { configStartDate = it; checkpointDraft() },
                                         label = getString(R.string.import_week_start),
                                         modifier = Modifier.fillMaxWidth(),
                                         isError = confirmError != null
@@ -193,7 +271,7 @@ class JwImportActivity : ComponentActivity() {
                                     // 此次把命名入口放到导入前, 落库前最后一次修改机会.
                                     TextField(
                                         value = configTableName,
-                                        onValueChange = { configTableName = it },
+                                        onValueChange = { configTableName = it; checkpointDraft() },
                                         label = { Text(getString(R.string.jw_table_name_label)) },
                                         singleLine = true,
                                         modifier = Modifier.fillMaxWidth()
@@ -206,9 +284,10 @@ class JwImportActivity : ComponentActivity() {
                                         onRowsChange = { newRows ->
                                             configRows = newRows
                                             configTimeJson = TimeTableUtils.buildTimeJsonFromRows(newRows)
+                                            checkpointDraft()
                                         },
                                         smartConfig = configSmartConfig,
-                                        onSmartConfigChange = { configSmartConfig = it }
+                                        onSmartConfigChange = { configSmartConfig = it; checkpointDraft() }
                                     )
                                 }
                             },
@@ -244,8 +323,10 @@ class JwImportActivity : ComponentActivity() {
                                                 },
                                                 startDate = configStartDate,
                                                 timeJson = configTimeJson,
-                                                nodesPerDay = maxNode
+                                                nodesPerDay = maxNode,
+                                                smartConfigJson = Json.encodeToString(configSmartConfig)
                                             )
+                                            draftId?.let { draftRepository.delete(it) }
                                             Log.d("JwImport", "importAsNewTable tableId=$tableId courses=${parsedCourses.size}")
                                             statusMsg = getString(R.string.jw_import_success, parsedCourses.size)
                                             importFinished = true
@@ -334,7 +415,7 @@ class JwImportActivity : ComponentActivity() {
                                             // 如果 WebView 抓到 periods 则预填，否则空行让用户填
                                             val maxNode = courses.maxOf { maxOf(it.startNode, it.endNode) }
                                             val periodMap = periods.associate { it.first to (it.second to it.third) }
-                                            configRows = (1..maxNode).map { node ->
+                                            val newRows = (1..maxNode).map { node ->
                                                 val filled = periodMap[node]
                                                 TimeTableUtils.TimeSlotRow(
                                                     node = node,
@@ -342,11 +423,23 @@ class JwImportActivity : ComponentActivity() {
                                                     end = filled?.second ?: ""
                                                 )
                                             }
+                                            configRows = newRows
                                             // 学期起始日预填: JSON 直连协议 (boya_pp/cqu/chaoxing) 能从
                                             // 接口拿到第一周周一 (如燕大 2026-2027-1 实为 2026-08-31,
                                             // 本地 9 月首一推断会差一周), 用户仍可在确认页修改
                                             configStartDate = termStartDate
                                             configTimeJson = ""
+                                            val snapshot = JwImportDraftSnapshot(
+                                                school = sch,
+                                                courses = courses,
+                                                periods = newRows.map { JwImportDraftPeriod(it.node, it.start, it.end) },
+                                                termStartDate = termStartDate,
+                                                tableName = getString(R.string.jw_import_title, sch.name),
+                                                smartConfigJson = Json.encodeToString(SmartPeriodConfig()),
+                                            )
+                                            draftId = withContext(Dispatchers.IO) {
+                                                draftRepository.save(snapshot, sourceType = "jw", sourceUrl = sch.url)
+                                            }
                                             stage = Stage.ConfigureConfirm
                                             statusMsg = null
                                         } catch (e: Exception) {

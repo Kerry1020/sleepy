@@ -39,6 +39,9 @@ import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.screen.schedule.ViewMode
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.lingion.sleepy.data.entity.CourseEntity
+import com.lingion.sleepy.data.jw.JwImportDraftCodec
+import com.lingion.sleepy.ui.screen.imports.ImportDraft
+import com.lingion.sleepy.ui.screen.imports.JwImportActivity
 import com.lingion.sleepy.ui.screen.edit.AddCourseScreen
 import com.lingion.sleepy.ui.component.NavDockSpec
 import com.lingion.sleepy.ui.component.PillNavigationBar
@@ -507,6 +510,7 @@ private fun MainTabs(
     // tab 往返滚动位置保真: when 条件组合同样整页移除被切走的 tab, 各 tab 内容包
     // SaveableStateProvider(currentTab.name) — key 稳定(tab 枚举名), 返回时恢复。
     // 注意: scheduleViewMode 会话态仍由 AppRoot 持有(§1.4 契约), 此处只管组合作用域。
+    val draftScope = rememberCoroutineScope()
     when (currentTab) {
         Tab.Schedule -> holder.SaveableStateProvider(currentTab.name) {
             ScheduleScreen(
@@ -526,7 +530,23 @@ private fun MainTabs(
             // pendingImportText != null 是另一路 (外部 app 分享课表文本进来) 的既有自动弹层, 语义不同并存。
             val autoOnce = MainActivity.autoShowImportOnceState.value
             if (autoOnce) MainActivity.autoShowImportOnceState.value = false
+            val draftEntities by SleepyApp.get().importDraftRepository.observeAll().collectAsState(initial = emptyList())
+            val drafts = draftEntities.mapNotNull { entity ->
+                val snapshot = JwImportDraftCodec.fromJson(entity.payloadJson) ?: return@mapNotNull null
+                ImportDraft(
+                    id = entity.id,
+                    name = snapshot.tableName.ifBlank { snapshot.school.name },
+                    details = "${snapshot.courses.size} ${ctx.getString(com.lingion.sleepy.R.string.import_courses)}",
+                )
+            }
             ManagementPage(autoShowImportSheet = autoOnce || MainActivity.pendingImportText != null, onJwImportRequested = { ctx.startActivity(Intent(ctx, com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java)) }, onCreateNewTableRequested = onCreateNewTable, onManualAdd = { pushOverlay(OverlayScreen.AddCourse) }, onEditCurrentTable = { pushOverlay(OverlayScreen.EditTable) }, onExportRequested = { pushOverlay(OverlayScreen.Export) },
+                drafts = drafts,
+                onRestoreDraft = { id ->
+                    ctx.startActivity(Intent(ctx, JwImportActivity::class.java).putExtra(JwImportActivity.EXTRA_DRAFT_ID, id))
+                },
+                onDeleteDraft = { id ->
+                    draftScope.launch { SleepyApp.get().importDraftRepository.delete(id) }
+                },
                 // v7.10.16w 用户 2026-09-10: 导入完成留在管理页 — 此前硬跳课表页(周/网格),
                 // 打断"复制副本→追加导入→继续操作"的管理动线。当前课表摘要卡就地刷新可见。
                 onImported = { /* 留在管理页, 摘要卡就地刷新 */ })
