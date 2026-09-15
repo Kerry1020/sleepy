@@ -1,0 +1,24 @@
+{
+  "repo_name": "ershiyidian/WakeUp_SHU",
+  "stars": 0,
+  "default_branch": "main",
+  "license": "NOASSERTION",
+  "relevant_files": [
+    "core/dex1/classes/app/05578_com.suda.yzune.wakeupschedule.schedule_parser.parser.o0OO00O.dexasm.json",
+    "core/dex1/classes/app/05451_com.suda.yzune.wakeupschedule.schedule_parser.bean.JZHandCourseInfoItem$$serializer.dexasm.json",
+    "core/dex1/classes/app/05453_com.suda.yzune.wakeupschedule.schedule_parser.bean.JZHandCourseInfoItem.dexasm.json",
+    "core/dex1/classes/app/05546_com.suda.yzune.wakeupschedule.schedule_parser.parser.jz.JinZhiSuperParser$generateCourseList$1.dexasm.json"
+  ],
+  "protocol_approach": "枚举式多分支 HTML 解析器(4 实例共用一方法, packed-switch first_key=0 分派), 其中一分支为正方 DataGrid1 网格表解析: getElementById 兜底 DataGrid1→MainWork_DataGrid1, 遍历 tr/td, 按 align=center 识别节次标签, rowspan 折叠计数, td 内容按 <br>{2,} 切分后逐行按「课程:/主讲教师:/辅讲教师/第N周」标记分类填 Course 字段。",
+  "exact_regex_or_code_snippet": "构造器 4 分支 Regex(字段 OooO:Lkotlin/text/Regex): 1) \"从第(\\\\d+)至(\\\\d+)\" 2) \"\\\\d周\" 3) \"[一二三四五六七日][0-9]+-[0-9]+\" 4) \"第[0-9]*周\"。主方法 OooO0o(Lo00OOOo/oo000o;) 共 1175 条指令, packed-switch targets=[L0733(zhengfang-oReportCell/a8 老式), L04e0, L02c6]。DataGrid 分支字符串常量(按序): \"-\",\"td\",\"tr\",\"周\",\"第\",\"单\",\"双\",\"html\",\"\",\"<head>\",\"</head>\",\"DataGrid1\",\"MainWork_DataGrid1\",\"align\",\"center\",\"rowspan\",\"<br>{2,}\",\"<br>\",\"课程:\",\"(\",\"辅讲教师\",\")\",\"主讲教师:\",\";\",\",\",\"单双\",\"name\",\"rowclass\",\"周)\",\"tr.ui-widget-content\",\"span\",\" \",\"/\",\"/ \",\" 单周\",\" 双周\",\"节\",\"</html>\",\"oReportCell\",\"a8\",\"div\",\"单周\",\"双周\",\"课程：\",\"pre\"。关键控制流: L0055 getElementById(\"DataGrid1\") null 则 L005d getElementById(\"MainWork_DataGrid1\"); L0065 select(\"tr\"); L0083-L009c attr(\"align\").toLowerCase()==\"center\" 判节次标签 td; L00e9 attr(\"rowspan\"); L0111 按 Regex(\"<br>{2,}\") split; L012c 再按 \"<br>\" join 清理; L015f containsMatchIn/startsWith(\"课程:\") → 课名; L0183 contains(\"辅讲教师\") → 从'('到')'剥出辅讲; L01a6 startsWith(\"主讲教师:\") → 教师; L021f contains(\"单双\") → 单双周枚举(0/1/2); L03e7 contains(\"周)\") 周次定位; L0428 char 65288(全角括号(/,/)/44 逗号 替换; L0843 另一分支 startsWith(\"课程：\")全角冒号。注意: 主流程用半角\"课程:\"/\"主讲教师:\", 分支 L0843 用全角\"课程：\"。",
+  "verdict": "POSITIVE",
+  "verdict_reason": "dex dump 实证 WakeUp parser 与 Sleepy suda_post 实现同构: 同一 DataGrid1/MainWork_DataGrid1 双选择器、align=center 节次识别、<br> 行拆分、课程:/主讲教师: 标记分类、第N周+单/双周次语义。",
+  "sleepy_claim_check": {
+    "DataGrid1_selector": "证实 — L0055 \"DataGrid1\" getElementById, L005d null 兜底 \"MainWork_DataGrid1\"; 注意顺序: WakeUp 先 DataGrid1 后 MainWork_DataGrid1",
+    "br_split": "证实 — L0111 按 Regex \"<br>{2,}\" split(容忍连续 br), 非严格单个 <br>; 随后 L012c 按 \"<br>\" fill-array 清理。Sleepy 若用单个 <br> 分行, 对连续 <br> 的容错弱于 WakeUp",
+    "teacher_markers": "证实 — L01a6 \"主讲教师:\"(半角冒号, startsWith 语义)与 L0183 \"辅讲教师\"(contains, 且从'('到')'剥内层)双标记; WakeUp 同时解析辅讲教师, Sleepy 描述未见辅讲处理=可能少拿一字段; 半角/全角差异: 主流程半角\"课程:\", 分支 L0843 才有全角\"课程：\", 若 Sleepy 只匹配全角冒号则主流程行会漏",
+    "week_regex": "证实+细化 — 构造器静态 Regex \"第[0-9]*周\"(find 单周次)与 \"从第(\\\\d+)至(\\\\d+)\"(连续周次区间)与 \"\\\\d周\"; 行内单双周由 L021f contains(\"单双\")/L0806 contains(\"单周\")/L080d contains(\"双周\") 三态判定(0=每周,1=单,2=双), 非 regex 捕获组形式。Sleepy 的\"第N-M周(单|双)\"在 WakeUp 中体现为区间解析(L03e7 \"周)\" 定位)+独立单双标志, 结构等价但形态不同",
+    "week_header_row_skip": "部分证伪预期 — 全方法 0 处 \"星期\" 字符串常量; 表头跳过不是靠\"含星期X的行\"文本过滤, 而是靠 td 的 align!=center 过滤(节次列 center, 表头/内容列非 center)+tr.ui-widget-content 选择器(L0508, 另一分支)限定数据行。Sleepy 若靠\"星期X\"文本跳表头, 在该协议下与 WakeUp 策略不同但效果可能等价",
+    "rowspan": "证实 — L00e9 attr(\"rowspan\") 参与(纵向合并单元格折叠计数), Sleepy 实现若未处理 rowspan 会丢跨节次课"
+  }
+}

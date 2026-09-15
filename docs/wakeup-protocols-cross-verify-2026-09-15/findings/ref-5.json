@@ -1,0 +1,18 @@
+{
+  "repo_name": "zyc-816/NUISTTable",
+  "stars": 0,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    "app/src/main/java/com/example/nuisttable/web/request.kt",
+    "app/src/main/java/com/example/nuisttable/web/api.kt",
+    "app/src/main/java/com/example/nuisttable/json/getJsonData.kt",
+    "app/src/main/java/com/example/nuisttable/json/data/Respose.kt",
+    "app/src/main/java/com/example/nuisttable/MainActivity.kt",
+    "app/src/main/java/com/example/nuisttable/ui/asset/WebPage.kt"
+  ],
+  "protocol_approach": "南京信息工程大学(NUIST)课表 App(Kotlin, 2026-09 仍活跃)。协议 = 正方新一代 jwapp 移动端(EMAP/ 南京南软系不是 south_soft): 基址 https://jwxt.nuist.edu.cn, WebView 登录后 onPageFinished 监听 finUrl 以 '#/xskcb' 结尾判成功, CookieManager 取含 GS_SESSIONID 的 cookie, 之后纯 OkHttp POST form + Cookie 头。三接口: ①学期 /jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do(空参) → datas.dqxnxq.rows[0].DM (格式如 20251, dropLast(2)=学年 takeLast(1)=学期); ②学期开始日期 /jwapp/sys/wdkb/modules/jshkcb/cxjcs.do(XN,XQ) → datas.cxjcs.rows[0].XQKSRQ; ③课表 /jwapp/sys/wdkb/modules/xskcb/cxxszhxqkb.do(XNXQDM, SKZC=周次), 逐周循环 week 1..20 各请求一次 → datas.cxxszhxqkb.rows[]: {KCM课程名, SKJS教师, SKXQ星期(Int), KSJC开始节次, JSJC结束节次, JASMC教室}。",
+  "exact_regex_or_code_snippet": "// request.kt: val termApi = Api(path = \"/jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do\", params = emptyMap())\n// fun beginDateApi(XN, XQ) = Api(path = \"/jwapp/sys/wdkb/modules/jshkcb/cxjcs.do\", params = mapOf(\"XN\" to XN, \"XQ\" to XQ))\n// fun scheduleApi(term, week) = Api(path = \"/jwapp/sys/wdkb/modules/xskcb/cxxszhxqkb.do\", params = mapOf(\"XNXQDM\" to term, \"SKZC\" to week))\n// WebPage.kt:83-85: if(finUrl.endsWith(\"xskcb\")) { val cookie = cookieManager.getCookie(\"https://jwxt.nuist.edu.cn/jwapp/sys/wdkb/*default/index.do?EMAP_LANG=zh#/xskcb\"); if(cookie.contains(\"GS_SESSIONID\")) ... }\n// getJsonData.kt: datas.dqxnxq.rows[0].DM / datas.cxjcs.rows[0].XQKSRQ / Respose<CxxszhxqkbData>.datas.cxxszhxqkb.rows → CxxszhxqkbContent(KCM, SKJS, SKXQ: Int, KSJC: String, JSJC: String, JASMC)\n// MainActivity.kt:92-95: for (week in 1..20) { val weekJson = requestData(scheduleApi(XNXQDM, week.toString()), cookie); scheduleList.add(getSchedule(weekJson)) }",
+  "verdict": "POSITIVE",
+  "verdict_reason": "代码说话: NUIST jwxt.nuist.edu.cn 走的是正方新一代 jwapp/EMAP 移动端(wdkb 模块 + GS_SESSIONID cookie + datas.<模块名>.rows 包装), 不是 south_soft——全仓搜不到 studentTableVm/studentTableVms/activities 任何南软特征 JSON 字段。周次靠 SKZC 参数逐周 1..20 循环(与 Sleepy HEBZYHJ 逐周抓取同形态)。字段模型与 NUIST 实际官方接口一致, 若 Sleepy 收录 NUIST 可直接复用 zf_new/jwapp 系通路+逐周循环, 勿按南软协议实现。"
+}

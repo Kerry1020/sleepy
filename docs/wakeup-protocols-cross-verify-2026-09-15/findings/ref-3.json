@@ -1,0 +1,14 @@
+{
+  "repo_name": "Daydream357/WakeUpSchedule",
+  "stars": 0,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    "README.md",
+    "releases/com.kcb.wakeupschedule_6.0.22.apk"
+  ],
+  "protocol_approach": "非代码仓库。文件树仅 4 个 blob: .gitignore / LICENSE(MIT) / README.md / releases/com.kcb.wakeupschedule_6.0.22.apk。README 自述'本仓库提供的是 v6.0.22 老版本, 无广告' + 免责声明'仅供个人学习与备份使用, 版权归原作者所有' = WakeUp 课程表 v6.0.22 官方 APK 的再分发备份仓(包名 com.kcb.wakeupschedule), 无任何源码/解析器/协议代码。注意: 这是 APK 直发仓, 不是反编译仓库——仓库里没有反编译出的 smali/java 源码。",
+  "exact_regex_or_code_snippet": "文件树全集: [.gitignore, LICENSE, README.md, releases/com.kcb.wakeupschedule_6.0.22.apk]; README: '> **本仓库提供的是 v6.0.22 老版本，无广告，纯净好用。**' + '本仓库仅供个人学习与备份使用，版权归原作者所有。'",
+  "verdict": "INDIRECT",
+  "verdict_reason": "确认是官方 APK 再分发备份仓(v6.0.22 无广告版), 非反编译源码仓——无 parser 目录无协议代码, 唯一可能的证据载体是那个 5.8MB APK 二进制本身(需 jadx 反编译才有协议价值, 本轮只读调研不做)。对 Sleepy 无直接协议证据, 仅佐证 WakeUp v6.0.22 包名 com.kcb.wakeupschedule 与版本形态。"
+}

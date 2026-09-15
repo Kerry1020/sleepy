@@ -1,0 +1,13 @@
+{
+  "repo_name": "zzzsq1/hait_AICourseTable",
+  "stars": 0,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": [
+    {"path": "README.md", "purpose": "唯一文件, 仅标题 '河南工学院-小爱课程表适配-青果教务系统'", "lines_with_protocol": [1]}
+  ],
+  "protocol_approach": "无代码。仓库全树仅 README.md 一个 blob (git tree recursive=1 验证), 一行标题声明是河南工学院青果教务的小爱课程表适配。无 scheduleHtmlProvider/scheduleHtmlParser, 无任何接口路径或解析逻辑。repo size 仅 1KB, 2024-08-01 后再无 push。",
+  "exact_regex_or_code_snippet": "# hait_AICourseTable\n河南工学院-小爱课程表适配-青果教务系统\n1\n(全文如此, 无其他内容)",
+  "verdict": "NULL_EVIDENCE",
+  "verdict_reason": "空壳仓库: 只有 README 一行标题, 零代码零协议证据。可作为'河南工学院走青果教务'的维护者自述佐证 (INDIRECT 级别的 school-selector 信息), 但对课表协议本身无任何贡献。"
+}

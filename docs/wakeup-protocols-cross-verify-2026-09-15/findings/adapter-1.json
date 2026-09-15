@@ -1,0 +1,11 @@
+{
+  "repo_name": "xiaxiaoyu8/xiaoaiSchedule",
+  "stars": 1,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": ["parser", "provider", "XiaoaiScheduleTool/localTools/code/parser.js"],
+  "protocol_approach": "金智 jwapp 新版 EMAP JSON API: POST /jwapp/sys/cxxszhxqkb.do (body XNXQDM=学年-学期), 读 data.datas.cxxszhxqkb.rows 数组逐行转小爱课程结构",
+  "exact_regex_or_code_snippet": "url = 'http://kjjw.ctgu.edu.cn/jwapp/sys/cxxszhxqkb.do' ... body: 'XNXQDM=' + XNXQDM; rows = data.datas.cxxszhxqkb.rows; crouse.name = rows[i].KCM; crouse.teacher = rows[i].SKJS; crouse.position = rows[i].JASMC; crouse.day = rows[i].SKXQ; let weekData = rows[i].ZCMC; let startSection = rows[i].KSJC; let endSection = rows[i].JSJC;",
+  "verdict": "INDIRECT",
+  "verdict_reason": "确为金智 (jwapp/sys/*.do EMAP 族) 适配, 但用的是新版大写字段族 KCM/SKJS/JASMC/SKXQ/ZCMC/KSJC/JSJC; 任务点名的小写族 xqj/djj/qmz/dsz/jsxm/skdd 与 HTML #CourseFormTable 在全仓 code-search 均 0 命中"
+}

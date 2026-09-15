@@ -1,0 +1,47 @@
+{
+  "sha": "3700653b52e2796046aca85ae7cf35f863f17964",
+  "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/trees/3700653b52e2796046aca85ae7cf35f863f17964",
+  "tree": [
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d21ab660ddc9650e74432650db1f9cbb6e4ba176",
+      "size": 1067,
+      "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/blobs/d21ab660ddc9650e74432650db1f9cbb6e4ba176"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ead9a495d53f9b24a3b24430fca1a3d375d23526",
+      "size": 256,
+      "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/blobs/ead9a495d53f9b24a3b24430fca1a3d375d23526"
+    },
+    {
+      "path": "parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e6dbeb2b8e1f7ec7ea683ad7f03d6792a12134a0",
+      "size": 6615,
+      "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/blobs/e6dbeb2b8e1f7ec7ea683ad7f03d6792a12134a0"
+    },
+    {
+      "path": "provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8312f5d72576d7c18b22f9566086aac5de140e4",
+      "size": 585,
+      "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/blobs/c8312f5d72576d7c18b22f9566086aac5de140e4"
+    },
+    {
+      "path": "timer.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e4c5d34afc97a3076f0c38b3bf5421bc2accae90",
+      "size": 2307,
+      "url": "https://api.github.com/repos/Kou-JunHao/mi-schedule/git/blobs/e4c5d34afc97a3076f0c38b3bf5421bc2accae90"
+    }
+  ],
+  "truncated": false
+}

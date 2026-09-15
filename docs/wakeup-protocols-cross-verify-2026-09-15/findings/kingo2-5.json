@@ -1,0 +1,16 @@
+{
+  "repo_name": "sw7943604-del/shike-android",
+  "stars": 0,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": [
+    {"path": "app/src/main/java/cn/edu/csu/timetable/PortalActivity.java", "purpose": "WebView 门户 + 读取课表入口; 直开 jsxsd 端点 = 强智判定关键证据", "lines_with_protocol": [30, 17, 70, 71, 74]},
+    {"path": "core/src/main/java/cn/edu/csu/timetable/core/importer/HtmlImporter.java", "purpose": "jsoup 全表扫描导入 + 学期/校历 metadata regex", "lines_with_protocol": [15, 32, 33, 34]},
+    {"path": "core/src/main/java/cn/edu/csu/timetable/core/importer/TableImporter.java", "purpose": "通用表格解析: 星期/节次表头自检 + 课程块拆分", "lines_with_protocol": [4, 5, 18]},
+    {"path": "core/src/main/java/cn/edu/csu/timetable/core/importer/WeekParser.java", "purpose": "周次串解析: 逗号/区间/单双归一化", "lines_with_protocol": [5, 6, 7, 8, 9, 10]}
+  ],
+  "protocol_approach": "中南大学 (CSU) 课程表安卓应用 (Java, 2026-09 活跃)。判定: 中南大学本科教务 = 强智 (jsxsd) 系统, 域名 csujwc.its.csu.edu.cn (legacy http 白名单硬编码), PortalActivity 一键直达 http://csujwc.its.csu.edu.cn/jsxsd/xskb/xskb_list.do — /jsxsd/xskb/xskb_list.do 是强智课表标准端点, 与青果 kbcx/xskbcx 无关。读取方式: WebView 登录 my.csu.edu.cn 统一认证后, evaluateJavascript 递归 walk 所有同源 frame (深度 5, 总量 2MB 上限) 抓 outerHTML, 交 HtmlImporter.parse。解析: jsoup 对每个 table 通用网格化 (rowspan/colspan 展开, 占位矩阵), TableImporter 靠表头自检定位 (星期 regex '(?:星期|周)([一二三四五六日天])' 计数>=2 或节次 regex '(?:第)?(\\d{1,2})\\s*[-—－、,，~至]\\s*(\\d{1,2})(?:节)?' 计数>=1), daysAcross 布尔区分星期横排/纵排, 课程块按 3+ 连续分隔线拆分, 周次走 WeekParser (支持 '1-16单/双'、顿号、全角波浪线, 上限 60 周)。学期 regex '20\\d{2}-20\\d{2}-[12]', 校历 regex '第\\s*1\\s*周\\s*(20\\d{2}-\\d{2}-\\d{2})日?\\s*至\\s*...' 且断言首周从周日开始。非接口流、非网格坐标流, 是'教务导出 HTML 表格通用解析'流。",
+  "exact_regex_or_code_snippet": "web.loadUrl(\"http://csujwc.its.csu.edu.cn/jsxsd/xskb/xskb_list.do\") (强智 jsxsd 端点) ; Pattern.compile(\"(?:星期|周)([一二三四五六日天])\") ; Pattern.compile(\"(?:第)?(\\\\d{1,2})\\\\s*[-—－、,，~至]\\\\s*(\\\\d{1,2})(?:节)?\") ; Pattern.compile(\"20\\\\d{2}-20\\\\d{2}-[12]\") ; Pattern.compile(\"第\\\\s*1\\\\s*周\\\\s*(20\\\\d{2}-\\\\d{2}-\\\\d{2})日?\\\\s*至\\\\s*(20\\\\d{2}-\\\\d{2}-\\\\d{2})\") ; WeekParser: s=s.replaceAll(\"[()（）\\\\s第单双周]\",\"\"); if(!s.matches(\"\\\\d+(?:-\\\\d+)?(?:,\\\\d+(?:-\\\\d+)?)*\"))return result; ... if((!text.contains(\"单\")||i%2==1)&&(!text.contains(\"双\")||i%2==0))",
+  "verdict": "POSITIVE",
+  "verdict_reason": "对'中南大学是什么教务'给出直接判定证据: csujwc.its.csu.edu.cn + /jsxsd/xskb/xskb_list.do = 强智 (jsxsd) 系统, 不是青果; 课表解析为 WebView 全框架 outerHTML + jsoup 通用表格网格化 + 表头自检 (非青果 mytable/td.class 流, 非网格坐标流)。附强智网页表头的星期/节次/周次 regex 可作跨仓校验素材。"
+}

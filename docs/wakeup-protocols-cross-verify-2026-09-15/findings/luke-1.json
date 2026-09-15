@@ -1,0 +1,25 @@
+{
+  "repo_name": "LukeJean/XiaoAiCurriculumSchedule",
+  "stars": 4,
+  "default_branch": "master",
+  "license": "NOASSERTION",
+  "relevant_files": [
+    {
+      "path": "scheduleHtmlParser.js",
+      "purpose": "Parses the QiangZhi (强智) course table HTML: walks #kbtable tr/td grid, extracts per-cell course text via tag-stripping regex, splits week/section tokens from the '(1-16周)[1-2节]' cell line, handles 单周/双周 odd/even filtering, and merges duplicate same-name same-week-different cells; emits courseInfos + hardcoded 12-section sectionTimes.",
+      "lines_with_protocol": [6, 9, 14, 17, 31, 49, 85, 93, 96, 101]
+    },
+    {
+      "path": "scheduleHtmlProvider.js",
+      "purpose": "DOM provider: grabs the timetable HTML from the iframe containing a form with id 'Form1' (classic QiangZhi jwgl frameset), returning Form1.innerHTML to the parser. No network endpoint construction here — endpoint calls are made by the 小爱课程表 host app (standard 强智 xskb_list.do page).",
+      "lines_with_protocol": [41, 42, 45, 46, 50]
+    }
+  ],
+  "protocol_approach": "This is a 小爱课程表 (XiaoAi) import adapter for 强智 (QiangZhi) jwgl systems, implemented as the standard XiaoAi import-script pair (scheduleHtmlProvider + scheduleHtmlParser). It does not build the endpoint URL itself; it scrapes the DOM the host app has already loaded — the timetable page of a 强智 system, which by protocol is the kbtable rendered by xskb_list.do — pulling it out of an iframe via a form with id 'Form1'. Parsing is grid-coordinate based: td column index col maps to day = col+1 (Monday=col0), rows are walked top-down, and section numbers come from parsing the trailing '[start-end节]' token of each cell, expanding start..end into a sections list. Week tokens 'X-Y周' / comma lists are expanded with 单/双 filters: a cell line containing 单 keeps odd weeks, 双 keeps even weeks, matching Sleepy's semantics exactly.",
+  "exact_regex_or_code_snippet": "scheduleHtmlParser.js:\n  let t = time.split('周)[');          // week(s) token boundary: '...周)['\n  if (weekStr.search('单') != -1) { flag = 1; weekStr = weekStr.replace('单', ''); }\n  if (weekStr.search('双') != -1) { flag = 2; weekStr = weekStr.replace('双', ''); }\n  if (flag == 1) { week = weekStr2IntList(weekStr).filter(v => v % 2 != 0); }   // 单周 = odd\n  else if (flag == 2) { week = weekStr2IntList(weekStr).filter(v => v % 2 == 0); } // 双周 = even\n  jc = t[1].replace('节]', '').split('-');  // section range token '[1-2节]'\n  course['day'] = col + 1                   // td column index → weekday, 1-based\n  const reg = new RegExp(/(?<=>)[^<>]+(?=<)/g)  // strip HTML tags from cell\n  $('#kbtable').find('tr').each(function (row, _) { ... $(this).find('td').each(...)\n  info = info.slice(2, info.length - 1)\n\nscheduleHtmlProvider.js:\n  const ifrs = dom.getElementsByTagName(\"iframe\")\n  if(!isEmpty(ifrs[i].contentDocument.getElementById('Form1'))){\n    iframeContent = ifrs[i].contentDocument.getElementById('Form1').innerHTML;",
+  "verdict": "POSITIVE",
+  "verdict_reason": "Independent student-maintained JavaScript implementation of the same 强智 protocol family: it parses the 强智 kbtable grid (#kbtable), extracts week/section coordinate tokens from the cell's '(N-N周)[N-N节]' text, applies 单周=odd / 双周=even week filtering, and obtains the HTML from the classic 强智 Form1 iframe — all matching Sleepy's claimed QiangZhi xskb_list.do + .kbcontent parsing family semantics (HTML source differs only in selector name; the .kbcontent cell is the same kbtable's cell class this repo consumes via td traversal).",
+  "sleepy_claim_check": {
+    "强智 xskb_list.do + .kbcontent 解析形态": "match — same 强智 protocol family: this repo consumes the same kbtable HTML (Form1 iframe of the xskb_list.do-rendered page; no explicit URL because XiaoAi host app navigates), parses cells by tr/td traversal rather than the .kbcontent class selector, and applies identical 单周=odd/双周=even week and [start-end节] section semantics. Endpoint itself not constructed in-repo (host-app navigation), so xskb_list.do is confirmed indirectly via the Form1 iframe DOM shape."
+  }
+}

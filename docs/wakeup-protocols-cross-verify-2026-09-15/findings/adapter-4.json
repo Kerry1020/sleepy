@@ -1,0 +1,11 @@
+{
+  "repo_name": "ZKJJaker/xiaoai-shuwei-course",
+  "stars": 1,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": ["3.0/Provider.js", "3.0/Parser.js", "1.0/scheduleHtmlProvider.js", "2.0/scheduleHtmlParser.js"],
+  "protocol_approach": "EAMS 教务 (商丘学院 jwxt.sqxy.edu.cn / jwxt.squ.net.cn): SHA1(盐+密码) 表单登录 loginExt.action → courseTableForStd!courseTable.action 页面取 .gridtable innerHTML → Parser 解析 .infoTitle 元素 (attribs.id 推 day/section, attribs.title 按 ';' 切分再 regex 抽课名/教师/地点/周次, getweeks 处理 单/双/逗号/区间)",
+  "exact_regex_or_code_snippet": "let course_url = \"http://jwxt.sqxy.edu.cn/eams/courseTableForStd.action\"; let login_url = \"http://jwxt.sqxy.edu.cn/eams/loginExt.action\"; ... dom.getElementsByClassName(\"gridtable\")[0].innerHTML ... let Allinfo = $('.infoTitle'); day = day.length > 5 ? parseInt(day[2])+1 : 1; ... name = info[num1].match(/^.+?[(]/).toString().replace(/\\(/g,\"\"); teacher = info[num1].split(\" \")[1].replace(/[()]/g,\"\"); // 作者注释自称: 适配数维不容易啊~~~！！",
+  "verdict": "NEGATIVE",
+  "verdict_reason": "任务给定的数维特征 courseUnits/unitCount/activities/day=arrayIndex/node=unitCount+1 在仓内全部 6 个关键文件 grep 均 0 命中; 仓内实际协议是 EAMS courseTableForStd.action + gridtable/infoTitle HTML 解析 (作者口头称'数维'但技术形态是 EAMS 族, 与任务描述的数维 JSON 协议无关)"
+}
