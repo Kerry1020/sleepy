@@ -278,14 +278,19 @@ fun PeriodTableEditScreen(
                             smartConfigJson = smartConfigJson,
                             nodesPerDay = slotRows.size.coerceAtLeast(1)
                         )
-                        // 预览: 全库范围内所有绑定本表的课程(§5.2 受影响课表列表)
-                        val boundTables = scheduleState.tables.filter { it.periodTableId == periodTable.id }
-                        val oldJson = periodTable.timeJson
-                        val allCourses = boundTables.flatMap { st ->
-                            scheduleState.courses.filter { it.tableId == st.id }
-                        }
-                        pendingPreview = TimeTableUtils.previewPeriodTableChange(oldJson, newTimeJson, allCourses)
                         pendingSave = updated
+                        // 预览: 全库范围内所有绑定本表的课程(§5.2 受影响课表列表)。
+                        // 修复: state.courses 只装当前选中表的课, 直接用它统计会漏掉其他绑定表 —
+                        // 从 repo 拉全库课程再按绑定表过滤
+                        scope.launch {
+                            val boundIds = scheduleState.tables
+                                .filter { it.periodTableId == periodTable.id }
+                                .map { it.id }
+                                .toSet()
+                            val allCourses = viewModel.getAllCourses().filter { it.tableId in boundIds }
+                            val oldJson = periodTable.timeJson
+                            pendingPreview = TimeTableUtils.previewPeriodTableChange(oldJson, newTimeJson, allCourses)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(SleepyTheme.Buttons.ctaHeight),
                     shape = SleepyTheme.Buttons.shape

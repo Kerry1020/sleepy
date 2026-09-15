@@ -220,7 +220,20 @@ class ScheduleRepository(private val db: AppDatabase) {
         val table = tableDao.getById(timeTableId) ?: return
         if (periodTableId != null && periodTableDao.getById(periodTableId) == null) return
         captureForUndo()
-        tableDao.update(table.copy(periodTableId = periodTableId))
+        // issue#40 §5.3: 换绑同步兼容列 — 新绑定节次表内容镜像到本表
+        // timeJson/nodesPerDay/smartConfigJson(与 savePeriodTable 的同步口径一致),
+        // 旧版本导入导出与渲染回退才读到正确数据; 课程行零改动(§9.1)
+        val target = periodTableId?.let { periodTableDao.getById(it) }
+        db.withTransaction {
+            tableDao.update(
+                table.copy(
+                    periodTableId = periodTableId,
+                    timeJson = target?.timeJson ?: table.timeJson,
+                    nodesPerDay = target?.nodesPerDay ?: table.nodesPerDay,
+                    smartConfigJson = target?.smartConfigJson ?: table.smartConfigJson
+                )
+            )
+        }
         onDataChanged()
     }
 
@@ -297,6 +310,9 @@ class ScheduleRepository(private val db: AppDatabase) {
         courseDao.getByTableAndDayOnce(tableId, day)
 
     suspend fun getCourses(tableId: Long): List<CourseEntity> = courseDao.getByTable(tableId)
+
+    /** issue#40: 全库课程 — 时间节次表保存预览须统计【所有】绑定表的课, 不只当前选中表 */
+    suspend fun getAllCourses(): List<CourseEntity> = courseDao.getAll()
 
     suspend fun getCourse(id: Long): CourseEntity? = courseDao.getById(id)
 

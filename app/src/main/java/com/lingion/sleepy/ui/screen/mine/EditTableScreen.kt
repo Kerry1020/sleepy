@@ -113,13 +113,17 @@ fun EditTableScreen(
     // pendingBind != table.periodTableId 时保存流程走换绑分支。
     var pendingBind by remember(table.id, table.periodTableId) { mutableStateOf<Long?>(table.periodTableId) }
     var bindExpanded by remember { mutableStateOf(false) }
+    // issue#40 §5.3: 换绑确认弹窗 — 非 null 时弹「确认换绑」, 确认才真正写 periodTableId
+    var pendingRebind by remember { mutableStateOf<Long?>(null) }
 
     // issue#40: 编辑的就是"有效时间表" — 绑定了独立时间节次表时, 节次编辑区
     // 展示/修改的是该时间节次表(多张绑定课表同享), 保存写回 period_tables;
     // 未绑定时行为不变(编辑本表兼容列)。
+    // 换绑修复: 有效表跟随 pendingBind(用户在下拉里改选时立即切换编辑区来源),
+    // 否则已绑定的表 effectivePeriodTable 恒非空, 保存永远走"写回旧表"分支, 换绑成死代码。
     val effectivePeriodTable = state.effectivePeriodTable?.takeIf {
-        table.periodTableId != null && it.id == table.periodTableId
-    }
+        pendingBind != null && it.id == pendingBind
+    } ?: allPeriodTables.find { it.id == pendingBind }
     val timeJson = effectivePeriodTable?.timeJson ?: table.timeJson
     val slotRows = remember(table.id, effectivePeriodTable?.id, timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -367,8 +371,17 @@ fun EditTableScreen(
                             timeJson = newTimeJson,
                             smartConfigJson = smartConfigJson
                         )
+                        val bindChanged = pendingBind != table.periodTableId
+                        if (bindChanged && pendingBind != null) {
+                            // issue#40 §5.3: 换绑须先预览确认 — 弹换绑确认框, 确认才写
+                            pendingRebind = pendingBind
+                            return@Button
+                        }
                         scope.launch {
-                            if (effectivePeriodTable != null) {
+                            if (bindChanged) {
+                                // issue#40 §5.3: 解绑 — 只写 periodTableId=null, 课程行零改动
+                                viewModel.bindPeriodTable(table.id, null)
+                            } else if (effectivePeriodTable != null) {
                                 // issue#40: 节次编辑区改的是共享时间节次表 — 写回 period_tables +
                                 // 同步全部绑定课表兼容列(§5.2); 课程行零改动(§9.1)
                                 viewModel.updatePeriodTableContent(
@@ -378,9 +391,6 @@ fun EditTableScreen(
                                         nodesPerDay = slotRows.size.coerceAtLeast(1)
                                     )
                                 )
-                            } else if (pendingBind != table.periodTableId) {
-                                // issue#40 §5.3: 换绑 — 只写 periodTableId, 课程行零改动
-                                viewModel.bindPeriodTable(table.id, pendingBind)
                             } else {
                                 // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
                                 // 课程不能再停在 13-16 节)
@@ -446,6 +456,33 @@ fun EditTableScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    // issue#40 §5.3: 换绑确认 — 换绑后本课表按新节次表解释节次时间, 自定义时间课程不受影响
+    if (pendingRebind != null) {
+        val targetId = pendingRebind
+        AlertDialog(
+            onDismissRequest = { pendingRebind = null },
+            title = { Text(stringResource(R.string.period_table_bind_preview_title), color = colors.onSurface) },
+            text = {
+                Text(
+                    text = stringResource(R.string.period_table_bind_preview_body),
+                    color = colors.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRebind = null
+                    scope.launch {
+                        viewModel.bindPeriodTable(table.id, targetId)
+                        onSaved()
+                    }
+                }) { Text(stringResource(R.string.period_table_preview_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRebind = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
