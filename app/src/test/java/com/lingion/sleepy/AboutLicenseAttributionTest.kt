@@ -213,6 +213,18 @@ class AboutLicenseAttributionTest {
         Attribution("qnxg/weihuda_backend", "qnxg"),
         Attribution("heriec/suda-yjs-shedule", "heriec"),
         Attribution("dlutor/chaoxingbook", "MIT"),
+        // 西南交通大学 SWJTU (2026-09-15 SOP cross-verified, 11 候选全量纳入; 采集包主证, 老教务仓仅反向参考)
+        Attribution("AmaneSuzuha000/SWJTU_Login", ""),
+        Attribution("1-nuo/swjtu-course-grabber", ""),
+        Attribution("Arex-lbb/auto-course-grabber", ""),
+        Attribution("1837634311/SWJTU-Course-Management-Script", "GPL-3.0"),
+        Attribution("HackSwjtu/Postime", "MIT"),
+        Attribution("lpzams/swjtu-course-crawler", ""),
+        Attribution("949144093/SWJTU-JiaoWuAutoLogin", ""),
+        Attribution("kakasearch/course_download", ""),
+        Attribution("zx1411057234/VatuuSpider", ""),
+        Attribution("kashaku/no-vatuu-evaluation", ""),
+        Attribution("Joe-create-star/swjtu-dektx-reminder", "MIT"),
     )
 
     // ----- 贡献者 (Contributors) token 集: 直接提交代码并合入的开发者, 与上游参考仓库致谢区分 -----

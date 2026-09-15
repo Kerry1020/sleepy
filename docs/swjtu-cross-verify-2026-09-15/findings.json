@@ -1,0 +1,266 @@
+{
+  "generated": "2026-09-15",
+  "candidate_count": 11,
+  "findings": [
+    {
+      "repo_name": "lpzams/swjtu-course-crawler",
+      "stars": 1,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "text.py",
+          "purpose": "课程表抓取/解析入口",
+          "lines_with_protocol": [
+            1
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "未发现 yhxt/yethan studentId 提取；使用旧教务页面字段",
+      "exact_regex_or_code_snippet": "未发现 yhxt/yethan 代码",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "源码指向 jwc.swjtu.edu.cn/vatuu 旧教务，不是本次 yhxt/yethan 协议。"
+    },
+    {
+      "repo_name": "AmaneSuzuha000/SWJTU_Login",
+      "stars": 1,
+      "default_branch": "request",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "yhxt.py",
+          "purpose": "YHXT API 客户端、ytoken 请求头、响应码处理",
+          "lines_with_protocol": [
+            28,
+            239,
+            261
+          ]
+        },
+        {
+          "path": "login.py",
+          "purpose": "YHXT CAS 服务入口及 ytoken cookie 提取",
+          "lines_with_protocol": [
+            32,
+            33,
+            595
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "JWT payload.sub",
+      "exact_regex_or_code_snippet": "YHXT_API_BASE = \"https://yhxt.swjtu.edu.cn/yethan\"; YHXT_SERVICE_URL = \"https://yhxt.swjtu.edu.cn/yethan/public/cas/tms\"",
+      "verdict": "POSITIVE",
+      "verdict_reason": "直接实现 yhxt/yethan 登录、ytoken cookie 与 API 请求。"
+    },
+    {
+      "repo_name": "949144093/SWJTU-JiaoWuAutoLogin",
+      "stars": 2,
+      "default_branch": "master",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "kaka_login.py",
+          "purpose": "旧教务验证码登录",
+          "lines_with_protocol": [
+            13,
+            21,
+            105
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "旧教务登录表单/会话，无 yhxt studentId 提取",
+      "exact_regex_or_code_snippet": "http://jwc.swjtu.edu.cn/vatuu/UserLoginAction",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "直接证据属于 jwc.swjtu.edu.cn/vatuu 旧系统。"
+    },
+    {
+      "repo_name": "HackSwjtu/Postime",
+      "stars": 30,
+      "default_branch": "master",
+      "license": "MIT",
+      "license_source": "api.github.com/licenses/mit",
+      "relevant_files": [
+        {
+          "path": "postime.js",
+          "purpose": "2016-17 旧教务网自动登录/评课",
+          "lines_with_protocol": []
+        }
+      ],
+      "studentId_extraction_approach": "旧教务表单字段",
+      "exact_regex_or_code_snippet": "未发现 yhxt/yethan",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "项目描述和源码对应旧教务网，不是当前 YETHAN。"
+    },
+    {
+      "repo_name": "kakasearch/course_download",
+      "stars": 0,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "kaka_login.py",
+          "purpose": "旧教务资源登录",
+          "lines_with_protocol": [
+            13,
+            105
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "旧 vatuu 会话",
+      "exact_regex_or_code_snippet": "未发现 yhxt/yethan",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "使用 jwc.swjtu.edu.cn/vatuu 旧协议。"
+    },
+    {
+      "repo_name": "zx1411057234/VatuuSpider",
+      "stars": 3,
+      "default_branch": "master",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "vatuu_spider.py",
+          "purpose": "VATUU 登录与课程抓取",
+          "lines_with_protocol": []
+        }
+      ],
+      "studentId_extraction_approach": "VATUU 登录响应/会话",
+      "exact_regex_or_code_snippet": "vatuu 端点",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "仓库明确针对 VatuuSpider，和 YETHAN 当前系统不同。"
+    },
+    {
+      "repo_name": "1837634311/SWJTU-Course-Management-Script",
+      "stars": 3,
+      "default_branch": "main",
+      "license": "GPL-3.0",
+      "license_source": "api.github.com/licenses/gpl-3.0",
+      "relevant_files": [
+        {
+          "path": "u1837_utils.py",
+          "purpose": "系统地址与请求工具",
+          "lines_with_protocol": [
+            12,
+            13
+          ]
+        },
+        {
+          "path": "u1837_User.py",
+          "purpose": "课程管理 API",
+          "lines_with_protocol": [
+            58,
+            82,
+            90
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "旧 TMS/VATUU 会话，未发现 yhxt JWT studentId",
+      "exact_regex_or_code_snippet": "OLD_SYSTEM = \"http://jwc.swjtu.edu.cn\"; NEW_SYSTEM = \"https://jiaowu.swjtu.edu.cn/TMS\"",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "README 的“新系统”是 jiaowu TMS，源码端点仍为 vatuu，不能作为 yhxt 证据。"
+    },
+    {
+      "repo_name": "Arex-lbb/auto-course-grabber",
+      "stars": 0,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "src/main/course-api.ts",
+          "purpose": "YHXT 课程/心跳 API",
+          "lines_with_protocol": [
+            99,
+            110,
+            126
+          ]
+        },
+        {
+          "path": "src/main/jwt.js",
+          "purpose": "JWT payload.sub 学号提取",
+          "lines_with_protocol": []
+        }
+      ],
+      "studentId_extraction_approach": "JWT payload.sub",
+      "exact_regex_or_code_snippet": "code === '401' || code === 'A0230' || code === 'A0422'",
+      "verdict": "POSITIVE",
+      "verdict_reason": "Electron 抢课工具直接使用 yhxt 域名、ytoken/JWT，并补充 A0422 失效码。"
+    },
+    {
+      "repo_name": "1-nuo/swjtu-course-grabber",
+      "stars": 1,
+      "default_branch": "master",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "1nuo_client.js",
+          "purpose": "ytoken 请求头与 YHXT client",
+          "lines_with_protocol": [
+            3,
+            13,
+            17
+          ]
+        },
+        {
+          "path": "1nuo_api.js",
+          "purpose": "YHXT 选课 API 与 JWT 学号解析",
+          "lines_with_protocol": [
+            7,
+            21
+          ]
+        },
+        {
+          "path": "1nuo_smCrypto.js",
+          "purpose": "SM2 C1C3C2 与 04 前缀",
+          "lines_with_protocol": [
+            39
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "JWT payload.sub",
+      "exact_regex_or_code_snippet": "headers: { ...COMMON_HEADERS, ytoken }",
+      "verdict": "POSITIVE",
+      "verdict_reason": "直接实现 yhxt ytoken client、选课 API、SM2 加密和 JWT 学号提取。"
+    },
+    {
+      "repo_name": "kashaku/no-vatuu-evaluation",
+      "stars": 4,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "novatuu.js",
+          "purpose": "VATUU 评教插件",
+          "lines_with_protocol": []
+        }
+      ],
+      "studentId_extraction_approach": "VATUU 页面/会话",
+      "exact_regex_or_code_snippet": "未发现 yhxt/yethan",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "项目名称和源码均锁定 VATUU 旧系统。"
+    },
+    {
+      "repo_name": "Joe-create-star/swjtu-dektx-reminder",
+      "stars": 1,
+      "default_branch": "main",
+      "license": "MIT",
+      "license_source": "api.github.com/licenses/mit",
+      "relevant_files": [
+        {
+          "path": "dektx_check.py",
+          "purpose": "第二课堂/OCW 页面检查",
+          "lines_with_protocol": []
+        }
+      ],
+      "studentId_extraction_approach": "OCW/VATUU 页面会话",
+      "exact_regex_or_code_snippet": "ocw.swjtu.edu.cn/yethan/YouthIndex",
+      "verdict": "INDIRECT",
+      "verdict_reason": "证明 YETHAN 平台存在多租户/第二课堂入口，但未直接验证本次 common 课表端点。"
+    }
+  ]
+}

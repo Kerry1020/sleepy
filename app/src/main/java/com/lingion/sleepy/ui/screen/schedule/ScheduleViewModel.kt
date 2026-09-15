@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -55,6 +56,14 @@ class ScheduleViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ScheduleState())
     val state: StateFlow<ScheduleState> = _state.asStateFlow()
+
+    /** issue#40: 全部独立时间节次表(管理页列表) */
+    val allPeriodTables = repo.observeAllPeriodTables()
+        .stateIn(
+            viewModelScope,
+            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
 
     /** Whether the user has explicitly selected a table (vs auto-picking default on load) */
     private var manualSelectDone = false
@@ -226,9 +235,33 @@ class ScheduleViewModel : ViewModel() {
     /** issue#40: 修改共享时间节次表内容 — 全部绑定课表立即生效, 课程行零改动 */
     fun updatePeriodTableContent(table: com.lingion.sleepy.data.entity.PeriodTableEntity) {
         viewModelScope.launch {
-            repo.updatePeriodTable(table)
+            repo.savePeriodTable(table)
         }
     }
+
+    /** issue#40: 换绑课程表的时间节次表(只写 periodTableId, 课程行零改动) */
+    fun bindPeriodTable(timeTableId: Long, periodTableId: Long?) {
+        viewModelScope.launch { repo.bindPeriodTable(timeTableId, periodTableId) }
+    }
+
+    /** issue#40: 复制时间节次表, 返回新副本 id (-1 = 源不存在) */
+    suspend fun copyPeriodTable(sourceId: Long): Long = repo.copyPeriodTable(sourceId)
+
+    /** issue#40: 删除时间节次表(被引用时 false, UI 提示先改绑) */
+    suspend fun deletePeriodTable(id: Long): Boolean = repo.deletePeriodTable(id)
+
+    /** issue#40: 新建空白时间节次表 */
+    suspend fun insertPeriodTable(
+        name: String,
+        timeJson: String = com.lingion.sleepy.util.TimeTableUtils.DEFAULT_TIME_JSON,
+        nodesPerDay: Int = 12,
+        smartConfigJson: String = ""
+    ): Long = repo.insertPeriodTable(
+        com.lingion.sleepy.data.entity.PeriodTableEntity(
+            name = name, nodesPerDay = nodesPerDay,
+            timeJson = timeJson, smartConfigJson = smartConfigJson
+        )
+    )
 
     fun updateTable(table: TimeTableEntity) {
         viewModelScope.launch { repo.updateTable(table) }

@@ -20,7 +20,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  *   v5 → v6: 加 courses.alias (issue#26 课程别名)
  *     - 列: TEXT NOT NULL DEFAULT ''
  *     - 旧库所有行 alias='' → 处处显示原名, 行为不变
- *   v6 → v7: 独立时间节次表 (issue#40)
+ *   v6 → v7: 加 import_drafts 导入草稿快照表 (issue#39)
+ *     - 草稿由显式 id 标识, payloadJson 保持导入预览数据的演进空间
+ *   v7 → v8: 独立时间节次表 (issue#40)
  *     - 新表 period_tables (id/name/nodesPerDay/timeJson/smartConfigJson/createdAt/updatedAt)
  *     - 加 time_tables.periodTableId (INTEGER, 可空)
  *     - 迁移: 每张旧课表生成一张独立时间节次表(继承 timeJson/smartConfigJson/nodesPerDay),
@@ -52,7 +54,13 @@ val MIGRATION_5_6: Migration = object : Migration(5, 6) {
 
 val MIGRATION_6_7: Migration = object : Migration(6, 7) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        MIGRATION_6_7_SCHEMA_STATEMENTS.forEach { db.execSQL(it) }
+        MIGRATION_6_7_STATEMENTS.forEach { db.execSQL(it) }
+    }
+}
+
+val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_7_8_SCHEMA_STATEMENTS.forEach { db.execSQL(it) }
 
         // Keep the old timetable ids in the new table. This makes the backfill
         // deterministic and lets the following UPDATE be checked row by row.
@@ -92,7 +100,8 @@ val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_3_4,
     MIGRATION_4_5,
     MIGRATION_5_6,
-    MIGRATION_6_7
+    MIGRATION_6_7,
+    MIGRATION_7_8
 )
 
 /** issue#26: v5→v6 逐条 SQL — 单一事实来源, CourseAliasMigrationTest 用 sqlite-jdbc 直接执行同一份 */
@@ -101,8 +110,22 @@ internal val MIGRATION_5_6_STATEMENTS: List<String> = listOf(
     "ALTER TABLE courses ADD COLUMN alias TEXT NOT NULL DEFAULT ''"
 )
 
-/** v6→v7 的静态 schema SQL — 迁移测试与 Room 共用同一份 SQL。 */
-internal val MIGRATION_6_7_SCHEMA_STATEMENTS: List<String> = listOf(
+/** v6→v7 SQL is shared with the JVM migration contract test (issue#39 import_drafts). */
+internal val MIGRATION_6_7_STATEMENTS: List<String> = listOf(
+    """
+    CREATE TABLE IF NOT EXISTS import_drafts (
+        id TEXT NOT NULL PRIMARY KEY,
+        sourceType TEXT NOT NULL DEFAULT '',
+        sourceUrl TEXT NOT NULL DEFAULT '',
+        payloadJson TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+    )
+    """.trimIndent(),
+)
+
+/** v7→v8 的静态 schema SQL — 迁移测试与 Room 共用同一份 SQL (issue#40)。 */
+internal val MIGRATION_7_8_SCHEMA_STATEMENTS: List<String> = listOf(
     """
     CREATE TABLE period_tables (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -111,8 +134,7 @@ internal val MIGRATION_6_7_SCHEMA_STATEMENTS: List<String> = listOf(
         timeJson TEXT NOT NULL,
         smartConfigJson TEXT NOT NULL,
         createdAt INTEGER NOT NULL,
-        updatedAt INTEGER NOT NULL
-    )
+        updatedAt INTEGER NOT NULL )
     """.trimIndent(),
     "CREATE INDEX index_period_tables_createdAt ON period_tables(createdAt)",
     "ALTER TABLE time_tables ADD COLUMN periodTableId INTEGER"

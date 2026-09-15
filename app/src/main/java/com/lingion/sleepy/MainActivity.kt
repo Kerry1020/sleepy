@@ -39,6 +39,9 @@ import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.screen.schedule.ViewMode
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.lingion.sleepy.data.entity.CourseEntity
+import com.lingion.sleepy.data.jw.JwImportDraftCodec
+import com.lingion.sleepy.ui.screen.imports.ImportDraft
+import com.lingion.sleepy.ui.screen.imports.JwImportActivity
 import com.lingion.sleepy.ui.screen.edit.AddCourseScreen
 import com.lingion.sleepy.ui.component.NavDockSpec
 import com.lingion.sleepy.ui.component.PillNavigationBar
@@ -197,7 +200,7 @@ private enum class Tab(val labelRes: Int, val icon: ImageVector) {
 }
 
 private enum class OverlayScreen {
-    AddCourse, AllTables, EditTable, Theme, General, Holiday, Export, Reminder, About, License, WidgetManagement, WidgetEdit
+    AddCourse, AllTables, EditTable, Theme, General, Holiday, Export, Reminder, About, License, WidgetManagement, WidgetEdit, PeriodTables, PeriodTableEdit
 }
 
 @Composable
@@ -237,6 +240,8 @@ private fun AppRoot(
     var pendingNewTableId by rememberSaveable { mutableStateOf<Long?>(null) }
     var previousDefaultTableId by rememberSaveable { mutableStateOf<Long?>(null) }
     var widgetEditId by rememberSaveable { mutableStateOf<Int?>(null) }
+    // issue#40: 时间节次表编辑页参数 — Long 可 Bundle 化, 旋转恢复同 editTableId 处理
+    var editPeriodTableId by rememberSaveable { mutableStateOf<Long?>(null) }
     var autoImportTriggered by remember { mutableStateOf(false) }
     // 底栏形态(贴底/悬浮 Dock): AppRoot 持真值 — 设置页改, 底栏即时切
     val context = LocalContext.current
@@ -396,6 +401,25 @@ private fun AppRoot(
         }
         return
     }
+    // issue#40: 独立时间节次表管理页 + 编辑页 — 返回栈逐层弹, 与 EditTable 同款
+    if (topOverlay() == OverlayScreen.PeriodTables) {
+        saveableStateHolder.SaveableStateProvider("PeriodTables") {
+            com.lingion.sleepy.ui.screen.mine.PeriodTablesScreen(
+                onBack = { popOverlay() },
+                onOpenEdit = { periodId -> editPeriodTableId = periodId; pushOverlay(OverlayScreen.PeriodTableEdit) }
+            )
+        }
+        return
+    }
+    if (topOverlay() == OverlayScreen.PeriodTableEdit) {
+        saveableStateHolder.SaveableStateProvider("PeriodTableEdit") {
+            com.lingion.sleepy.ui.screen.mine.PeriodTableEditScreen(
+                periodTableId = editPeriodTableId ?: -1L,
+                onBack = { popOverlay(); editPeriodTableId = null }
+            )
+        }
+        return
+    }
 
     // 底栏双形态(用户 2026-09-04 定版):
     // 贴底 = Scaffold bottomBar 占位(原样, 内容止于栏上沿);
@@ -507,6 +531,7 @@ private fun MainTabs(
     // tab 往返滚动位置保真: when 条件组合同样整页移除被切走的 tab, 各 tab 内容包
     // SaveableStateProvider(currentTab.name) — key 稳定(tab 枚举名), 返回时恢复。
     // 注意: scheduleViewMode 会话态仍由 AppRoot 持有(§1.4 契约), 此处只管组合作用域。
+    val draftScope = rememberCoroutineScope()
     when (currentTab) {
         Tab.Schedule -> holder.SaveableStateProvider(currentTab.name) {
             ScheduleScreen(
@@ -526,7 +551,23 @@ private fun MainTabs(
             // pendingImportText != null 是另一路 (外部 app 分享课表文本进来) 的既有自动弹层, 语义不同并存。
             val autoOnce = MainActivity.autoShowImportOnceState.value
             if (autoOnce) MainActivity.autoShowImportOnceState.value = false
+            val draftEntities by SleepyApp.get().importDraftRepository.observeAll().collectAsState(initial = emptyList())
+            val drafts = draftEntities.mapNotNull { entity ->
+                val snapshot = JwImportDraftCodec.fromJson(entity.payloadJson) ?: return@mapNotNull null
+                ImportDraft(
+                    id = entity.id,
+                    name = snapshot.tableName.ifBlank { snapshot.school.name },
+                    details = "${snapshot.courses.size} ${ctx.getString(com.lingion.sleepy.R.string.import_courses)}",
+                )
+            }
             ManagementPage(autoShowImportSheet = autoOnce || MainActivity.pendingImportText != null, onJwImportRequested = { ctx.startActivity(Intent(ctx, com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java)) }, onCreateNewTableRequested = onCreateNewTable, onManualAdd = { pushOverlay(OverlayScreen.AddCourse) }, onEditCurrentTable = { pushOverlay(OverlayScreen.EditTable) }, onExportRequested = { pushOverlay(OverlayScreen.Export) },
+                drafts = drafts,
+                onRestoreDraft = { id ->
+                    ctx.startActivity(Intent(ctx, JwImportActivity::class.java).putExtra(JwImportActivity.EXTRA_DRAFT_ID, id))
+                },
+                onDeleteDraft = { id ->
+                    draftScope.launch { SleepyApp.get().importDraftRepository.delete(id) }
+                },
                 // v7.10.16w 用户 2026-09-10: 导入完成留在管理页 — 此前硬跳课表页(周/网格),
                 // 打断"复制副本→追加导入→继续操作"的管理动线。当前课表摘要卡就地刷新可见。
                 onImported = { /* 留在管理页, 摘要卡就地刷新 */ })
@@ -534,6 +575,7 @@ private fun MainTabs(
         Tab.Mine -> holder.SaveableStateProvider(currentTab.name) {
             MineScreen(
                 onOpenAllTables = { pushOverlay(OverlayScreen.AllTables) },
+                onOpenPeriodTables = { pushOverlay(OverlayScreen.PeriodTables) },
                 onOpenAppearance = { pushOverlay(OverlayScreen.Theme) },
                 onOpenGeneral = { pushOverlay(OverlayScreen.General) },
                 onOpenExport = { pushOverlay(OverlayScreen.Export) },

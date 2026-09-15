@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.FilledTonalButton
@@ -52,6 +53,7 @@ import kotlinx.coroutines.launch
 fun MineScreen(
     viewModel: ScheduleViewModel = viewModel(),
     onOpenAllTables: () -> Unit = {},
+    onOpenPeriodTables: () -> Unit = {},
     onOpenAppearance: () -> Unit = {},
     onOpenGeneral: () -> Unit = {},
     onOpenExport: () -> Unit = {},
@@ -114,6 +116,9 @@ fun MineScreen(
                 ) {
                     SettingsItem(icon = Icons.Outlined.Edit, label = stringResource(R.string.all_tables), onClick = onOpenAllTables)
                     Divider()
+                    // issue#40: 时间节次表入口 — 与课表管理并列(设计 §4.1)
+                    SettingsItem(icon = Icons.Outlined.Schedule, label = stringResource(R.string.mine_period_tables), subtitle = stringResource(R.string.mine_period_tables_sub), onClick = onOpenPeriodTables)
+                    Divider()
                     SettingsItem(icon = Icons.Outlined.Share, label = stringResource(R.string.mine_export), onClick = onOpenExport)
                     Divider()
                     SettingsItem(icon = Icons.Outlined.Notifications, label = stringResource(R.string.reminder_title), onClick = onOpenReminder)
@@ -175,7 +180,7 @@ private fun StatItem(value: String, label: String) {
 
 @Composable
 // isLast / trailing 死参数已删（函数体从未读取 isLast; trailing 无任何调用方传值）
-private fun SettingsItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
+private fun SettingsItem(icon: ImageVector, label: String, onClick: () -> Unit = {}, subtitle: String? = null) {
     val colors = SleepyTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth().noRippleClickable(onClick).padding(horizontal = 16.dp, vertical = 14.dp),
@@ -184,7 +189,12 @@ private fun SettingsItem(icon: ImageVector, label: String, onClick: () -> Unit =
         Box(modifier = Modifier.size(40.dp).clip(SleepyTheme.shapes.medium).background(colors.primaryContainer), contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
         }
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = colors.onSurface, modifier = Modifier.weight(1f).padding(start = 16.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = colors.onSurface)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+        }
     }
 }
 
