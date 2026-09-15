@@ -527,6 +527,12 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="about_feedback_detail">Reporta errores o comparte ideas mediante un Issue de GitHub, o contacta al autor por correo</string>
     <string name="about_feedback_github">Issue de GitHub</string>
     <string name="about_feedback_email">Correo</string>
+    <string name="about_qq_title">Grupo de QQ</string>
+    <string name="about_qq_group_number">1063407652</string>
+    <string name="about_qq_detail">ID del grupo %1$s · tócalo para copiar y abrir QQ</string>
+    <string name="about_qq_copied">ID copiado: únete en QQ</string>
+    <string name="about_qq_copy_action">Copiar ID del grupo</string>
+    <string name="about_qq_no_qq">ID copiado. QQ no está instalado, búscalo manualmente.</string>
     <string name="about_feedback_email_subject">[Sleepy Comentario]</string>
     <string name="about_feedback_email_body">Por favor describe el problema o la idea:\n\n— Entorno —\n(opcional)\n</string>
     <string name="about_feedback_no_mail_app">No se encontró ninguna app de correo. Usa un Issue de GitHub.</string>
