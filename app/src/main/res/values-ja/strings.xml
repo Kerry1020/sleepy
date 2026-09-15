@@ -549,6 +549,7 @@
     <string name="action_confirm">OK</string>
     <string name="course_color">色</string>
     <string name="color_custom_switch">カスタムカラー</string>
+    <string name="course_group_color">グループの色</string>
     <string name="export_copied_hint">共有パネルを開きました</string>
     <string name="export_course_count">%1$d 授業</string>
     <string name="export_failed">エクスポート失敗、再試行してください</string>
