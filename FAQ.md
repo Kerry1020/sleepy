@@ -37,11 +37,11 @@ v1.0.29 之前用 Glance 异步渲染——ColorOS 桌面会把 Glance 的 Sessi
 能。APK 三种 ABI 都打：arm64-v8a（主流）、armeabi-v7a（32 位备机）、x86_64（模拟器）。
 
 ### iPhone 能装吗？
-不能（截至 2026-09-11 没出公开的 iOS 版）。iOS 移植的调研记录在 `Desktop/sleepy-ios/` 但还没 release。
+不能（截至 2026-09-14 没出公开的 iOS 版）。iOS 移植的调研记录在 `Desktop/sleepy-ios/` 但还没 release。
 
 ## 导入课表
 
-### 我的学校不在 179 所名单里怎么办？
+### 我的学校不在当前名单里怎么办？
 开 issue，用 `school_adaptation.yml` 模板，填教务系统 URL + 失败现象描述。维护者会按 SOP 走适配流程：先 URL 协议指纹识别 → 失败才要采集数据 → 采集必须按 `docs/adapt-kit/README.md` 走，**不能提交账号密码验证码**。
 
 ### 教务直连失败，怎么抓数据给维护者？
