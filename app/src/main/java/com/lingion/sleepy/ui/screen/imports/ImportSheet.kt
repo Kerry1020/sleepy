@@ -456,33 +456,35 @@ fun ImportSheet(
                             shape = SleepyTheme.fieldShape,
                             colors = SleepyTheme.fieldColors()
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                        com.lingion.sleepy.ui.component.DialogActionButtons(
+                            confirmText = stringResource(R.string.period_table_import_confirm),
+                            onConfirm = {
+                                scope.launch {
+                                    isLoading = true
+                                    try {
+                                        applyPurePeriodImport(
+                                            name = candidate,
+                                            parsed = pt,
+                                            onImported = onImported,
+                                            onError = { msg -> errorMsg = msg }
+                                        )
+                                        preview = null
+                                        importJustApplied = true
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            },
+                            dismissText = stringResource(R.string.cancel),
+                            onDismiss = { preview = null },
+                            confirmEnabled = candidate.isNotBlank() && !nameTaken
+                        )
                     }
                 },
-                confirmButton = {
-                    TextButton(
-                        enabled = candidate.isNotBlank() && !nameTaken,
-                        onClick = {
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    applyPurePeriodImport(
-                                        name = candidate,
-                                        parsed = pt,
-                                        onImported = onImported,
-                                        onError = { msg -> errorMsg = msg }
-                                    )
-                                    preview = null
-                                    importJustApplied = true
-                                } finally {
-                                    isLoading = false
-                                }
-                            }
-                        }
-                    ) { Text(stringResource(R.string.period_table_import_confirm)) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { preview = null }) { Text(stringResource(R.string.cancel)) }
-                }
+                confirmButton = {},
+                dismissButton = {}
             )
             return@let
         }
@@ -1313,45 +1315,45 @@ private fun ImportConfirmDialog(
                         onSelectPeriodTable = onSelectPeriodTable
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+                // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                com.lingion.sleepy.ui.component.DialogActionButtons(
+                    confirmText = stringResource(R.string.import_confirm),
+                    onConfirm = {
+                        if (startDate.isBlank()) {
+                            errorMsg = context.getString(R.string.import_start_date_required)
+                            return@DialogActionButtons
+                        }
+                        val dateRegex = Regex("""^\d{4}-\d{2}-\d{2}$""")
+                        if (!dateRegex.matches(startDate)) {
+                            errorMsg = context.getString(R.string.start_date_format)
+                            return@DialogActionButtons
+                        }
+                        val emptyRows = rows.filter { it.start.isBlank() || it.end.isBlank() }
+                        if (emptyRows.isNotEmpty()) {
+                            errorMsg = context.getString(R.string.slot_time_required, emptyRows.first().node)
+                            return@DialogActionButtons
+                        }
+                        val timeRegex = Regex("""^\d{2}:\d{2}$""")
+                        val invalidRows = rows.filter {
+                            !timeRegex.matches(it.start) || !timeRegex.matches(it.end) ||
+                            it.start >= it.end
+                        }
+                        if (invalidRows.isNotEmpty()) {
+                            errorMsg = context.getString(R.string.slot_time_invalid, invalidRows.first().node)
+                            return@DialogActionButtons
+                        }
+                        errorMsg = null
+                        onTimeJsonChange(TimeTableUtils.buildTimeJsonFromRows(rows))
+                        onConfirm()
+                    },
+                    dismissText = stringResource(R.string.back),
+                    onDismiss = onDismiss
+                )
             }
         },
-        confirmButton = {
-            TextButton(onClick = {
-                if (startDate.isBlank()) {
-                    errorMsg = context.getString(R.string.import_start_date_required)
-                    return@TextButton
-                }
-                val dateRegex = Regex("""^\d{4}-\d{2}-\d{2}$""")
-                if (!dateRegex.matches(startDate)) {
-                    errorMsg = context.getString(R.string.start_date_format)
-                    return@TextButton
-                }
-                val emptyRows = rows.filter { it.start.isBlank() || it.end.isBlank() }
-                if (emptyRows.isNotEmpty()) {
-                    errorMsg = context.getString(R.string.slot_time_required, emptyRows.first().node)
-                    return@TextButton
-                }
-                val timeRegex = Regex("""^\d{2}:\d{2}$""")
-                val invalidRows = rows.filter {
-                    !timeRegex.matches(it.start) || !timeRegex.matches(it.end) ||
-                    it.start >= it.end
-                }
-                if (invalidRows.isNotEmpty()) {
-                    errorMsg = context.getString(R.string.slot_time_invalid, invalidRows.first().node)
-                    return@TextButton
-                }
-                errorMsg = null
-                onTimeJsonChange(TimeTableUtils.buildTimeJsonFromRows(rows))
-                onConfirm()
-            }) {
-                Text(stringResource(R.string.import_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.back))
-            }
-        }
+        confirmButton = {},
+        dismissButton = {}
     )
 }
 

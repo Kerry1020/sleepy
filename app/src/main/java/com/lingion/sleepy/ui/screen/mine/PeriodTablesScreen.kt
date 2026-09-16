@@ -175,35 +175,40 @@ fun PeriodTablesScreen(
         AlertDialog(
             onDismissRequest = { copyTarget = null },
             title = { Text(stringResource(R.string.period_table_copy_dialog_title), color = colors.onSurface) },
+            confirmButton = {},
+            dismissButton = {},
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
             text = {
-                TextField(
-                    value = copyName,
-                    onValueChange = { copyName = it },
-                    label = { Text(stringResource(R.string.period_table_name_label)) },
-                    singleLine = true,
-                    isError = nameTaken,
-                    supportingText = if (nameTaken) {
-                        { Text(stringResource(R.string.period_table_name_taken)) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = SleepyTheme.fieldShape,
-                    colors = SleepyTheme.fieldColors()
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = candidate.isNotBlank() && !nameTaken,
-                    onClick = {
-                        scope.launch {
-                            // 二次查重: 列表可能在弹窗打开期间发生变化, 不能只信预览态。
-                            val newId = viewModel.copyPeriodTableAs(target.id, candidate)
-                            if (newId > 0) copyTarget = null
-                        }
-                    }
-                ) { Text(stringResource(R.string.ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { copyTarget = null }) { Text(stringResource(R.string.cancel)) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = copyName,
+                        onValueChange = { copyName = it },
+                        label = { Text(stringResource(R.string.period_table_name_label)) },
+                        singleLine = true,
+                        isError = nameTaken,
+                        supportingText = if (nameTaken) {
+                            { Text(stringResource(R.string.period_table_name_taken)) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = SleepyTheme.fieldShape,
+                        colors = SleepyTheme.fieldColors()
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.ok),
+                        onConfirm = {
+                            scope.launch {
+                                // 二次查重: 列表可能在弹窗打开期间发生变化, 不能只信预览态。
+                                val newId = viewModel.copyPeriodTableAs(target.id, candidate)
+                                if (newId > 0) copyTarget = null
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { copyTarget = null },
+                        confirmEnabled = candidate.isNotBlank() && !nameTaken
+                    )
+                }
             }
         )
     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -125,26 +126,69 @@ fun UpdateChangelogDialog(
                     }
                 },
                 confirmButton = {
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 次级动作换 secondary 色块, 保持等高一行
                     when (state) {
                         is UpdateUiState.UpdateAvailable -> {
-                            TextButton(onClick = onDismiss) {
-                                Text(stringResource(R.string.update_cancel))
-                            }
-                            Button(onClick = { onDownload(version, changelog, url) }) {
-                                Text(stringResource(R.string.update_download))
+                            androidx.compose.foundation.layout.Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.weight(1f),
+                                    shape = SleepyTheme.Buttons.shape,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = colors.secondaryContainer,
+                                        contentColor = colors.onSecondaryContainer
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.update_cancel), maxLines = 1)
+                                }
+                                Button(
+                                    onClick = { onDownload(version, changelog, url) },
+                                    modifier = Modifier.weight(1f),
+                                    shape = SleepyTheme.Buttons.shape
+                                ) {
+                                    Text(stringResource(R.string.update_download), maxLines = 1)
+                                }
                             }
                         }
                         is UpdateUiState.Downloading -> {
-                            Button(onClick = { onCancelDownload() }) {
-                                Text(stringResource(R.string.update_cancel))
+                            Button(
+                                onClick = { onCancelDownload() },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = SleepyTheme.Buttons.shape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colors.secondaryContainer,
+                                    contentColor = colors.onSecondaryContainer
+                                )
+                            ) {
+                                Text(stringResource(R.string.update_cancel), maxLines = 1)
                             }
                         }
                         is UpdateUiState.Failed -> {
-                            TextButton(onClick = onDismiss) {
-                                Text(stringResource(R.string.update_cancel))
-                            }
-                            Button(onClick = { onRetry(version, changelog, url) }) {
-                                Text(stringResource(R.string.update_retry))
+                            androidx.compose.foundation.layout.Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.weight(1f),
+                                    shape = SleepyTheme.Buttons.shape,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = colors.secondaryContainer,
+                                        contentColor = colors.onSecondaryContainer
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.update_cancel), maxLines = 1)
+                                }
+                                Button(
+                                    onClick = { onRetry(version, changelog, url) },
+                                    modifier = Modifier.weight(1f),
+                                    shape = SleepyTheme.Buttons.shape
+                                ) {
+                                    Text(stringResource(R.string.update_retry), maxLines = 1)
+                                }
                             }
                         }
                         is UpdateUiState.Installing -> { /* 无按钮,等系统安装器 */ }

@@ -33,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -382,30 +381,36 @@ fun EditTableScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(stringResource(R.string.edit_table_delete_confirm), color = colors.onSurface) },
+            confirmButton = {},
             // 防呆: 删表=连带删全部课程, 明示数量让用户知道要失去多少数据
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+            title = { Text(stringResource(R.string.edit_table_delete_confirm), color = colors.onSurface) },
             text = {
-                Text(
-                    stringResource(
-                        if (state.courses.isNotEmpty()) R.string.edit_table_delete_msg_count
-                        else R.string.edit_table_delete_msg,
-                        table.name,
-                        state.courses.size
-                    ),
-                    color = colors.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    scope.launch {
-                        viewModel.deleteTable(table.id)
-                        onDeleted()
-                    }
-                }) { Text(stringResource(R.string.delete), color = colors.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(
+                            if (state.courses.isNotEmpty()) R.string.edit_table_delete_msg_count
+                            else R.string.edit_table_delete_msg,
+                            table.name,
+                            state.courses.size
+                        ),
+                        color = colors.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.delete),
+                        onConfirm = {
+                            showDeleteConfirm = false
+                            scope.launch {
+                                viewModel.deleteTable(table.id)
+                                onDeleted()
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { showDeleteConfirm = false },
+                        destructive = true
+                    )
+                }
             }
         )
     }
@@ -417,23 +422,28 @@ fun EditTableScreen(
             onDismissRequest = { pendingRebind = null },
             title = { Text(stringResource(R.string.period_table_bind_preview_title), color = colors.onSurface) },
             text = {
-                Text(
-                    text = stringResource(R.string.period_table_bind_preview_body),
-                    color = colors.onSurfaceVariant
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.period_table_bind_preview_body),
+                        color = colors.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.period_table_preview_confirm),
+                        onConfirm = {
+                            pendingRebind = null
+                            scope.launch {
+                                viewModel.bindPeriodTable(table.id, targetId)
+                                onSaved()
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { pendingRebind = null }
+                    )
+                }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    pendingRebind = null
-                    scope.launch {
-                        viewModel.bindPeriodTable(table.id, targetId)
-                        onSaved()
-                    }
-                }) { Text(stringResource(R.string.period_table_preview_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingRebind = null }) { Text(stringResource(R.string.cancel)) }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }
