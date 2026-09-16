@@ -54,6 +54,7 @@
     <string name="schedule_switch_table">切换课表</string>
     <string name="schedule_undo">撤回</string>
     <string name="schedule_undo_none">没有可撤回的操作</string>
+    <string name="schedule_scale_keep">保留缩放</string>
     <string name="all_tables_new">新建课表</string>
     <string name="all_tables_duplicate">创建副本</string>
     <string name="table_created_at">导入于 %1$s</string>
@@ -111,11 +112,6 @@
     <string name="read_failed">读取失败: %1$s</string>
     <string name="cannot_read_file">无法读取文件</string>
     <string name="import_preview_sub">先预览，再导入，不让课表被一把覆盖</string>
-    <string name="import_drafts">导入草稿</string>
-    <string name="import_drafts_empty">暂无保存的导入草稿</string>
-    <string name="import_draft_restore">恢复草稿</string>
-    <string name="import_draft_delete">删除草稿</string>
-    <string name="import_draft_saved_at">保存于 %1$s</string>
     <string name="format_wakeup_share">WakeUp 分享文本</string>
     <string name="format_wakeup_desc">【来自WakeUp课程表】开头</string>
     <string name="format_wakeup_json">WakeUp JSON</string>
@@ -253,6 +249,8 @@
     <string name="group_color_confirm_msg">组色会影响本课程所有跟随组色的节次。</string>
     <string name="color_auto">自动</string>
     <string name="color_custom">自定义</string>
+    <string name="color_custom_switch">自定义颜色</string>
+    <string name="course_group_color">组色</string>
     <string name="color_refresh">换自动色</string>
     <string name="color_toast_last_group">最后一节将跟随组色</string>
     <string name="import_multi_location_warning">部分课程存在多个上课地点</string>
@@ -307,23 +305,6 @@
     <string name="mine_refresh_widgets">刷新所有小组件</string>
     <string name="mine_refresh_widgets_done">已刷新全部小组件</string>
     <string name="mine_export">导出课表</string>
-    <string name="mine_period_tables">时间节次表</string>
-    <string name="mine_period_tables_sub">管理各课表共用的作息</string>
-    <string name="period_tables_title">时间节次表</string>
-    <string name="period_table_bound_count">已绑定 %1$d 张课表</string>
-    <string name="period_table_new">新建时间表</string>
-    <string name="period_table_copy">复制时间表</string>
-    <string name="period_table_name_label">时间表名称</string>
-    <string name="period_table_delete_confirm">删除时间节次表</string>
-    <string name="period_table_delete_msg_body">确定要删除时间节次表「%1$s」吗？此操作可撤回。</string>
-    <string name="period_table_delete_blocked">该时间表仍被 %1$d 张课表绑定，请先改绑</string>
-    <string name="period_table_bind_label">时间节次表</string>
-    <string name="period_table_unbound">未绑定（使用本表作息）</string>
-    <string name="period_table_save_preview_title">保存前预览</string>
-    <string name="period_table_preview_summary">将影响 %1$d 张课表：%2$d 门课时间变化，%3$d 门不变</string>
-    <string name="period_table_preview_confirm">确认保存</string>
-    <string name="period_table_bind_preview_title">换绑确认</string>
-    <string name="period_table_bind_preview_body">切换后本课表按新时间节次表解释节次；自定义时间的课程不受影响</string>
     <!-- Export -->
     <string name="export_title">导出课表</string>
     <string name="share_sheet_title">分享课表</string>
@@ -370,6 +351,13 @@
     <string name="settings_grid_sub_none_sub">网格卡片只显示课程名</string>
     <string name="settings_pill">主页显示设置</string>
     <string name="settings_pill_scale">网格视图缩放</string>
+    <string name="settings_grid_auto_hide_evening">自动收起空白晚间</string>
+    <string name="settings_grid_auto_hide_evening_sub">整个学期没有晚课时自动收起晚间节次</string>
+    <string name="settings_grid_evening_start">晚间起始时间</string>
+    <string name="settings_grid_adaptive_height">课表自适应行高</string>
+    <string name="settings_grid_adaptive_height_sub">按可用高度自动缩放行高，优先完整显示课表</string>
+    <string name="settings_lab">实验室</string>
+    <string name="settings_lab_sub">实验性功能，默认关闭，可能随版本调整</string>
     <string name="settings_pill_week_scale">周视图缩放</string>
     <string name="settings_pill_corner">卡片圆角</string>
     <string name="settings_week_two_column">周视图两栏显示</string>
@@ -709,12 +697,6 @@
     <!-- i18n: additional strings added for full localization -->
     <string name="default_table_with_num">默认%1$d</string>
     <string name="new_course">新课程</string>
-    <string name="jw_import_exit_title">退出导入？</string>
-    <string name="jw_import_exit_message">当前导入尚未完成，退出后可以保留草稿供稍后继续。</string>
-    <string name="jw_import_exit_continue">继续导入</string>
-    <string name="jw_import_exit_keep_draft">退出并保留草稿</string>
-    <string name="jw_import_exit_delete_draft">退出并删除草稿</string>
-
     <string name="jw_import_title">教务导入 - %1$s</string>
     <string name="month_day_format">%1$d月%2$d日</string>
     <string name="section_short">%1$d</string>
@@ -813,4 +795,31 @@
     <string name="edge_insert_start_label">起始时间</string>
     <string name="edge_insert_end_label">结束时间</string>
     <string name="edge_insert_ok">添加</string>
+    <string name="import_drafts">导入草稿</string>
+    <string name="import_drafts_empty">暂无保存的导入草稿</string>
+    <string name="import_draft_restore">恢复草稿</string>
+    <string name="import_draft_delete">删除草稿</string>
+    <string name="import_draft_saved_at">保存于 %1$s</string>
+    <string name="mine_period_tables">时间节次表</string>
+    <string name="mine_period_tables_sub">管理各课表共用的作息</string>
+    <string name="period_tables_title">时间节次表</string>
+    <string name="period_table_bound_count">已绑定 %1$d 张课表</string>
+    <string name="period_table_new">新建时间表</string>
+    <string name="period_table_copy">复制时间表</string>
+    <string name="period_table_name_label">时间表名称</string>
+    <string name="period_table_delete_confirm">删除时间节次表</string>
+    <string name="period_table_delete_msg_body">确定要删除时间节次表「%1$s」吗？此操作可撤回。</string>
+    <string name="period_table_delete_blocked">该时间表仍被 %1$d 张课表绑定，请先改绑</string>
+    <string name="period_table_bind_label">时间节次表</string>
+    <string name="period_table_unbound">未绑定（使用本表作息）</string>
+    <string name="period_table_save_preview_title">保存前预览</string>
+    <string name="period_table_preview_summary">将影响 %1$d 张课表：%2$d 门课时间变化，%3$d 门不变</string>
+    <string name="period_table_preview_confirm">确认保存</string>
+    <string name="period_table_bind_preview_title">换绑确认</string>
+    <string name="period_table_bind_preview_body">切换后本课表按新时间节次表解释节次；自定义时间的课程不受影响</string>
+    <string name="jw_import_exit_title">退出导入？</string>
+    <string name="jw_import_exit_message">当前导入尚未完成，退出后可以保留草稿供稍后继续。</string>
+    <string name="jw_import_exit_continue">继续导入</string>
+    <string name="jw_import_exit_keep_draft">退出并保留草稿</string>
+    <string name="jw_import_exit_delete_draft">退出并删除草稿</string>
 </resources>
