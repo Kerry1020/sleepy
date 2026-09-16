@@ -303,6 +303,8 @@
     <string name="settings_grid_evening_start">夜間の開始時刻</string>
     <string name="settings_grid_adaptive_height">時間割の行の高さ自動調整</string>
     <string name="settings_grid_adaptive_height_sub">画面に収まるよう行の高さを自動調整します</string>
+    <string name="settings_grid_pinch_zoom">ピンチで行の高さを調整</string>
+    <string name="settings_grid_pinch_zoom_sub">時間割上で2本指の上下ピンチを行の高さ変更に使います。オフでは無効</string>
     <string name="settings_lab">ラボ</string>
     <string name="settings_lab_sub">実験的な機能。デフォルトはオフで、バージョンによって変更される可能性があります</string>
     <string name="settings_pill_week_scale">週表示の拡大率</string>

@@ -345,6 +345,8 @@
     <string name="settings_grid_evening_start">晚间起始时间</string>
     <string name="settings_grid_adaptive_height">课表自适应行高</string>
     <string name="settings_grid_adaptive_height_sub">按可用高度自动缩放行高，优先完整显示课表</string>
+    <string name="settings_grid_pinch_zoom">双指捏放调整行高</string>
+    <string name="settings_grid_pinch_zoom_sub">在课表上用双指上下捏放改变行高；关闭后不可捏放</string>
     <string name="settings_lab">实验室</string>
     <string name="settings_lab_sub">实验性功能，默认关闭，可能随版本调整</string>
     <string name="settings_pill_week_scale">周视图缩放</string>
