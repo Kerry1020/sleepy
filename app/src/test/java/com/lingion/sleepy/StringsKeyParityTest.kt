@@ -102,7 +102,7 @@ class StringsKeyParityTest {
      */
     private val periodTableKeys = listOf(
         "mine_period_tables",
-        "mine_period_tables_sub",
+        // mine_period_tables_sub 已删(2026-09-16 用户: 「管理各课表共用的作息」副标题冗余)
         "period_tables_title",
         "period_table_bound_count",
         "period_table_new",

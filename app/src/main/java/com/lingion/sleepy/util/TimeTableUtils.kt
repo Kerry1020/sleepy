@@ -630,7 +630,9 @@ object TimeTableUtils {
         /** 旧表解释的 "HH:mm-HH:mm"; 旧表缺该节次行 = null(无法解释) */
         val oldTime: String?,
         /** 新表解释的 "HH:mm-HH:mm"; 新表缺该节次行 = null */
-        val newTime: String?
+        val newTime: String?,
+        /** 2026-09-16: 逐节对比 — 真正变化了的节次列表(空 = 首尾对变了但节次没变, 理论不出现) */
+        val changedNodes: List<Int> = emptyList()
     )
 
     /** 预览结果: 有时间变化的课程 + 无变化课程数(供"共 N 门, M 门受影响"文案) */
@@ -642,6 +644,11 @@ object TimeTableUtils {
     /**
      * 对一批课程, 用 oldTimeJson/newTimeJson 各自解释节次编号(§5.2:
      * "按新旧两份 timeJson 对同一批节次编号解析"), 产出逐课时间变化。
+     *
+     * 2026-09-16 逐节对比修复: 旧实现只比 (首节.start, 末节.end) 一对 — 连堂课
+     * (如 1-2 节)改了第 1 节结束时间(早八持续时长)时, 首尾对不变 → 误判"不变",
+     * 用户实测 41 门早八全报 0 变化。现在逐节次 (start,end) 对比, 任一节变了即变。
+     *
      * 纯函数 — 不触库不写库; 取消保存时丢弃结果即可, 数据库零改动。
      */
     fun previewPeriodTableChange(
@@ -651,11 +658,21 @@ object TimeTableUtils {
     ): PeriodTablePreview {
         val changed = mutableListOf<CourseTimeChange>()
         var unchanged = 0
+        val oldNodes = parseNodes(oldTimeJson)
+        val newNodes = parseNodes(newTimeJson)
+        fun nodeTime(nodes: List<NodeTime>, n: Int): Pair<String, String>? =
+            nodes.find { it.node == n }?.let { Pair(formatTime(it.start), formatTime(it.end)) }
         for (c in courses) {
             if (c.ownTime || c.isIrregularTime) continue  // 自定义时间: 起止照旧, 不参与解释
+            val endNode = c.startNode + c.step - 1
+            val changedNodes = (c.startNode..endNode).mapNotNull { n ->
+                val o = nodeTime(oldNodes, n)
+                val w = nodeTime(newNodes, n)
+                if (o != w) n else null
+            }
             val oldParts = courseTimeParts(c.startNode, c.step, oldTimeJson)
             val newParts = courseTimeParts(c.startNode, c.step, newTimeJson)
-            if (oldParts == newParts) {
+            if (changedNodes.isEmpty()) {
                 unchanged++
             } else {
                 changed.add(
@@ -665,7 +682,8 @@ object TimeTableUtils {
                         startNode = c.startNode,
                         step = c.step,
                         oldTime = oldParts?.let { "${it.first}-${it.second}" },
-                        newTime = newParts?.let { "${it.first}-${it.second}" }
+                        newTime = newParts?.let { "${it.first}-${it.second}" },
+                        changedNodes = changedNodes
                     )
                 )
             }

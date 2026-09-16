@@ -21,7 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -54,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lingion.sleepy.R
 import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.SmartPeriodConfig
+import com.lingion.sleepy.ui.component.PeriodTableOption as TimeSlotEditorPeriodTableOption
 import com.lingion.sleepy.ui.component.TimeSlotEditor
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -107,6 +110,18 @@ fun PeriodTableEditScreen(
     var pendingSave by remember { mutableStateOf<PeriodTableEntity?>(null) }
     // issue#40: 新建未保存表的丢弃标记 — 用户确认保存后翻 false, 返回不再删行
     var unsavedNew by remember { mutableStateOf(isNewUnsaved) }
+    // v1.0.56 T6: 第三 Tab「作息表」— 作息表编辑页同样有(用户 2026-09-16: 有手动/自动就有第三个)。
+    // 语义 = 取入: 选中另一张作息表, 把它的节次内容拷进当前编辑区(成为本表内容的起点),
+    // 非活绑 — period_tables 自身无绑定字段, 绑定只存在于课表上。排除自己禁自引用。
+    var selectedImportTableId by remember(periodTable.id) { mutableStateOf<Long?>(null) }
+    // v1.0.56 T7: 删除入口迁入本页 — 确认弹窗 + 绑定拦截提示(从管理页列表行整体搬迁)
+    var showDeleteConfirm by remember(periodTable.id) { mutableStateOf(false) }
+    var deleteBlockedMsg by remember(periodTable.id) { mutableStateOf<String?>(null) }
+    // v1.0.56 T8: 复制先命名, 确认后才建; 成功后回管理页
+    var showCopyDialog by remember(periodTable.id) { mutableStateOf(false) }
+    var copyName by remember(periodTable.id) { mutableStateOf("") }
+    // v1.0.56 T11: 分享底部弹窗(原生格式/JSON 二选一)
+    var showShareSheet by remember(periodTable.id) { mutableStateOf(false) }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -150,12 +165,17 @@ fun PeriodTableEditScreen(
                     }
                 },
                 actions = {
-                    // 复制时间表(§4.2): 先生成新实体再进入其编辑页, 原表与绑定关系不变
+                    // v1.0.56 T11: 分享作息表(原生格式 / JSON 二选一)
+                    IconButton(onClick = { showShareSheet = true }) {
+                        Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.period_table_share_sheet_title), tint = colors.onBackground)
+                    }
+                    // v1.0.56 T8: 复制先弹命名框, 确认后才落库; 成功回管理页
                     IconButton(onClick = {
                         scope.launch {
-                            val newId = viewModel.copyPeriodTable(periodTable.id)
-                            if (newId > 0) {
-                                onBack()
+                            val suggested = viewModel.suggestPeriodTableCopyName(periodTable.id)
+                            if (suggested != null) {
+                                copyName = suggested
+                                showCopyDialog = true
                             }
                         }
                     }) {
@@ -250,7 +270,33 @@ fun PeriodTableEditScreen(
                                     slotRows.addAll(newRows)
                                 },
                                 smartConfig = smartConfig.value,
-                                onSmartConfigChange = { smartConfig.value = it }
+                                onSmartConfigChange = { smartConfig.value = it },
+                                // v1.0.56 T6: 第三 Tab「作息表」— 列表排除自己;
+                                // 选中 = 把该表节次取入当前编辑区(取入非活绑)
+                                periodTableOptions = periodTables.map {
+                                    TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                },
+                                selectedPeriodTableId = selectedImportTableId,
+                                excludePeriodTableId = periodTable.id,
+                                onSelectPeriodTable = { pickedId ->
+                                    selectedImportTableId = pickedId
+                                    val picked = periodTables.find { it.id == pickedId } ?: return@TimeSlotEditor
+                                    val imported = TimeTableUtils.parseTimeSlotRows(picked.timeJson)
+                                    slotRows.clear()
+                                    slotRows.addAll(imported)
+                                    smartConfig.value = if (picked.smartConfigJson.isNotBlank()) {
+                                        try {
+                                            Json.decodeFromString<SmartPeriodConfig>(picked.smartConfigJson)
+                                        } catch (_: Exception) {
+                                            smartConfig.value
+                                        }
+                                    } else {
+                                        SmartPeriodConfig(
+                                            totalPeriods = imported.size.coerceAtLeast(1),
+                                            startTime = imported.firstOrNull()?.start?.takeIf { it.isNotBlank() } ?: "08:00"
+                                        )
+                                    }
+                                }
                             )
                         }
                     }
@@ -310,6 +356,26 @@ fun PeriodTableEditScreen(
                 }
             }
 
+            // v1.0.56 T7: 删除键从管理页列表行挪到这里(用户 2026-09-16)。
+            // 新建未保存的表不显示 — 退出即丢弃, 无"已存在的东西"可删。
+            // 删除成功后回管理页; 被绑定拦截时弹 blocked 提示(与原列表行删除同语义)。
+            if (!unsavedNew) {
+                item {
+                    Button(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier.fillMaxWidth().height(SleepyTheme.Buttons.regularHeight),
+                        shape = SleepyTheme.Buttons.shape,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = colors.errorContainer
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null, tint = colors.onErrorContainer)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.period_table_delete_confirm), color = colors.onErrorContainer)
+                    }
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(28.dp)) }
         }
     }
@@ -331,12 +397,27 @@ fun PeriodTableEditScreen(
                         ),
                         color = colors.onSurfaceVariant
                     )
-                    // 逐课旧时间→新时间(§5.2), 最多列 8 行防溢出
+                    // 逐课旧时间→新时间(§5.2) + 变化节次标注, 最多列 8 行防溢出。
+                    // 2026-09-16 用户要求: 改早八必须列出所有第一节课的课程名+几点到几点。
                     pendingPreview!!.changedCourses.take(8).forEach { change ->
+                        val oldT = change.oldTime ?: "?"
+                        val newT = change.newTime ?: "?"
+                        val nodesTag = if (change.changedNodes.size == 1) {
+                            context.getString(R.string.course_node_format, change.changedNodes.first().toString())
+                        } else {
+                            "${change.changedNodes.first()}-${change.changedNodes.last()}"
+                        }
                         Text(
-                            "${change.courseName}: ${change.oldTime ?: "?"} → ${change.newTime ?: "?"}",
+                            "${change.courseName}($nodesTag): $oldT → $newT",
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.onSurface
+                        )
+                    }
+                    if (pendingPreview!!.changedCourses.size > 8) {
+                        Text(
+                            stringResource(R.string.period_table_preview_more, pendingPreview!!.changedCourses.size - 8),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant
                         )
                     }
                 }
@@ -358,6 +439,97 @@ fun PeriodTableEditScreen(
                 TextButton(onClick = { pendingPreview = null; pendingSave = null }) {
                     Text(stringResource(R.string.cancel))
                 }
+            }
+        )
+    }
+
+    // v1.0.56 T7: 删除确认弹窗(原管理页逻辑整体迁移, 语义不变)
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(stringResource(R.string.period_table_delete_msg_body, periodTable.name), color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    scope.launch {
+                        val ok = viewModel.deletePeriodTable(periodTable.id)
+                        if (ok) {
+                            onBack()
+                        } else {
+                            val bound = scheduleState.tables.count { it.periodTableId == periodTable.id }
+                            deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
+                        }
+                    }
+                }) { Text(stringResource(R.string.delete), color = colors.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    // v1.0.56 T7: 绑定拦截提示(删不掉 = 仍有课表绑着本表)
+    deleteBlockedMsg?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { deleteBlockedMsg = null },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(msg, color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
+            }
+        )
+    }
+
+    // v1.0.56 T11: 分享格式选择底部弹窗
+    if (showShareSheet) {
+        com.lingion.sleepy.ui.component.PeriodTableShareSheet(
+            periodTable = periodTable,
+            onDismiss = { showShareSheet = false }
+        )
+    }
+
+    if (showCopyDialog) {
+        val candidate = copyName.trim()
+        val nameTaken = candidate.isNotBlank() && TimeTableUtils.isTableNameTaken(
+            candidate,
+            scheduleState.tables.map { it.name },
+            periodTables.map { it.name }
+        )
+        AlertDialog(
+            onDismissRequest = { showCopyDialog = false },
+            title = { Text(stringResource(R.string.period_table_copy_dialog_title), color = colors.onSurface) },
+            text = {
+                androidx.compose.material3.TextField(
+                    value = copyName,
+                    onValueChange = { copyName = it },
+                    label = { Text(stringResource(R.string.period_table_name_label)) },
+                    singleLine = true,
+                    isError = nameTaken,
+                    supportingText = if (nameTaken) {
+                        { Text(stringResource(R.string.period_table_name_taken)) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = SleepyTheme.fieldShape,
+                    colors = fieldColors
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = candidate.isNotBlank() && !nameTaken,
+                    onClick = {
+                        scope.launch {
+                            val newId = viewModel.copyPeriodTableAs(periodTable.id, candidate)
+                            if (newId > 0) {
+                                showCopyDialog = false
+                                onBack()
+                            }
+                        }
+                    }
+                ) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCopyDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

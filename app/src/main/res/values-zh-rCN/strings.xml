@@ -31,15 +31,17 @@
     <string name="schedule_no_course_today">今天没有课哦</string>
 
     <!-- Import / Manage -->
-    <string name="import_title">导入课表</string>
+    <string name="import_title">导入课表/作息表</string>
     <string name="manage_current_table">当前课表</string>
-    <string name="manage_import">导入课表</string>
-    <string name="manage_import_sub">从文件 / 文本 / CSV 导入课表</string>
+    <string name="manage_import">导入课表/作息表</string>
+    <string name="manage_import_sub">从文件 / 文本 / 教务导入课表或作息表</string>
     <string name="manage_new_table">新建课表</string>
     <string name="manage_new_table_sub">创建一张空白课表，手动添加课程</string>
+    <string name="manage_new_period_table">新建作息表</string>
+    <string name="manage_new_period_table_sub">创建一张空白作息表，供多张课表共用</string>
     <string name="manage_edit_current">编辑当前课表</string>
     <string name="manage_edit_current_sub">编辑当前课表名称、日期、节次时间</string>
-    <string name="manage_export">导出当前课表</string>
+    <string name="manage_export">导出课表/作息表</string>
     <string name="manage_export_sub">以原生格式 / WakeUp JSON / ICS / 文本分享</string>
     <string name="manage_manual_add">手动添加课程</string>
     <string name="manage_manual_add_sub">直接添加一门课程到当前课表</string>
@@ -293,9 +295,9 @@
     <string name="mine_subtitle">管理你的课表与设置</string>
     <string name="mine_refresh_widgets">刷新所有小组件</string>
     <string name="mine_refresh_widgets_done">已刷新全部小组件</string>
-    <string name="mine_export">导出课表</string>
+    <string name="mine_export">导出课表/作息表</string>
     <!-- Export -->
-    <string name="export_title">导出课表</string>
+    <string name="export_title">导出课表/作息表</string>
     <string name="export_no_table">暂无可导出的课表</string>
     <string name="export_pick_table">选择要导出的课表</string>
     <string name="export_current_table_badge">当前课表</string>
@@ -345,6 +347,8 @@
     <string name="settings_grid_evening_start">晚间起始时间</string>
     <string name="settings_grid_adaptive_height">课表自适应行高</string>
     <string name="settings_grid_adaptive_height_sub">按可用高度自动缩放行高，优先完整显示课表</string>
+    <string name="settings_grid_pinch_zoom">双指捏放调整行高</string>
+    <string name="settings_grid_pinch_zoom_sub">在课表上用双指上下捏放改变行高；关闭后不可捏放</string>
     <string name="settings_lab">实验室</string>
     <string name="settings_lab_sub">实验性功能，默认关闭，可能随版本调整</string>
     <string name="settings_pill_week_scale">周视图缩放</string>
@@ -746,19 +750,31 @@
     <string name="irregular_slot_edit_title">编辑第 %1$d 节默认时间</string>
     <string name="irregular_duration_label">持续时长（分钟）</string>
     <string name="mine_period_tables">作息表</string>
-    <string name="mine_period_tables_sub">管理各课表共用的作息</string>
     <string name="period_tables_title">作息表</string>
     <string name="period_table_bound_count">已绑定 %1$d 张课表</string>
     <string name="period_table_new">新建作息表</string>
     <string name="period_table_copy">复制作息表</string>
+    <string name="period_table_share_sheet_title">分享作息表</string>
+    <string name="period_table_share_native_title">Sleepy 原生格式</string>
+    <string name="period_table_share_native_sub">纯作息分享·其他 Sleepy 可导入</string>
+    <string name="period_table_share_json_title">JSON 格式</string>
+    <string name="period_table_share_json_sub">节次时间数据·通用格式</string>
+    <string name="period_table_import_title">导入作息表</string>
+    <string name="period_table_import_body">检测到输入仅包含作息表内容，将只创建一张作息表。</string>
+    <string name="period_table_import_confirm">确认导入作息表</string>
+    <string name="period_table_name_taken">该名称已被其他课表或作息表使用</string>
+    <string name="period_table_copy_dialog_title">复制作息表</string>
     <string name="period_table_name_label">作息表名称</string>
     <string name="period_table_delete_confirm">删除作息表</string>
     <string name="period_table_delete_msg_body">确定要删除作息表「%1$s」吗？此操作可撤回。</string>
     <string name="period_table_delete_blocked">该作息表仍被 %1$d 张课表绑定，请先改绑</string>
     <string name="period_table_bind_label">作息表</string>
     <string name="period_table_unbound">未绑定（使用本表作息）</string>
+    <string name="period_tables_tab">作息表</string>
+    <string name="period_table_nodes_count">%1$d 节/天</string>
     <string name="period_table_save_preview_title">保存前预览</string>
     <string name="period_table_preview_summary">将影响 %1$d 张课表：%2$d 门课时间变化，%3$d 门不变</string>
+    <string name="period_table_preview_more">…和其他 %1$d 门课</string>
     <string name="period_table_preview_confirm">确认保存</string>
     <string name="period_table_bind_preview_title">换绑确认</string>
     <string name="period_table_bind_preview_body">切换后本课表按新作息表解释节次；自定义时间的课程不受影响</string>

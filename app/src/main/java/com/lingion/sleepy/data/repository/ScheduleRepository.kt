@@ -211,6 +211,22 @@ class ScheduleRepository(private val db: AppDatabase) {
     }
 
     /**
+     * v1.0.56 T8: 按指定名建副本 — 复制弹窗确认后调用, 名字已由 UI 层查重。
+     * 返回新副本 id, 源不存在返回 -1。
+     */
+    suspend fun copyPeriodTableAs(sourceId: Long, newName: String): Long {
+        val src = periodTableDao.getById(sourceId) ?: return -1L
+        captureForUndo()
+        val copy = src.copy(
+            id = 0,
+            name = newName,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        return periodTableDao.insert(copy)
+    }
+
+    /**
      * 换绑(设计 §5.3): 只写 time_tables.periodTableId, 课程行零改动。
      * periodTableId=null = 解绑(回退旧兼容列)。
      * 悬空目标(periodTableId 不存在)拒绝 — 禁止制造悬空引用。

@@ -121,6 +121,69 @@ object SleepyNativeExporter {
     )
 
     /**
+     * v1.0.56 T11: 作息表单独导出 — sleepy-v1 纯 P 区块文本(marker 包裹, 无 T/C 行)。
+     * 解析端: 0 C 行 + P 区块 → courses 空 + periodTable 非空 → 导入走 T9 纯作息路径
+     * (只建作息表, 不建空课表)。预设 12 节折叠 Pd, 其余逐节 Pn(与混合导出同文法)。
+     */
+    fun exportPeriodTableShareText(pt: com.lingion.sleepy.data.entity.PeriodTableEntity): String {
+        val body = buildPeriodOnlyBody(pt)
+        return "【来自Sleepy】\n作息分享：\n\n<<<SLEEPY-BEGIN>>>\n$body\n<<<SLEEPY-END>>>"
+    }
+
+    /**
+     * v1.0.56 T11: 作息表单独导出 — JSON 形态。
+     * {"name":"…","tableInfo":{"nodesPerDay":N,"timeList":[{"node":1,"start":"08:00","end":"08:45"},…]}}
+     * 包装进 tableInfo(与 WakeUp/Sleepy 导出同语义): 解析端判别子串命中 → timeList 逐节收割
+     * → courses 空 + periodTable 非空 → 导入走 T9 纯作息路径。
+     */
+    fun exportPeriodTableJson(pt: com.lingion.sleepy.data.entity.PeriodTableEntity): String {
+        val nodes = TimeTableUtils.parseNodes(pt.timeJson)
+        // timeList 用 WakeUp 原生字段名 startTime/endTime — 解析端 harvest 按此名收割
+        val timeArr = nodes.joinToString(",", "[", "]") { n ->
+            """{"node":${n.node},"startTime":"${SleepyNativeFormat.fmtTime(n.start)}","endTime":"${SleepyNativeFormat.fmtTime(n.end)}"}"""
+        }
+        return """{"name":${jsonQuote(pt.name)},"tableInfo":{"nodesPerDay":${pt.nodesPerDay.coerceAtLeast(1)},"timeList":$timeArr}}"""
+    }
+
+    private fun jsonQuote(s: String): String {
+        val sb = StringBuilder("\"")
+        for (ch in s) {
+            when (ch) {
+                '"' -> sb.append("\\\"")
+                '\\' -> sb.append("\\\\")
+                '\n' -> sb.append("\\n")
+                '\r' -> sb.append("\\r")
+                '\t' -> sb.append("\\t")
+                else -> if (ch < ' ') sb.append("\\u%04x".format(ch.code)) else sb.append(ch)
+            }
+        }
+        sb.append("\"")
+        return sb.toString()
+    }
+
+    /** T11: 纯作息 body — magic + P 头 + Pd/Pn 行, 无 T/N/C 行 */
+    private fun buildPeriodOnlyBody(pt: com.lingion.sleepy.data.entity.PeriodTableEntity): String {
+        val sb = StringBuilder()
+        sb.append("#sleepy-v1\n")
+        sb.append("P")
+        sb.append(SleepyNativeFormat.escape(pt.name))
+        sb.append('|').append(pt.id)
+        sb.append('|').append(pt.nodesPerDay.coerceAtLeast(1))
+        sb.append('\n')
+        if (SleepyNativeFormat.matchesNdPreset(pt.timeJson)) {
+            sb.append("Pd\n")
+        } else {
+            for (n in TimeTableUtils.parseNodes(pt.timeJson)) {
+                sb.append("Pn").append(n.node)
+                sb.append('|').append(SleepyNativeFormat.fmtTime(n.start))
+                sb.append('|').append(SleepyNativeFormat.fmtTime(n.end))
+                sb.append('\n')
+            }
+        }
+        return sb.toString().trimEnd('\n')
+    }
+
+    /**
      * 按 §4 散周 partition 拆行: 把每个课程的上课周集合按"极大连续段"拆为多条 C 行, 每行 type 重新判定:
      * - 段全奇 → type 1 (S-E单)
      * - 段全偶 → type 2 (S-E双)

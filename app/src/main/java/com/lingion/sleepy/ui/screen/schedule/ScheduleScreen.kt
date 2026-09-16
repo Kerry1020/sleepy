@@ -311,7 +311,9 @@ fun ScheduleScreen(
                         // 比例定位与聚簇都基于扩展后的槽位表(真实分钟语义)
                         timeJson = state.effectiveCurrentTable?.timeJson,
                         rowHeightScale = rowHeightScale,
-                        onRowHeightScaleChange = { rowHeightScale = it }
+                        onRowHeightScaleChange = { rowHeightScale = it },
+                        // v1.0.56 T3: 实验室开关 — 默认关=手势不挂(顶栏 tick 按钮也随 scaleUncommitted 恒 false 不亮)
+                        pinchZoomEnabled = AppPrefs.isGridPinchZoom(context)
                     )
                 }
             }
