@@ -25,8 +25,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chromedp/cdproto/dom"
 	cdpbrowser "github.com/chromedp/cdproto/browser"
+	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/cdproto/log"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
@@ -1344,6 +1344,22 @@ func main() {
 	}
 	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
 		target = "https://" + target
+	}
+
+	// 版本自检 (2026-09-16 定法): 自身 SHA256 与线上 dist/sha256sums.txt 对比,
+	// 不一致自动下载替换并要求重启; 线上不可达只警告不拦 (离线/内网仍可采集)。
+	if ok, updated, err := selfCheckAndUpdate(); err != nil {
+		fmt.Println("⚠ 版本自检失败 (不拦采集):", err)
+	} else if updated {
+		fmt.Println()
+		fmt.Println("=====================================================")
+		fmt.Println("✓ 已更新到线上版本。请关闭本窗口, 重新双击运行采集器 (输入的网址记得重填)。")
+		fmt.Println("=====================================================")
+		waitEnter()
+		return
+	} else if !ok {
+		waitEnter()
+		return
 	}
 
 	headless := os.Getenv("SLEEPY_COLLECTOR_HEADLESS") == "1"
