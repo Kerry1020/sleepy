@@ -757,6 +757,8 @@
     <string name="period_table_delete_blocked">该作息表仍被 %1$d 张课表绑定，请先改绑</string>
     <string name="period_table_bind_label">作息表</string>
     <string name="period_table_unbound">未绑定（使用本表作息）</string>
+    <string name="period_tables_tab">作息表</string>
+    <string name="period_table_nodes_count">%1$d 节/天</string>
     <string name="period_table_save_preview_title">保存前预览</string>
     <string name="period_table_preview_summary">将影响 %1$d 张课表：%2$d 门课时间变化，%3$d 门不变</string>
     <string name="period_table_preview_confirm">确认保存</string>

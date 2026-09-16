@@ -746,6 +746,8 @@
     <string name="period_table_delete_blocked">%1$d 件の時間割が使用中です。先に切り替えてください</string>
     <string name="period_table_bind_label">時程表</string>
     <string name="period_table_unbound">未バインド（この時間割の時限を使用）</string>
+    <string name="period_tables_tab">時程表</string>
+    <string name="period_table_nodes_count">%1$d 時限/日</string>
     <string name="period_table_save_preview_title">保存前に確認</string>
     <string name="period_table_preview_summary">%1$d 件の時間割に影響：%2$d 件の時刻が変化、%3$d 件は変更なし</string>
     <string name="period_table_preview_confirm">保存</string>
