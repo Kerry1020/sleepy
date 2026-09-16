@@ -1488,10 +1488,13 @@ private suspend fun applyImportPreview(
             // issue#40 §6: 新格式带 P 区块 → 建 period_tables 并绑定(恢复共享关系);
             // 旧格式 periodTable=null → 不建(课表用自己兼容列, 不误共享)。
             // v1.0.56 T6: 用户在第三 Tab 显式选了作息表 → 绑定用户所选(优先于自动建表绑定);
+            // v1.0.56 T10: 自动建表走全局唯一名顺延(撞名加后缀, 禁与既有课表/作息表同名)
             val importedPeriodTableId = bindPeriodTableId ?: preview.parseResult.periodTable?.let { pt ->
+                val courseNames = repo.getAllTables().map { it.name }
+                val periodNames = repo.getAllPeriodTables().map { it.name }
                 repo.insertPeriodTable(
                     com.lingion.sleepy.data.entity.PeriodTableEntity(
-                        name = pt.name,
+                        name = TimeTableUtils.suggestUniqueName(pt.name, courseNames, periodNames),
                         nodesPerDay = pt.nodesPerDay,
                         timeJson = pt.timeJson
                     )

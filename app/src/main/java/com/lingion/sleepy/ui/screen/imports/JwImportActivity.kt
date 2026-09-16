@@ -232,6 +232,8 @@ class JwImportActivity : ComponentActivity() {
                     configSmartConfig = snapshot.smartConfigJson.takeIf { it.isNotBlank() }
                         ?.let { runCatching { Json.decodeFromString<SmartPeriodConfig>(it) }.getOrNull() }
                         ?: SmartPeriodConfig()
+                    // v1.0.56 T10: 默认选中「本次导入自动建作息表」(合成 id=-1)
+                    configBindPeriodTableId = -1L
                     exitDraftState = exitDraftState.copy(activeImport = true)
                     stage = Stage.ConfigureConfirm
                 }
@@ -300,9 +302,20 @@ class JwImportActivity : ComponentActivity() {
                                         smartConfig = configSmartConfig,
                                         onSmartConfigChange = { configSmartConfig = it; checkpointDraft() },
                                         // v1.0.56 T6: 第三 Tab「作息表」— 选一张现有作息表直接用;
-                                        // 不选 = 用教务解析出的节次(内置)
-                                        periodTableOptions = allPeriodTables.map {
-                                            TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                        // v1.0.56 T10: id=-1 合成项 = 「本次导入自动建表」(教务解析出的
+                                        // 节次将落成独立作息表, 名随课表名, 撞名自动后缀), 默认选中;
+                                        // 不选(null) = 节次只作课表内置, 不建独立表
+                                        periodTableOptions = buildList {
+                                            if (configRows.isNotEmpty()) {
+                                                add(TimeSlotEditorPeriodTableOption(
+                                                    -1L,
+                                                    configTableName.ifBlank { getString(R.string.jw_import_title, school.name) },
+                                                    configRows.size
+                                                ))
+                                            }
+                                            addAll(allPeriodTables.map {
+                                                TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                            })
                                         },
                                         selectedPeriodTableId = configBindPeriodTableId,
                                         onSelectPeriodTable = { configBindPeriodTableId = it }
@@ -334,6 +347,18 @@ class JwImportActivity : ComponentActivity() {
                                     scope.launch {
                                         try {
                                             val maxNode = configRows.maxOfOrNull { it.node } ?: 0
+                                            // v1.0.56 T10: id=-1 = 本次导入自动建作息表(名字随课表名, VM 内
+                                            // 走全局唯一名顺延); id>0 = 绑定既有表; null = 不建不绑
+                                            val autoPeriodEntity =
+                                                if (configBindPeriodTableId == -1L && configRows.isNotEmpty()) {
+                                                    com.lingion.sleepy.data.entity.PeriodTableEntity(
+                                                        name = configTableName.ifBlank {
+                                                            getString(R.string.jw_import_title, school.name)
+                                                        },
+                                                        nodesPerDay = configRows.size,
+                                                        timeJson = configTimeJson
+                                                    )
+                                                } else null
                                             val tableId = jwViewModel.importAsNewTable(
                                                 courses = parsedCourses,
                                                 tableName = configTableName.ifBlank {
@@ -342,11 +367,13 @@ class JwImportActivity : ComponentActivity() {
                                                 startDate = configStartDate,
                                                 timeJson = configTimeJson,
                                                 nodesPerDay = maxNode,
-                                                smartConfigJson = Json.encodeToString(configSmartConfig)
+                                                smartConfigJson = Json.encodeToString(configSmartConfig),
+                                                periodTable = autoPeriodEntity
                                             )
-                                            // v1.0.56 T6: 选了作息表 Tab → 导入的课表直接绑定该表(节次以表为准)
-                                            if (configBindPeriodTableId != null) {
-                                                scheduleViewModel.bindPeriodTable(tableId, configBindPeriodTableId)
+                                            // v1.0.56 T6: 选了既有作息表 Tab → 导入的课表直接绑定该表(节次以表为准)
+                                            val chosenId = configBindPeriodTableId
+                                            if (chosenId != null && chosenId > 0) {
+                                                scheduleViewModel.bindPeriodTable(tableId, chosenId)
                                             }
                                             draftId?.let { draftRepository.delete(it) }
                                             Log.d("JwImport", "importAsNewTable tableId=$tableId courses=${parsedCourses.size}")
@@ -463,6 +490,8 @@ class JwImportActivity : ComponentActivity() {
                                                 draftRepository.save(snapshot, sourceType = "jw", sourceUrl = sch.url)
                                             }
                                             stage = Stage.ConfigureConfirm
+                                            // v1.0.56 T10: 默认选中「本次导入自动建作息表」(合成 id=-1)
+                                            configBindPeriodTableId = -1L
                                             statusMsg = null
                                         } catch (e: Exception) {
                                             Log.e("JwImport", "parseHtml failed", e)

@@ -598,7 +598,11 @@ class JwImportViewModel(application: Application) : AndroidViewModel(application
         startDate: String? = null,
         timeJson: String = "",
         nodesPerDay: Int = 0,
-        smartConfigJson: String = ""    ): Long = withContext(Dispatchers.IO) {
+        smartConfigJson: String = "",
+        // v1.0.56 T10: 非 null = 教务解析出了独立节次 → 同事务自动建同名作息表并绑定。
+        // 名字走全局唯一名顺延(课表∪作息表), 撞名自动加后缀。
+        periodTable: com.lingion.sleepy.data.entity.PeriodTableEntity? = null
+    ): Long = withContext(Dispatchers.IO) {
         if (courses.isEmpty()) throw IllegalArgumentException("课程列表为空，请确认已到达课表页面")
 
         val db = AppDatabase.get(getApplication())
@@ -621,7 +625,20 @@ class JwImportViewModel(application: Application) : AndroidViewModel(application
                 isDefault = true,  // 导入的课表设为默认，widget 直接展示
                 smartConfigJson = smartConfigJson
             )
-            val generatedId = tableDao.insert(newTable)
+            // v1.0.56 T10: 自动作息表先落库拿 id — 建表时同名, 但全局唯一名墙:
+            // 名字与既有课表/作息表撞 → 顺延后缀。建课表时直接带绑定。
+            val autoPeriodTableId = periodTable?.let { pt ->
+                val periodDao = db.periodTableDao()
+                val courseNames = tableDao.getAll().map { it.name }
+                val periodNames = periodDao.getAll().map { it.name }
+                periodDao.insert(
+                    pt.copy(
+                        name = com.lingion.sleepy.util.TimeTableUtils.suggestUniqueName(pt.name, courseNames, periodNames),
+                        nodesPerDay = pt.nodesPerDay.coerceAtLeast(1)
+                    )
+                )
+            }
+            val generatedId = tableDao.insert(newTable.copy(periodTableId = autoPeriodTableId))
             // 把其他表设为非 default，确保只有当前表是 default
             tableDao.setDefault(generatedId)
 
