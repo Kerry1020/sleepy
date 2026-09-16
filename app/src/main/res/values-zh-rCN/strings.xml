@@ -753,6 +753,8 @@
     <string name="period_table_bound_count">已绑定 %1$d 张课表</string>
     <string name="period_table_new">新建作息表</string>
     <string name="period_table_copy">复制作息表</string>
+    <string name="period_table_name_taken">该名称已被其他课表或作息表使用</string>
+    <string name="period_table_copy_dialog_title">复制作息表</string>
     <string name="period_table_name_label">作息表名称</string>
     <string name="period_table_delete_confirm">删除作息表</string>
     <string name="period_table_delete_msg_body">确定要删除作息表「%1$s」吗？此操作可撤回。</string>

@@ -742,6 +742,8 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="period_table_bound_count">Vinculado a %1$d horario(s)</string>
     <string name="period_table_new">Nuevo horario de períodos</string>
     <string name="period_table_copy">Duplicar horario de períodos</string>
+    <string name="period_table_name_taken">Este nombre ya lo usa otra tabla</string>
+    <string name="period_table_copy_dialog_title">Copiar horario de períodos</string>
     <string name="period_table_name_label">Nombre del horario de períodos</string>
     <string name="period_table_delete_confirm">Eliminar horario de períodos</string>
     <string name="period_table_delete_msg_body">¿Eliminar el horario de períodos «%1$s»? Se puede deshacer.</string>

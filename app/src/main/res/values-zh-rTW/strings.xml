@@ -742,6 +742,8 @@
     <string name="period_table_bound_count">已綁定 %1$d 張課表</string>
     <string name="period_table_new">新增作息表</string>
     <string name="period_table_copy">複製時間表</string>
+    <string name="period_table_name_taken">該名稱已被其他課表或作息表使用</string>
+    <string name="period_table_copy_dialog_title">複製作息表</string>
     <string name="period_table_name_label">作息表名稱</string>
     <string name="period_table_delete_confirm">刪除作息表</string>
     <string name="period_table_delete_msg_body">確定要刪除作息表「%1$s」嗎？此操作可復原。</string>
