@@ -1,0 +1,6 @@
+[
+  {"project": "huhu415/eduData-GoBack", "author": "huhu415", "license_or_None": null, "role_in_verification": "同款 Gwork 研究生系统完整链路实锤 (登录/课表 URL/dgData 文法); 已在 school-wakeup-family 卡致谢, 本轮沿用"},
+  {"project": "XingHeYuZhuan/shiguang_warehouse", "author": "XingHeYuZhuan", "license_or_None": "MIT", "role_in_verification": "UPC/CUG 研究生 dgData 表格解析双仓佐证; 已在 foundational 卡 + wakeup-family 卡致谢, 本轮沿用"},
+  {"project": "jiefing/SCAU-Grad-Automatically-Fill-Evaluation-Form-JS", "author": "jiefing", "license_or_None": null, "role_in_verification": "Gwork 族 contentParent_dgData_* 控件命名旁证 (INDIRECT); 新触达 → 补进 school-wakeup-family 卡"},
+  {"project": "nacglalevin/hacker", "author": "nacglalevin", "license_or_None": null, "role_in_verification": "NEGATIVE 检索噪声 (非教务); 按 v1.5 JOU 边界: 非教务仓不触协议, 不致谢, 记录排除"}
+]

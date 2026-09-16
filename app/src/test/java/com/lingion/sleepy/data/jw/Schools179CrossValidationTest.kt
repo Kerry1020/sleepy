@@ -177,7 +177,8 @@ class Schools179CrossValidationTest {
         // 2026-09-10 收录燕山大学(博雅研究生平台, 首个 grad_supported, PR #30) → 185
         // 2026-09-13 WakeUp 专属库全量调查 2253 条, 实锤 193 中可路由 172 落地 → 357; 不变量: 总量=337 起随实锤收录递增
         // 2026-09-15 收录西南交通大学(YETHAN, 用户采集包) → 338; 广西农业职业技术大学(zf_new, 用户实测导入通过) → 339
-        assertEquals(339, entries().size)
+        // 2026-09-16 收录新疆大学(研究生 xju_post, Gwork 族, 用户报 URL) → 340
+        assertEquals(340, entries().size)
     }
 
     @Test

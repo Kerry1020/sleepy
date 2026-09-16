@@ -216,7 +216,8 @@ class JwNewSchoolsTest {
             JwProtocol.TYPE_CQU, JwProtocol.TYPE_CHAOXING, JwProtocol.TYPE_BOYA_PP, JwProtocol.TYPE_HNUST,
             JwProtocol.TYPE_EAMS5, JwProtocol.TYPE_SEU, JwProtocol.TYPE_ZJU,
             JwProtocol.TYPE_USTC, JwProtocol.TYPE_SCU, JwProtocol.TYPE_NEU, JwProtocol.TYPE_BJTU,
-            JwProtocol.TYPE_WHUT, JwProtocol.TYPE_CLASSIC_EAMS, JwProtocol.TYPE_YETHAN
+            JwProtocol.TYPE_WHUT, JwProtocol.TYPE_CLASSIC_EAMS, JwProtocol.TYPE_YETHAN,
+            JwProtocol.TYPE_XJU_POST
         )
         val pendingTypes = listOf(
             "com.lingion.sleepy.data.jw.JwChengFangParser" to "cf",

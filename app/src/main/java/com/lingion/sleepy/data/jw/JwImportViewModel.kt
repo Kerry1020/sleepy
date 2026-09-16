@@ -361,6 +361,10 @@ class JwImportViewModel(application: Application) : AndroidViewModel(application
             // ①c YETHAN — 西南交通大学逐专平台（host 唯一锚点，自建 JSON API）
             u.matches(Regex("""https?://yhxt\.swjtu\.edu\.cn(/.*)?""")) -> JwProtocol.TYPE_YETHAN
 
+            // ①d XJU_POST — 新疆大学研究生培养管理信息系统（Gwork 族, host 唯一锚点;
+            //    2026-09-16 收录. yjspy 子域专属, xju.edu.cn 本科教务等其余子域不误判）
+            u.matches(Regex("""https?://yjspy\.xju\.edu\.cn(/.*)?""")) -> JwProtocol.TYPE_XJU_POST
+
             u.contains("xkgo.ucas.ac.cn") && u.contains("/course/personschedule") -> JwProtocol.TYPE_UCAS
 
             // ②b QZ_IEAS — 必须先于通用 /kbcx/ 规则

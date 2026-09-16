@@ -2423,6 +2423,15 @@
   },
   {
     "sortKey": "X",
+    "name": "新疆大学",
+    "url": "https://yjspy.xju.edu.cn/Gstudent/Default.aspx",
+    "type": "xju_post",
+    "status": "grad_supported",
+    "aliases": ["xju", "yjspy.xju.edu.cn"],
+    "sortKeyFull": "xinjiangdaxue"
+  },
+  {
+    "sortKey": "X",
     "name": "新疆师范大学",
     "url": "https://jwxt.xjnu.edu.cn/jsxsd/",
     "type": "qz",
