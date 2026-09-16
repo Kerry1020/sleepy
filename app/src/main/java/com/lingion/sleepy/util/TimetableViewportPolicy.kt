@@ -17,6 +17,9 @@ object TimetableViewportPolicy {
     const val FIXED_ROW_DP = 52f // 原固定行高 (issue#8 时代 d(52f)) — 实验室自适应关闭时的基座
     const val MIN_ROW_DP = 36f
     const val MAX_ROW_DP = 96f
+
+    /** 网格行间 gap(与 CourseTableView gapH = 4dp×scale 同值), 占位行几何检测用。 */
+    const val ROW_GAP_DP = 4f
     const val VERTICAL_GESTURE_THRESHOLD_DP = 8f
     const val VERTICAL_DOMINANCE_RATIO = 1.25f
     val EVENING_START: LocalTime = LocalTime.of(18, 0)
