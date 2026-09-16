@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +28,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +53,8 @@ import com.lingion.sleepy.ui.theme.noRippleClickable
 fun ManagementPage(
     onJwImportRequested: () -> Unit,
     onCreateNewTableRequested: () -> Unit,
+    // v1.0.56 T7: 新建作息表 — 内部建表(自动命名+全局唯一)落库后回调新 id, 调用方进其编辑页
+    onCreateNewPeriodTableRequested: (Long) -> Unit = {},
     onManualAdd: () -> Unit,
     onEditCurrentTable: () -> Unit,
     onExportRequested: () -> Unit = {},
@@ -62,6 +67,8 @@ fun ManagementPage(
 ) {
     val state by viewModel.state.collectAsState()
     val colors = SleepyTheme.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val table = state.currentTable
 
     var showImportSheet by remember { mutableStateOf(autoShowImportSheet) }
@@ -120,7 +127,7 @@ fun ManagementPage(
                 }
             }
 
-            // 管理按钮（5 个：导入 / 新建 / 手动添加 / 编辑 / 导出）
+            // 管理按钮（6 个：导入 / 新建课表 / 新建作息表 / 手动添加 / 编辑 / 导出）
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ManageCard(
@@ -134,6 +141,23 @@ fun ManagementPage(
                         title = stringResource(R.string.manage_new_table),
                         subtitle = stringResource(R.string.manage_new_table_sub),
                         onClick = onCreateNewTableRequested
+                    )
+                    // v1.0.56 T7: 新建作息表 — 插在「新建课表」正下方(用户指定卡位)
+                    ManageCard(
+                        icon = Icons.Outlined.Schedule,
+                        title = stringResource(R.string.manage_new_period_table),
+                        subtitle = stringResource(R.string.manage_new_period_table_sub),
+                        onClick = {
+                            // v1.0.56 T7: 建表(自动唯一命名, T2 suggestUniqueName)落库后回调新 id
+                            val ctx = context
+                            scope.launch {
+                                val newId = viewModel.insertPeriodTableWithUniqueName(
+                                    name = "",
+                                    defaultName = ctx.getString(R.string.period_table_new)
+                                )
+                                if (newId > 0) onCreateNewPeriodTableRequested(newId)
+                            }
+                        }
                     )
                     ManageCard(
                         icon = Icons.Outlined.Add,

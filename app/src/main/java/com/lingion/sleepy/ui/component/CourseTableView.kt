@@ -129,7 +129,9 @@ fun CardsGridView(
     // 比例定位基于扩展后的槽位表。null = 不合成(旧调用方兼容)。
     timeJson: String? = null,
     rowHeightScale: Float = 1f,
-    onRowHeightScaleChange: (Float) -> Unit = {}
+    onRowHeightScaleChange: (Float) -> Unit = {},
+    // v1.0.56 T3(实验室): 双指捏放行高总开关, 默认 false = 手势整个不挂(存量缩放值不清)。
+    pinchZoomEnabled: Boolean = false
 ) {
     val colors = SleepyTheme.colors
     // 设置页改 scale / cornerRatio 后强制 recompose
@@ -259,11 +261,14 @@ fun CardsGridView(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalResizeGesture(
-                        baseRowHeightDp = baseRowHeight,
-                        currentRowHeightDp = rowHeightDp,
-                        contentScale = scale,
-                        onRowHeightScaleChange = onRowHeightScaleChange
+                    .then(
+                        // v1.0.56 T3: 实验室开关默认关 — 手势不挂即捏不动; 开=原行为
+                        if (pinchZoomEnabled) Modifier.verticalResizeGesture(
+                            baseRowHeightDp = baseRowHeight,
+                            currentRowHeightDp = rowHeightDp,
+                            contentScale = scale,
+                            onRowHeightScaleChange = onRowHeightScaleChange
+                        ) else Modifier
                     )
             ) {
                 Column(

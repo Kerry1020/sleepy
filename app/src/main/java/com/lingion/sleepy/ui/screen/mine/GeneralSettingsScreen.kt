@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -105,6 +107,10 @@ fun GeneralSettingsScreen(
     var weekScale by remember { mutableStateOf(AppPrefs.getWeekScale(context)) }
     var autoHideEmptyEvening by remember { mutableStateOf(AppPrefs.isGridAutoHideEmptyEvening(context)) }
     var gridAdaptiveHeight by remember { mutableStateOf(AppPrefs.isGridAdaptiveHeight(context)) }
+    // v1.0.56 T3: 双指捏放行高(实验室, 默认关)
+    var gridPinchZoom by remember { mutableStateOf(AppPrefs.isGridPinchZoom(context)) }
+    // v1.0.56 T4: 语言折叠卡展开态 — 默认收起; 选择语言即 recreate 重建, 会话态足够
+    var languageExpanded by remember { mutableStateOf(false) }
     var eveningStart by remember { mutableStateOf(AppPrefs.getGridEveningStart(context)) }
     var gridCorner by remember { mutableStateOf(AppPrefs.getGridCornerRatio(context)) }
     var weekTwoColumn by remember { mutableStateOf(AppPrefs.isWeekTwoColumn(context)) }
@@ -663,31 +669,66 @@ fun GeneralSettingsScreen(
             // ── 分隔线 ──
             item { HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline)) }
 
-            // ── 分组④ 语言 ──
+            // ── 分组④ 语言 (v1.0.56 T4: 折叠卡 — 收起只显当前语言, 点开展开 5 项) ──
             item {
                 SectionHeader(title = stringResource(R.string.settings_language))
             }
 
             item {
+                val currentLabel = languages.firstOrNull { it.first == language }?.second ?: language
                 Column(
-                    modifier = Modifier.fillMaxWidth().clip(SleepyTheme.shapes.large).background(colors.surfaceContainer).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.fillMaxWidth().clip(SleepyTheme.shapes.large).background(colors.surfaceContainer)
                 ) {
-                    languages.forEach { (code, label) ->
-                        val selected = language == code
-                        Row(
-                            modifier = Modifier.fillMaxWidth().noRippleClickable {
-                                language = code
-                                AppPrefs.setLanguage(context, code)
-                                (context as? android.app.Activity)?.recreate()
-                            }.padding(vertical = 10.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = label, style = MaterialTheme.typography.bodyLarge, color = if (selected) colors.primary else colors.onSurface)
-                            if (selected) Icon(Icons.Outlined.Check, null, tint = colors.primary, modifier = Modifier.size(20.dp))
+                    // 折叠头: 语言名 + 当前值 + 展开箭头
+                    Row(
+                        modifier = Modifier.fillMaxWidth().noRippleClickable { languageExpanded = !languageExpanded }.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_language),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = colors.onSurface
+                            )
+                            Text(
+                                text = currentLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant
+                            )
                         }
-                        if (code != languages.last().first) HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                        Icon(
+                            Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = colors.onSurfaceVariant,
+                            modifier = Modifier.rotate(if (languageExpanded) 180f else 0f)
+                        )
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = languageExpanded,
+                        enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                        exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            languages.forEach { (code, label) ->
+                                val selected = language == code
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().noRippleClickable {
+                                        language = code
+                                        AppPrefs.setLanguage(context, code)
+                                        (context as? android.app.Activity)?.recreate()
+                                    }.padding(vertical = 10.dp, horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = label, style = MaterialTheme.typography.bodyLarge, color = if (selected) colors.primary else colors.onSurface)
+                                    if (selected) Icon(Icons.Outlined.Check, null, tint = colors.primary, modifier = Modifier.size(20.dp))
+                                }
+                                if (code != languages.last().first) HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                            }
+                        }
                     }
                 }
             }
@@ -718,6 +759,17 @@ fun GeneralSettingsScreen(
                         onCheckedChange = {
                             gridAdaptiveHeight = it
                             AppPrefs.setGridAdaptiveHeight(context, it)
+                        }
+                    )
+                    HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                    // v1.0.56 T3: 双指捏放行高 — 默认关, 关=网格视图捏不动
+                    SettingToggleRow(
+                        label = stringResource(R.string.settings_grid_pinch_zoom),
+                        subtitle = stringResource(R.string.settings_grid_pinch_zoom_sub),
+                        checked = gridPinchZoom,
+                        onCheckedChange = {
+                            gridPinchZoom = it
+                            AppPrefs.setGridPinchZoom(context, it)
                         }
                     )
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))

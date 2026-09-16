@@ -476,6 +476,9 @@ private fun AppRoot(
                             previousDefaultTableId = previousId; pendingNewTableId = newId; editTableId = newId; pushOverlay(OverlayScreen.EditTable)
                         }
                     },
+                    onCreateNewPeriodTable = { newId ->
+                        pendingNewPeriodTableId = newId; editPeriodTableId = newId; pushOverlay(OverlayScreen.PeriodTableEdit)
+                    },
                     holder = saveableStateHolder
                 )
             }
@@ -507,6 +510,9 @@ private fun AppRoot(
                                 val newId = mainVm.createEmptyTable(commitSelection = false)
                                 previousDefaultTableId = previousId; pendingNewTableId = newId; editTableId = newId; pushOverlay(OverlayScreen.EditTable)
                             }
+                        },
+                        onCreateNewPeriodTable = { newId ->
+                            pendingNewPeriodTableId = newId; editPeriodTableId = newId; pushOverlay(OverlayScreen.PeriodTableEdit)
                         },
                         holder = saveableStateHolder
                     )
@@ -542,6 +548,7 @@ private fun MainTabs(
     viewMode: ViewMode,
     onViewModeChange: (ViewMode) -> Unit,
     onCreateNewTable: () -> Unit,
+    onCreateNewPeriodTable: (Long) -> Unit = {},
     holder: SaveableStateHolder
 ) {
     // tab 往返滚动位置保真: when 条件组合同样整页移除被切走的 tab, 各 tab 内容包
@@ -576,7 +583,11 @@ private fun MainTabs(
                     details = "${snapshot.courses.size} ${ctx.getString(com.lingion.sleepy.R.string.import_courses)}",
                 )
             }
-            ManagementPage(autoShowImportSheet = autoOnce || MainActivity.pendingImportText != null, onJwImportRequested = { ctx.startActivity(Intent(ctx, com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java)) }, onCreateNewTableRequested = onCreateNewTable, onManualAdd = { pushOverlay(OverlayScreen.AddCourse) }, onEditCurrentTable = { pushOverlay(OverlayScreen.EditTable) }, onExportRequested = { pushOverlay(OverlayScreen.Export) },
+            ManagementPage(autoShowImportSheet = autoOnce || MainActivity.pendingImportText != null, onJwImportRequested = { ctx.startActivity(Intent(ctx, com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java)) }, onCreateNewTableRequested = onCreateNewTable,
+                // v1.0.56 T7: 新建作息表卡 — ManagementPage 内部建表(自动唯一命名)后回调带新 id,
+                // 与 PeriodTablesScreen 新建按钮同一套 pendingNew discard 残留语义
+                onCreateNewPeriodTableRequested = onCreateNewPeriodTable,
+                onManualAdd = { pushOverlay(OverlayScreen.AddCourse) }, onEditCurrentTable = { pushOverlay(OverlayScreen.EditTable) }, onExportRequested = { pushOverlay(OverlayScreen.Export) },
                 drafts = drafts,
                 onRestoreDraft = { id ->
                     ctx.startActivity(Intent(ctx, JwImportActivity::class.java).putExtra(JwImportActivity.EXTRA_DRAFT_ID, id))
