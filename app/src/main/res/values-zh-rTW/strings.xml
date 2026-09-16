@@ -303,6 +303,8 @@
     <string name="settings_grid_evening_start">晚間起始時間</string>
     <string name="settings_grid_adaptive_height">課表自適應行高</string>
     <string name="settings_grid_adaptive_height_sub">按可用高度自動縮放行高，優先完整顯示課表</string>
+    <string name="settings_grid_pinch_zoom">雙指捏放調整行高</string>
+    <string name="settings_grid_pinch_zoom_sub">在課表上用雙指上下捏放改變行高；關閉後不可捏放</string>
     <string name="settings_lab">實驗室</string>
     <string name="settings_lab_sub">實驗性功能，預設關閉，可能隨版本調整</string>
     <string name="settings_pill_week_scale">週檢視縮放</string>

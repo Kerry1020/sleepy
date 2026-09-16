@@ -320,6 +320,8 @@
     <string name="settings_grid_evening_start">Evening starts at</string>
     <string name="settings_grid_adaptive_height">Adaptive timetable row height</string>
     <string name="settings_grid_adaptive_height_sub">Scale row heights to fit the timetable on screen</string>
+    <string name="settings_grid_pinch_zoom">Pinch to resize rows</string>
+    <string name="settings_grid_pinch_zoom_sub">Use a two-finger vertical pinch on the timetable to change row height; disabled when off</string>
     <string name="settings_lab">Lab</string>
     <string name="settings_lab_sub">Experimental features, off by default and may change between versions</string>
     <string name="settings_pill_week_scale">Week view zoom</string>

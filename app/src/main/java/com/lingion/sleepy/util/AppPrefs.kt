@@ -68,6 +68,8 @@ object AppPrefs {
     const val KEY_GRID_ADAPTIVE_HEIGHT = "grid_adaptive_height" // bool default false — 实验室: 网格视图自适应行高(默认固定 52dp 基座)
     const val KEY_GRID_EVENING_START = "grid_evening_start" // string "HH:mm" default 18:00 — 实验室: 晚间起始时间(用户自定义)
     const val KEY_GRID_ROW_SCALE = "grid_row_scale" // float default 1.0 — 双指行高缩放确认值(相对基座; 顶栏 tick 落盘, 撤回回退)
+    const val KEY_GRID_PINCH_ZOOM = "grid_pinch_zoom" // bool default false — 实验室: 网格视图双指捏放行高(v1.0.56 默认关, 关=手势不挂; 存量缩放值不清)
+    const val DEFAULT_GRID_PINCH_ZOOM = false
     const val KEY_WEEK_SCALE = "week_scale" // float 0.7~1.3 default 1.0 — 周视图整体缩放(与网格视图互相独立, issue#8)
     const val KEY_GRID_CORNER_RATIO = "grid_corner_ratio" // float 0.0~2.0 default 1.0 — 网格/周视图圆角比例系数(乘基准 12/16dp, issue#8)
     const val KEY_WEEK_TWO_COLUMN = "week_two_column" // bool default false — 周视图两栏开关, issue#8
@@ -490,6 +492,15 @@ object AppPrefs {
     fun setGridAdaptiveHeight(ctx: Context, v: Boolean) {
         sp(ctx).edit().putBoolean(KEY_GRID_ADAPTIVE_HEIGHT, v).apply()
         _changeBus.tryEmit(KEY_GRID_ADAPTIVE_HEIGHT)
+    }
+
+    // v1.0.56 T3: 网格双指捏放行高开关(实验室, 默认关)
+    fun isGridPinchZoom(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_GRID_PINCH_ZOOM, DEFAULT_GRID_PINCH_ZOOM)
+
+    fun setGridPinchZoom(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_GRID_PINCH_ZOOM, v).apply()
+        _changeBus.tryEmit(KEY_GRID_PINCH_ZOOM)
     }
 
     fun getGridEveningStart(ctx: Context): String =

@@ -105,6 +105,8 @@ fun GeneralSettingsScreen(
     var weekScale by remember { mutableStateOf(AppPrefs.getWeekScale(context)) }
     var autoHideEmptyEvening by remember { mutableStateOf(AppPrefs.isGridAutoHideEmptyEvening(context)) }
     var gridAdaptiveHeight by remember { mutableStateOf(AppPrefs.isGridAdaptiveHeight(context)) }
+    // v1.0.56 T3: 双指捏放行高(实验室, 默认关)
+    var gridPinchZoom by remember { mutableStateOf(AppPrefs.isGridPinchZoom(context)) }
     var eveningStart by remember { mutableStateOf(AppPrefs.getGridEveningStart(context)) }
     var gridCorner by remember { mutableStateOf(AppPrefs.getGridCornerRatio(context)) }
     var weekTwoColumn by remember { mutableStateOf(AppPrefs.isWeekTwoColumn(context)) }
@@ -718,6 +720,17 @@ fun GeneralSettingsScreen(
                         onCheckedChange = {
                             gridAdaptiveHeight = it
                             AppPrefs.setGridAdaptiveHeight(context, it)
+                        }
+                    )
+                    HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                    // v1.0.56 T3: 双指捏放行高 — 默认关, 关=网格视图捏不动
+                    SettingToggleRow(
+                        label = stringResource(R.string.settings_grid_pinch_zoom),
+                        subtitle = stringResource(R.string.settings_grid_pinch_zoom_sub),
+                        checked = gridPinchZoom,
+                        onCheckedChange = {
+                            gridPinchZoom = it
+                            AppPrefs.setGridPinchZoom(context, it)
                         }
                     )
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
