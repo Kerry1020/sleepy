@@ -1,0 +1,115 @@
+{
+  "generated": "2026-09-16",
+  "candidate_count": 4,
+  "findings": [
+    {
+      "repo_name": "huhu415/eduData-GoBack",
+      "stars": 2,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "school/hrbust/Pg/postgraduate.md",
+          "purpose": "同款 Gwork 登录链协议文档: VIEWSTATE/EVENTVALIDATION/验证码/btLogin UpdatePanel PostBack",
+          "lines_with_protocol": [
+            1,
+            60
+          ]
+        },
+        {
+          "path": "school/hrbust/Pg/GetData.go",
+          "purpose": "课表页 URL: Course/StuCourseQuery.aspx?EID=<加密菜单ID>&UID=<学号> — EID 部署加密不可硬编码",
+          "lines_with_protocol": [
+            19,
+            21,
+            36
+          ]
+        },
+        {
+          "path": "school/hrbust/Pg/ParseData.go",
+          "purpose": "table#contentParent_dgData tbody tr 解析 + 教师/地点/N-M周 regex 提取",
+          "lines_with_protocol": [
+            28,
+            56,
+            84,
+            85,
+            223
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "UID query 参数(登录后菜单/URL 携带)",
+      "exact_regex_or_code_snippet": "doc.Find(\"table#contentParent_dgData tbody tr\") + 教师:([^\\s,]+) + 地点:([^\\s\\]]+)",
+      "verdict": "POSITIVE",
+      "verdict_reason": "同款 Gwork 研究生系统完整开源链路: 登录形态/课表页 URL 形态/dgData 表格文法三重实锤"
+    },
+    {
+      "repo_name": "XingHeYuZhuan/shiguang_warehouse",
+      "stars": 56,
+      "default_branch": "main",
+      "license": "MIT",
+      "license_source": "api.github.com/licenses/mit",
+      "relevant_files": [
+        {
+          "path": "resources/UPC/upc_graduate.js",
+          "purpose": "ASP.NET 研究生 dgData 表格: 列序 0:周日|1..6:周一..六, rowspan→endSection, 第X周[教师:..,地点:..]",
+          "lines_with_protocol": [
+            67,
+            94,
+            128,
+            147,
+            186
+          ]
+        },
+        {
+          "path": "resources/CUG/cug_postgraduate.js",
+          "purpose": "同款 9 列占用计数器 occ[] 还原 rowspan 网格 + N-M周[教师:x,地点:y] regex",
+          "lines_with_protocol": [
+            4,
+            96,
+            104,
+            137,
+            218
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "页面 DOM",
+      "exact_regex_or_code_snippet": "doc.getElementById(\"ctl00_contentParent_dgData\") + rowspan→endSection=startSection+rowspan-1",
+      "verdict": "POSITIVE",
+      "verdict_reason": "两所高校同款 Gwork 研究生课表脚本, 表格选择器/列序/rowspan/单元格文法与 WakeUp jadx OooOOO.java 一致, 与 Sleepy parseXju 一致"
+    },
+    {
+      "repo_name": "jiefing/SCAU-Grad-Automatically-Fill-Evaluation-Form-JS",
+      "stars": 4,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [
+        {
+          "path": "main.js",
+          "purpose": "contentParent_dgData_drpPfdj_* 服务器控件 ID 命名同源旁证(Gwork 族)",
+          "lines_with_protocol": [
+            53,
+            55
+          ]
+        }
+      ],
+      "studentId_extraction_approach": "无(评教场景)",
+      "exact_regex_or_code_snippet": "document.querySelectorAll('select[id^=\"contentParent_dgData_drpPfdj_\"]')",
+      "verdict": "INDIRECT",
+      "verdict_reason": "评教页非课表页, 仅佐证 Gwork 族 ctl00_contentParent_dgData 控件 ID 命名约定的普适性"
+    },
+    {
+      "repo_name": "nacglalevin/hacker",
+      "stars": 3,
+      "default_branch": "main",
+      "license": null,
+      "license_source": null,
+      "relevant_files": [],
+      "studentId_extraction_approach": "无",
+      "exact_regex_or_code_snippet": "",
+      "verdict": "NEGATIVE",
+      "verdict_reason": "通用网络工具仓, D2 代码检索噪声误命中, 与教务协议无关"
+    }
+  ]
+}

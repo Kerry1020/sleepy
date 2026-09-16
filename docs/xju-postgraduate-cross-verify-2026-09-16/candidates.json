@@ -1,0 +1,26 @@
+{
+  "generated": "2026-09-16",
+  "school": "新疆大学（研究生）yjspy.xju.edu.cn Gwork 研究生培养管理信息系统",
+  "scope_note": "本轮=学校收录(协议族 xju_post 已在 main), 检索目标=①新大专属仓 ②同族 Gwork/dgData 新证据。上轮 wakeup-protocols-cross-verify-2026-09-15 已覆盖 8 族基础检索(xju 专属命中 0), 本轮为增量复核。",
+  "queries": [
+    {"id": "A1", "query": "新疆大学 课程表", "hits_relevant": 0},
+    {"id": "A2", "query": "新疆大学 课表", "hits_relevant": 0},
+    {"id": "B1", "query": "xinjiang university schedule", "hits_relevant": 0},
+    {"id": "B2", "query": "XJU timetable", "hits_relevant": 0},
+    {"id": "C1", "query": "新疆大学 教务系统", "hits_relevant": 0},
+    {"id": "C2", "query": "yjspy", "hits_relevant": 0},
+    {"id": "D1", "query": "code: yjspy.xju.edu.cn OR Gstudent/Default.aspx", "hits_relevant": 0},
+    {"id": "D2", "query": "code: contentParent_dgData", "hits_relevant": 8},
+    {"id": "D3", "query": "code: 研究生+课表+aspx", "hits_relevant": 0, "note": "131 总命中全为无关领域, 无 Gwork 同族新证据"},
+    {"id": "E1", "query": "App_Themes/Gwork", "hits_relevant": 1}
+  ],
+  "candidates": [
+    {"full_name": "huhu415/eduData-GoBack", "stars": 2, "lang": "Go", "pushed": "2026-04-25", "archived": false, "license": null, "branch": "main", "desc": "多校教务爬虫, hrbust 研究生 Pg 目录=同款 Gwork 系统完整链路(登录 VIEWSTATE/EVENTVALIDATION/验证码 + 课表 Course/StuCourseQuery.aspx?EID=&UID= + table#contentParent_dgData 解析)", "families": ["xju_post"], "evidence_paths": ["school/hrbust/Pg/postgraduate.md", "school/hrbust/Pg/ParseData.go", "school/hrbust/Pg/GetData.go", "school/hrbust/Pg/Pg课程html/TestForm.html"]},
+    {"full_name": "XingHeYuZhuan/shiguang_warehouse", "stars": 56, "lang": "JavaScript", "pushed": "2026-09-15", "archived": false, "license": "MIT", "branch": "main", "desc": "时光课程表脚本库, UPC/CUG 研究生脚本=同款 ctl00_contentParent_dgData DOM 表格解析(列序 0:周日|1..6 / rowspan→endSection / 第X周[教师:..,地点:..])", "families": ["xju_post(同族 dgData)"], "evidence_paths": ["resources/UPC/upc_graduate.js", "resources/CUG/cug_postgraduate.js"]},
+    {"full_name": "jiefing/SCAU-Grad-Automatically-Fill-Evaluation-Form-JS", "stars": 4, "lang": "JavaScript", "pushed": "2026-01-06", "archived": false, "license": null, "branch": "main", "desc": "华南农大研究生评教脚本: contentParent_dgData_drpPfdj_* 命名同源(Gwork 族 ASP.NET 服务器控件 ID 约定旁证)", "families": ["xju_post(同族控件命名)"]},
+    {"full_name": "nacglalevin/hacker", "stars": 3, "lang": "Python", "pushed": "2024-08-07", "archived": false, "license": null, "branch": "main", "desc": "D2 代码检索误命中(通用网络工具, 非教务)", "families": [], "note": "检索噪声, 记录后排除"}
+  ],
+  "touched_non_protocol": [],
+  "rejection_rule": "archived && pushed > 10 年前",
+  "notes": "新疆大学专属教务仓 0 命中(与上轮 wakeup 档案一致); 协议证据链=同族 Gwork 三仓 + 用户 URL 实测探针 + WakeUp jadx OooOOO.java mode 1。"
+}
