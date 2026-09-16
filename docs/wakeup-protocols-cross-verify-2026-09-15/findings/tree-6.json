@@ -1,0 +1,200 @@
+{
+  "sha": "365c249ac65659396775e84a056c284b6a256adb",
+  "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/365c249ac65659396775e84a056c284b6a256adb",
+  "tree": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac346092b8819fc3fb8eea526c5055fba065af63",
+      "size": 26,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/ac346092b8819fc3fb8eea526c5055fba065af63"
+    },
+    {
+      "path": ".idea",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4077f6551a161030e8073a4d6a7abc1f65d8ec66",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/4077f6551a161030e8073a4d6a7abc1f65d8ec66"
+    },
+    {
+      "path": ".idea/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "73f69e0958611ac6e00bde95641f6699030ad235",
+      "size": 176,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/73f69e0958611ac6e00bde95641f6699030ad235"
+    },
+    {
+      "path": ".idea/compiler.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2fa8e1f4d4cef20adb7f6835b0535ce87b578cc",
+      "size": 546,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/d2fa8e1f4d4cef20adb7f6835b0535ce87b578cc"
+    },
+    {
+      "path": ".idea/encodings.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "15a15b218a29e09c9190992732698d646e4d659a",
+      "size": 135,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/15a15b218a29e09c9190992732698d646e4d659a"
+    },
+    {
+      "path": ".idea/jarRepositories.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c6e4d02b0893ad81f00e1d895f62feccd321dd2",
+      "size": 868,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/9c6e4d02b0893ad81f00e1d895f62feccd321dd2"
+    },
+    {
+      "path": ".idea/misc.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "141b0f758d769cc2fbc7c18f037e870a5c7332fe",
+      "size": 806,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/141b0f758d769cc2fbc7c18f037e870a5c7332fe"
+    },
+    {
+      "path": ".idea/vcs.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "94a25f7f4cb416c083d265558da75d457237d671",
+      "size": 180,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/94a25f7f4cb416c083d265558da75d457237d671"
+    },
+    {
+      "path": "README.MD",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e32b64ece76c4b7a1926cd162e935d51dabbdf35",
+      "size": 432,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/e32b64ece76c4b7a1926cd162e935d51dabbdf35"
+    },
+    {
+      "path": "ScheduleX_Parser_for_SCAU.iml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78b2cc53b203f0b97534bb1184cdc7b474339fb4",
+      "size": 80,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/78b2cc53b203f0b97534bb1184cdc7b474339fb4"
+    },
+    {
+      "path": "pom.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8ae28c6ba412621bcc87f1bde2a6eb153b6d534",
+      "size": 905,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/a8ae28c6ba412621bcc87f1bde2a6eb153b6d534"
+    },
+    {
+      "path": "result_sample.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7d9e608c5d462d433cdd162528403fb60bbd45d",
+      "size": 83170,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/c7d9e608c5d462d433cdd162528403fb60bbd45d"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "96a6a6f5ad69ab2acf5ec4206f46a31b17b06f25",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/96a6a6f5ad69ab2acf5ec4206f46a31b17b06f25"
+    },
+    {
+      "path": "src/main",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1a22f0fc37e32613a71d687349c01c7add80ec01",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/1a22f0fc37e32613a71d687349c01c7add80ec01"
+    },
+    {
+      "path": "src/main/java",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a8596fd87b58613ff606cfa315ab554e73ab5c3f",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/a8596fd87b58613ff606cfa315ab554e73ab5c3f"
+    },
+    {
+      "path": "src/main/java/CourseWrapper.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5474df24c1473ac38b1f067e9526b5ae43f4426",
+      "size": 1077,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/c5474df24c1473ac38b1f067e9526b5ae43f4426"
+    },
+    {
+      "path": "src/main/java/QZParser.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "741cf22eaadc48f43659770aaec3f9dabe1fb637",
+      "size": 6974,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/741cf22eaadc48f43659770aaec3f9dabe1fb637"
+    },
+    {
+      "path": "src/main/resources",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "dc77c355b7d4c15e3b93157ee7969ffa8766be19",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/dc77c355b7d4c15e3b93157ee7969ffa8766be19"
+    },
+    {
+      "path": "src/main/resources/sample2021-1.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "55e1e9374ca3ecc9b182db79e0d1f70f1ec5433d",
+      "size": 64104,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/55e1e9374ca3ecc9b182db79e0d1f70f1ec5433d"
+    },
+    {
+      "path": "src/main/resources/sample2021-2.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7058f405a99e1677c6d5c96e2c2a6e5132a6a3dd",
+      "size": 66756,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/7058f405a99e1677c6d5c96e2c2a6e5132a6a3dd"
+    },
+    {
+      "path": "src/main/resources/schedule_sample_scau.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "953a4bf5c5954da08640a3fa2dd129fb0c0c8ec4",
+      "size": 142968,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/953a4bf5c5954da08640a3fa2dd129fb0c0c8ec4"
+    },
+    {
+      "path": "src/statement.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2da50b102328a1bedf09e6d89488502d3fa990ff",
+      "size": 377,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/2da50b102328a1bedf09e6d89488502d3fa990ff"
+    },
+    {
+      "path": "src/test",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bb56698bb24bcc2806c0badb495592d30d2d1ca6",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/bb56698bb24bcc2806c0badb495592d30d2d1ca6"
+    },
+    {
+      "path": "src/test/java",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c450b0241930094b12d7f908c9e4f871888cfaa8",
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/trees/c450b0241930094b12d7f908c9e4f871888cfaa8"
+    },
+    {
+      "path": "src/test/java/TestMain.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "58ecb09d96bb843885592fe37de577256a3309c8",
+      "size": 707,
+      "url": "https://api.github.com/repos/greyovo/ScheduleXParser_SCAU/git/blobs/58ecb09d96bb843885592fe37de577256a3309c8"
+    }
+  ],
+  "truncated": false
+}

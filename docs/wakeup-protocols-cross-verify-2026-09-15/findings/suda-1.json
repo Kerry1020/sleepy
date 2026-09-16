@@ -1,0 +1,17 @@
+{
+  "repo_name": "heriec/suda-yjs-shedule",
+  "stars": 0,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": [
+    "readme.md",
+    "code/provider.js",
+    "code/parser.js",
+    "code/timer.js",
+    "main.js"
+  ],
+  "protocol_approach": "苏州大学研究生教务 jyjxxt.yjs.suda.edu.cn (小米 AISchedule 插件三件套 provider/parser/timer)。provider 从 iframe 里抓 class='curriculum' 的表格 outerHTML (入口: 培养方案 > 学生课表查询); parser 用 cheerio 按 `#kb tbody tr` 逐行逐格解析, 每格内 <p> 元素承载课程, 多条目以 <br> 分隔; 每条目内 3 个 <span> 依次为 [课程名, 周次, 地点], 教师从 p 的裸文本节点按空格 split 取第 2 段。同一 day+课程名 的重复行合并进 sections 数组 (跨节靠重复行聚合, 不解析 rowspan 属性)。周次 span 文本按空格 split 取 [1] 再按 '-' 切并 parseInt (如 '第 1-16周'), 仅展开 start..end 连续区间, 不处理单/双周。",
+  "exact_regex_or_code_snippet": "parser.js: `$(\"#kb tbody tr\").each((i, tr) => { ... $(td).find(\"p\") ... text.split(\"<br>\") ... })`; getClassItem: `const [name, week, position] = inner(\"span\").map(...).get()` + `const [start, end] = week.split(\" \")[1].split(\"-\").map((w) => parseInt(w))`; provider.js: `frame.contentDocument.body.getElementsByClassName(\"curriculum\")[0].outerHTML`。无单双周逻辑, 无 rowspan 解析, 无 '课程：'/'主讲教师：' 标记。",
+  "verdict": "partial",
+  "verdict_reason": "唯一公开的苏大研究生课表仓, 证明该系统课表查询页 (curriculum/#kb) 用 span 分段 + 连续周展开, 无 #DataGrid1/#MainWork_DataGrid1、无全角冒号行标记、无单双周后缀。与 Sleepy suda_post 的四个特征 (表格选择器/行标记/周次regex/rowspan) 均无直接对应——既不佐证也不证伪, 因两者可能落在同系统不同页面/视图。提示: 若 Sleepy suda_post 目标页就是 jyjxxt 的课表查询页, 选择器 #DataGrid1 与 #kb 冲突, 需真机页面复核; 若目标是苏大另一 aspx 门户则本仓不构成证据。"
+}

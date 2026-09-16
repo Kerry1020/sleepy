@@ -1,0 +1,11 @@
+{
+  "repo_name": "moeshin/ai-schedule-chaoxing",
+  "stars": 3,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": ["scheduleHtmlProvider.js", "scheduleHtmlParser.js"],
+  "protocol_approach": "超星排课 HTML 双路: (a) 直接解析 tbody td.cell 表格 (getPreset 从 td.id=Cell{day}{section}+rowspan 推 day/sections, parseCell 断言 onclick=openKckb/openJskb 节点文本); (b) JSON 路: fetch /admin/pkgl/xskb/queryKbForXsd 拿 xhid/xqdm + #xnxq1 option 选项, 再 fetch /admin/pkgl/xskb/sdpkkbList?xnxq=&xhid=&xqdm= 取课程数组",
+  "exact_regex_or_code_snippet": "const iframe = dom.querySelector('iframe[src$=\"/queryKbForXsd\"]'); const path = '/admin/pkgl/xskb/queryKbForXsd'; ... return fetch('/admin/pkgl/xskb/sdpkkbList?' + new URLSearchParams({xnxq, xhid, xqdm})) ... {name: cleanTag(info['kcmc']) + getType(info['type']), teacher: cleanTag(info['tmc']), position: cleanTag(info['croommc']), sections: [info['djc']], weeks: info['zc'], day: info['xingqi']}; ... getWeeks: str.match(/^(\\d+)(?:-(\\d+)(?:\\(([单双])\\))?)?$/)",
+  "verdict": "POSITIVE",
+  "verdict_reason": "超星排课接口族实锤 (queryKbForXsd + sdpkkbList, 字段 kcmc/tmc/croommc/djc/zc/xingqi 与 单双周 正则), 但任务点名的 queryKbForGrdb/kckbData/LessonArray 三个名字在仓内 code-search 均 0 命中——同名同族不同 action"
+}

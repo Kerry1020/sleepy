@@ -1,0 +1,19 @@
+{
+  "repo_name": "huhu415/eduData-GoBack",
+  "stars": 2,
+  "default_branch": "main",
+  "license": null,
+  "relevant_files": [
+    "school/hrbust/Pg/ParseData.go",
+    "school/hrbust/Pg/Pg课程html/TestForm.html",
+    "school/hrbust/Pg/Pg课程html/TestFormWeek.html",
+    "school/hrbust/Ug/ParseData.go",
+    "school/pub/pub.go",
+    "school/pub/pub_test.go",
+    "school/hlju/Ug/parse_course.go"
+  ],
+  "protocol_approach": "哈理工(HRBUST)研究生教务 aspx 网格课表, 与 Sleepy suda_post 的四个特征逐项同构: (1) 表格选择器 `table#contentParent_dgData tbody tr` (ContentPlaceHolder id=contentParent + DataGrid id=dgData, fixture 实锤同页并存 contentParent_dgData/dgListSw/dgListWs/dgListXw); (2) 课程格文本带全角花括号包裹元数据 '机器学习1班｛3-10周[教师:陈晨,地点:待定]｝', 半角 '教师:'/'地点:' 作字段标记 (相当于 Sleepy 的 '课程：'/'主讲教师：' 行标记角色); (3) 周次 regex 两级: 研究生 `([0-9]+-[0-9]+)周` 展开连续区间, 本科共享 pub.ExtractWeekRange 用 `第N周` / `(\\d+)-(\\d+)` + strings.Contains(text,\"单\")=>1 / Contains(text,\"双\")=>0, 按 i%2 过滤 — 精确对应 Sleepy 的 '第N-M周(单|双)' 语义; (4) rowspan 显式处理: cell.AttrOr(\"rowspan\",..) 转数字后向上(后继行)标 MapMaker 占位矩阵 [13][11], 后续 td 用 while 跳过被占列修正 colIndexOwn (注释明言 colspan 缺失需补位, '课表只有 rowspan, 没有 colspan'), 节次=行号 rowIndex, 连堂=NumberOfLessonsLength=rowspanNum。",
+  "exact_regex_or_code_snippet": "school/pub/pub.go:33-75 ExtractWeekRange: `regexp.MustCompile(\"[0-9]+\")` for 第x周; `regexp.MustCompile(`(\\d+)-(\\d+)`)` + `switch { case strings.Contains(text, \"单\"): evenOrOdd = 1; case strings.Contains(text, \"双\"): evenOrOdd = 0 }`, 过滤 `if evenOrOdd != 5 { if i%2 != evenOrOdd { continue } }`; Pg/ParseData.go: `doc.Find(\"table#contentParent_dgData tbody tr\")`, `regexp.MustCompile(`教师:([^\\s,]+)`)`, `regexp.MustCompile(`地点:([^\\s\\]]+)`)`, `regexp.MustCompile(`(\\d+)-(\\d+)周`)`, rowspan: `for i := rowspanNum; i > 0; i-- { MapMaker[rowIndex+i-1][colIndexOwn] = true }` + 跳占位 `for MapMaker[rowIndex][colIndexOwn] { colIndexOwn++ }`; 研究生格文本原文: '机器学习1班｛3-10周[教师:陈晨,地点:待定]｝' (TestFormWeek.html), 12节次时间轴 '上午：第一节：8:00-8:45…晚上：第十二节：20:40-21:25'。",
+  "verdict": "supports",
+  "verdict_reason": "最强佐证仓: 独立实锤了 aspx 网格课表四要素的完整可解析范式 — ContentPlaceHolder+DataGrid 复合 id 表格选择器、字段标记文本行、'N-M周+单/双' 后缀语义与 i%2 展开、rowspan 占位矩阵还原连堂节次。与 Sleepy suda_post 的 #DataGrid1/#MainWork_DataGrid1 (表格)、'课程：'/'主讲教师：' (标记)、'第N-M周(单|双)' (regex)、rowspan (节次跨度) 逐项语义对齐, 仅标记文案与括号风格是校内差异。其 TestForm/TestFormWeek fixture 可直接拿来当跨仓 invariant 测试样例源。"
+}

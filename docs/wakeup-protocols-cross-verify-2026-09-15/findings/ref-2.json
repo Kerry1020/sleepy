@@ -1,0 +1,15 @@
+{
+  "repo_name": "tKM9WsmQUaUgNttn3DGUsHkxG8/WakeupSchedule_Kotlin",
+  "stars": 28,
+  "default_branch": "master",
+  "license": null,
+  "relevant_files": [
+    "app/src/main/java/com/suda/yzune/wakeupschedule/schedule_import/ImportService.kt",
+    "app/src/main/java/com/suda/yzune/wakeupschedule/schedule_import/ImportRepository.kt",
+    "app/src/main/java/com/suda/yzune/wakeupschedule/schedule_import/ImportViewModel.kt"
+  ],
+  "protocol_approach": "Wakeup 课程表 2018 年 Kotlin 重构版(作者 yzune 早期尝试, 2018-11 停更)。没有 parser 目录、没有协议分派机制: ImportViewModel.kt:52 硬编码单校 ImportRepository(\"http://xk.suda.edu.cn\") = 苏州大学正方老版(ZF-old ASP.NET)协议。三步流: GET /CheckCode.aspx 拿验证码+Set-Cookie → POST /default2.aspx 登录(txtUserName/Textbox2/txtSecretCode/Button1/__VIEWSTATE/TextBox1-3 两套表单变体) → GET+POST /xskbcx.aspx?xh=..&xm=..&gnmkdm=N121603(__EVENTTARGET=xnd, xnd=学年, xqd=学期, __VIEWSTATE 回传) 拿课表HTML。HTML 解析用 Jsoup: getElementById(\"Table1\") 取课表表格 tr/td, 单元格匹配'第N节'行号 pattern 定位 startNode, 空格 split 拆课程/教师/教室/周次。另有 MyRetrofitService 向作者服务器 /school/count、/school/apply_html(school/type/html/qq) 上报各校页面收集。",
+  "exact_regex_or_code_snippet": "// ImportService.kt: @GET(\"/CheckCode.aspx\") · @POST(\"/default2.aspx\") fields txtUserName,Textbox2,txtSecretCode,Button1,__VIEWSTATE · @POST(\"/xskbcx.aspx\") Query xh,xm,gnmkdm=N121603 + Field __EVENTTARGET,__EVENTARGUMENT,__VIEWSTATE,xnd,xqd\n// ImportViewModel.kt:52: private val repository = ImportRepository(\"http://xk.suda.edu.cn\")\n// ImportViewModel.kt:141-143: val doc = org.jsoup.Jsoup.parse(html); val table1 = doc.getElementById(\"Table1\"); val trs = table1.getElementsByTag(\"tr\")\n// 节次定位: if (Pattern.matches(pattern, courseSource)) { val nodeStr = courseSource.substring(1, courseSource.length - 1); node = Integer.decode(nodeStr) }",
+  "verdict": "INDIRECT",
+  "verdict_reason": "无通用 parser 架构可借鉴: 单校硬编码(苏州大学 xk.suda.edu.cn 正方老版), 无协议枚举/分派器, 2018-11 停更。价值仅佐证 Wakeup 系课表 App 的正方老版协议调用形态(CheckCode→default2→xskbcx+__VIEWSTATE+Table1 锚点), 这些 Sleepy 的 zf 老版通路已有更完整实现。"
+}

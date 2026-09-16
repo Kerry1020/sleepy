@@ -1,0 +1,766 @@
+{
+  "sha": "99aa258017823f52abecc9d03597538b3f372397",
+  "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/99aa258017823f52abecc9d03597538b3f372397",
+  "tree": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cc6ccdade6d593568d0df53dcda17105ef7b31b1",
+      "size": 187,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/cc6ccdade6d593568d0df53dcda17105ef7b31b1"
+    },
+    {
+      "path": ".idea",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d2526ff45357b02666f166b84fc8099518e8c459",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/d2526ff45357b02666f166b84fc8099518e8c459"
+    },
+    {
+      "path": ".idea/codeStyles",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d779909335e1ebfbc848d8ba213b1ec19a7990c5",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/d779909335e1ebfbc848d8ba213b1ec19a7990c5"
+    },
+    {
+      "path": ".idea/codeStyles/Project.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30aa626c23142d59e94cc76327172301f159b618",
+      "size": 1775,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/30aa626c23142d59e94cc76327172301f159b618"
+    },
+    {
+      "path": ".idea/gradle.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76a4349cfb077d383a87a50cb2b362a9f01fa82f",
+      "size": 449,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/76a4349cfb077d383a87a50cb2b362a9f01fa82f"
+    },
+    {
+      "path": ".idea/misc.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3801c332fe2a345ce80146b94d9382fe47f4c73e",
+      "size": 2015,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/3801c332fe2a345ce80146b94d9382fe47f4c73e"
+    },
+    {
+      "path": ".idea/runConfigurations.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7f68460d8b38ac04e3a3224d7c79ef719b1991a9",
+      "size": 564,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/7f68460d8b38ac04e3a3224d7c79ef719b1991a9"
+    },
+    {
+      "path": ".idea/vcs.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "35eb1ddfbbc029bcab630581847471d7f238ec53",
+      "size": 167,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/35eb1ddfbbc029bcab630581847471d7f238ec53"
+    },
+    {
+      "path": "A__CourseTable.iml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac1d0f779e87f30543292cfd762d8a72b649816e",
+      "size": 891,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/ac1d0f779e87f30543292cfd762d8a72b649816e"
+    },
+    {
+      "path": "CourseTable.iml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c2b62d36650aec35b7046c79dcbabe5810a1df5e",
+      "size": 888,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/c2b62d36650aec35b7046c79dcbabe5810a1df5e"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ffa57329f68da516943b0dc55a9307fa3b7cd10d",
+      "size": 10155,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/ffa57329f68da516943b0dc55a9307fa3b7cd10d"
+    },
+    {
+      "path": "apk-release",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b78fd2b77baa41abe477fc7999e0e57f310a6055",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/b78fd2b77baa41abe477fc7999e0e57f310a6055"
+    },
+    {
+      "path": "apk-release/app-release.apk",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9966a63d7002caf64c66999021c16ffefb28cdbf",
+      "size": 2903413,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/9966a63d7002caf64c66999021c16ffefb28cdbf"
+    },
+    {
+      "path": "apk-release/output.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f0c95966bfe0ace42c2f67a988baacf7942459d",
+      "size": 234,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/9f0c95966bfe0ace42c2f67a988baacf7942459d"
+    },
+    {
+      "path": "app",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6fba3a4ee5390d3be392a78ee1d2d62b6e560a60",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/6fba3a4ee5390d3be392a78ee1d2d62b6e560a60"
+    },
+    {
+      "path": "app/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "796b96d1c402326528b4ba3c12ee9d92d0e212e9",
+      "size": 7,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/796b96d1c402326528b4ba3c12ee9d92d0e212e9"
+    },
+    {
+      "path": "app/build.gradle",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7db7a73f72716e632804eb0016b5226b14a005b2",
+      "size": 1238,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/7db7a73f72716e632804eb0016b5226b14a005b2"
+    },
+    {
+      "path": "app/proguard-rules.pro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f1b424510da51fd82143bc74a0a801ae5a1e2fcd",
+      "size": 751,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/f1b424510da51fd82143bc74a0a801ae5a1e2fcd"
+    },
+    {
+      "path": "app/release",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7391bc2ddb304628c2d4ac8c780c530b466754bc",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/7391bc2ddb304628c2d4ac8c780c530b466754bc"
+    },
+    {
+      "path": "app/release/app-release.apk",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3930230675098ed05dad7b64455b9fcf5adb8d87",
+      "size": 2903721,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/3930230675098ed05dad7b64455b9fcf5adb8d87"
+    },
+    {
+      "path": "app/release/output.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f0c95966bfe0ace42c2f67a988baacf7942459d",
+      "size": 234,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/9f0c95966bfe0ace42c2f67a988baacf7942459d"
+    },
+    {
+      "path": "app/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "53570501648a76242f917af08453a8e1f6ed29a5",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/53570501648a76242f917af08453a8e1f6ed29a5"
+    },
+    {
+      "path": "app/src/androidTest",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e28be815dfe55a99779097eba23c140ed2bb63a3",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/e28be815dfe55a99779097eba23c140ed2bb63a3"
+    },
+    {
+      "path": "app/src/androidTest/java",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "225ce2a34a855682e06f752882c85c999ed50b37",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/225ce2a34a855682e06f752882c85c999ed50b37"
+    },
+    {
+      "path": "app/src/androidTest/java/com",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ef3780de6de09a28172e14b1acd1a0b56ca25516",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/ef3780de6de09a28172e14b1acd1a0b56ca25516"
+    },
+    {
+      "path": "app/src/androidTest/java/com/shengid",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b9b6d7589cded06be83d5a6ff5a559f41cafeb8d",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/b9b6d7589cded06be83d5a6ff5a559f41cafeb8d"
+    },
+    {
+      "path": "app/src/androidTest/java/com/shengid/liture",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "710e94fe1ecca3e95f7704153dd2d7bebf00627d",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/710e94fe1ecca3e95f7704153dd2d7bebf00627d"
+    },
+    {
+      "path": "app/src/androidTest/java/com/shengid/liture/coursetable",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "274c9ce1c19247e34658fbf77124126521b1909d",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/274c9ce1c19247e34658fbf77124126521b1909d"
+    },
+    {
+      "path": "app/src/androidTest/java/com/shengid/liture/coursetable/ExampleInstrumentedTest.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f64f497a93eb64a09f98e6cb63f5335bdaea0666",
+      "size": 744,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/f64f497a93eb64a09f98e6cb63f5335bdaea0666"
+    },
+    {
+      "path": "app/src/main",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a50f09fe7ee25a5ca9bfa0de47cc6855278c9eac",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/a50f09fe7ee25a5ca9bfa0de47cc6855278c9eac"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ca4a9d2912ba60d5919f330be1467996cbc3c145",
+      "size": 915,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/ca4a9d2912ba60d5919f330be1467996cbc3c145"
+    },
+    {
+      "path": "app/src/main/java",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "641d11c926378779be182f4b80fb89744beba3c3",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/641d11c926378779be182f4b80fb89744beba3c3"
+    },
+    {
+      "path": "app/src/main/java/com",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e5f779a4a4a12622268ad337072bba68ef9673d9",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/e5f779a4a4a12622268ad337072bba68ef9673d9"
+    },
+    {
+      "path": "app/src/main/java/com/shengid",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e9cd1221b16448c084790ca5160a0ee900d9402a",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/e9cd1221b16448c084790ca5160a0ee900d9402a"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7f41183b6989434eff6e269397113500dcf04a6f",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/7f41183b6989434eff6e269397113500dcf04a6f"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b7240295d92f9629c15c11a6af73380edb1ddeed",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/b7240295d92f9629c15c11a6af73380edb1ddeed"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Activity",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "dc3f35e9f03d1fbf2b94cb9856fb11efc9b80d36",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/dc3f35e9f03d1fbf2b94cb9856fb11efc9b80d36"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Activity/LoginActivity.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ebe58930756d251829669c2a95f918707cca8f50",
+      "size": 4072,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/ebe58930756d251829669c2a95f918707cca8f50"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Activity/MainActivity.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1909e19bc7ed3a43b4fcfea8afbab3a3650edb04",
+      "size": 9135,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/1909e19bc7ed3a43b4fcfea8afbab3a3650edb04"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Entity",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5ab35fc32bfa69e060e4f138888167ed831cbb1c",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/5ab35fc32bfa69e060e4f138888167ed831cbb1c"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Entity/Course.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5cc4d32e0353bcc781751410ba8c5e57663154ea",
+      "size": 1078,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/5cc4d32e0353bcc781751410ba8c5e57663154ea"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Entity/CourseInfoEntity.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fa9dc588d4d82d0181d8de13768bf9724d4b9a99",
+      "size": 2070,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/fa9dc588d4d82d0181d8de13768bf9724d4b9a99"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Entity/CourseTable.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "264bf1f112cbf4f736eeae6060a0e24e43fd2873",
+      "size": 1120,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/264bf1f112cbf4f736eeae6060a0e24e43fd2873"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/FromHandler",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "43a72832e84ea6bb2510d68eca22c06f29b696c8",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/43a72832e84ea6bb2510d68eca22c06f29b696c8"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/FromHandler/From.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dd4836241a3bc7b7a587f3dc01704dd5f826c548",
+      "size": 5192,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/dd4836241a3bc7b7a587f3dc01704dd5f826c548"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Helper",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9feb344e135a92a8e2285edec51baf84178f0f7c",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/9feb344e135a92a8e2285edec51baf84178f0f7c"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Helper/Alert.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30d563e294393da36b1ee592eaadc09204c04baf",
+      "size": 543,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/30d563e294393da36b1ee592eaadc09204c04baf"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Helper/DateUtil.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "40304213f591c2b6ec991113eaf0fcfb1ba46992",
+      "size": 4169,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/40304213f591c2b6ec991113eaf0fcfb1ba46992"
+    },
+    {
+      "path": "app/src/main/java/com/shengid/liture/coursetable/Helper/WeekAdapter.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "baa6dfe36400934b0c032e003bcf251ba54b15f5",
+      "size": 2838,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/baa6dfe36400934b0c032e003bcf251ba54b15f5"
+    },
+    {
+      "path": "app/src/main/res",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d29bca6e081ff5a1ee8bcdb09c12095553ee8403",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/d29bca6e081ff5a1ee8bcdb09c12095553ee8403"
+    },
+    {
+      "path": "app/src/main/res/drawable-v24",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bd40c9e711569dec6ea00e0ec3ca207081f05d08",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/bd40c9e711569dec6ea00e0ec3ca207081f05d08"
+    },
+    {
+      "path": "app/src/main/res/drawable-v24/bgimg.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b9a40e46a04c3ce6440eaa177fd269b4e04a2b09",
+      "size": 902700,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/b9a40e46a04c3ce6440eaa177fd269b4e04a2b09"
+    },
+    {
+      "path": "app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f6bb290603d7caa16c5fb6f61bbfdc750622f5c",
+      "size": 1880,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/1f6bb290603d7caa16c5fb6f61bbfdc750622f5c"
+    },
+    {
+      "path": "app/src/main/res/drawable",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a69a9efae859a853a46c42d93e85901debda5827",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/a69a9efae859a853a46c42d93e85901debda5827"
+    },
+    {
+      "path": "app/src/main/res/drawable/bgimg2.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e6ea7053a40a1a422bc86d0de9d578f5a03ab87",
+      "size": 272377,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/2e6ea7053a40a1a422bc86d0de9d578f5a03ab87"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0d025f9bf6b67c63044a36a9ff44fbc69e5c5822",
+      "size": 5606,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/0d025f9bf6b67c63044a36a9ff44fbc69e5c5822"
+    },
+    {
+      "path": "app/src/main/res/layout",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2369fe86d33f6d0102c06fab59a939834a78834b",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/2369fe86d33f6d0102c06fab59a939834a78834b"
+    },
+    {
+      "path": "app/src/main/res/layout/activity_login.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b0b193344e3ff09d71b043f03393b63ecdf643b6",
+      "size": 1975,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/b0b193344e3ff09d71b043f03393b63ecdf643b6"
+    },
+    {
+      "path": "app/src/main/res/layout/activity_main.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "75dd129781cb0afb9805da64194ff99d105e025d",
+      "size": 1467,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/75dd129781cb0afb9805da64194ff99d105e025d"
+    },
+    {
+      "path": "app/src/main/res/layout/week_item.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "508a754ced3d901d26cb352a08e0851beb9d900c",
+      "size": 440,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/508a754ced3d901d26cb352a08e0851beb9d900c"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "82a5c352420d748e55a96b8f576bc0f0688a8469",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/82a5c352420d748e55a96b8f576bc0f0688a8469"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eca70cfe52eac1ba66ba280a68ca7be8fcf88a16",
+      "size": 272,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/eca70cfe52eac1ba66ba280a68ca7be8fcf88a16"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eca70cfe52eac1ba66ba280a68ca7be8fcf88a16",
+      "size": 272,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/eca70cfe52eac1ba66ba280a68ca7be8fcf88a16"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "14503cd1ae181fadb3b9b7309e2e5293e13358c1",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/14503cd1ae181fadb3b9b7309e2e5293e13358c1"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "898f3ed59ac9f3248734a00e5902736c9367d455",
+      "size": 2963,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/898f3ed59ac9f3248734a00e5902736c9367d455"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dffca3601eba7bf5f409bdd520820e2eb5122c75",
+      "size": 4905,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/dffca3601eba7bf5f409bdd520820e2eb5122c75"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "774a1c1fe71b622a9fab75655a51595593cbd3b4",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/774a1c1fe71b622a9fab75655a51595593cbd3b4"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64ba76f75e9ce021aa3d95c213491f73bcacb597",
+      "size": 2060,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/64ba76f75e9ce021aa3d95c213491f73bcacb597"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dae5e082342fcdeee5db8a6e0b27028e2d2808f5",
+      "size": 2783,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/dae5e082342fcdeee5db8a6e0b27028e2d2808f5"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "217c90d703526010bd2836a27e6a8f9e879631e3",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/217c90d703526010bd2836a27e6a8f9e879631e3"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e5ed46597ea8447d91ab1786a34e30f1c26b18bd",
+      "size": 4490,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/e5ed46597ea8447d91ab1786a34e30f1c26b18bd"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "14ed0af35023e4f1901cf03487b6c524257b8483",
+      "size": 6895,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/14ed0af35023e4f1901cf03487b6c524257b8483"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4ac7a9a1276ab517e476dffd7026861340375d2c",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/4ac7a9a1276ab517e476dffd7026861340375d2c"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b0907cac3bfd8fbfdc46e1108247f0a1055387ec",
+      "size": 6387,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/b0907cac3bfd8fbfdc46e1108247f0a1055387ec"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8ae03154975f397f8ed1b84f2d4bf9783ecfa26",
+      "size": 10413,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/d8ae03154975f397f8ed1b84f2d4bf9783ecfa26"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a22dec46017e3b4fc1dc50547848235937de400f",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/a22dec46017e3b4fc1dc50547848235937de400f"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2c18de9e66108411737e910f5c1972476f03ddbf",
+      "size": 9128,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/2c18de9e66108411737e910f5c1972476f03ddbf"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "beed3cdd2c32af5114a7dc70b9ef5b698eb8797e",
+      "size": 15132,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/beed3cdd2c32af5114a7dc70b9ef5b698eb8797e"
+    },
+    {
+      "path": "app/src/main/res/values",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4602c63e38fece8acfa45f68b8bb407733cb7be5",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/4602c63e38fece8acfa45f68b8bb407733cb7be5"
+    },
+    {
+      "path": "app/src/main/res/values/colors.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4ae2b5cdc67936907bc0cd20831707c17f72b0c1",
+      "size": 304,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/4ae2b5cdc67936907bc0cd20831707c17f72b0c1"
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fbb10a66920a4b3d37b12836db3f6f6e7dfc52f",
+      "size": 74,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/9fbb10a66920a4b3d37b12836db3f6f6e7dfc52f"
+    },
+    {
+      "path": "app/src/main/res/values/styles.xml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5885930df6d10edf3d6df40d6556297d11f953da",
+      "size": 383,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/5885930df6d10edf3d6df40d6556297d11f953da"
+    },
+    {
+      "path": "app/src/test",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "24a6aaf9de823d4a5d98432fef8baa7510672370",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/24a6aaf9de823d4a5d98432fef8baa7510672370"
+    },
+    {
+      "path": "app/src/test/java",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "42e3c3d5cb1154f938479761f0bf3d342ff501c0",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/42e3c3d5cb1154f938479761f0bf3d342ff501c0"
+    },
+    {
+      "path": "app/src/test/java/com",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "242ba1de7c83c8b1994e4940837781bd288f8b18",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/242ba1de7c83c8b1994e4940837781bd288f8b18"
+    },
+    {
+      "path": "app/src/test/java/com/shengid",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1e1bcc3acf34157a418fa4c8c606353201bff14f",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/1e1bcc3acf34157a418fa4c8c606353201bff14f"
+    },
+    {
+      "path": "app/src/test/java/com/shengid/liture",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bd53ee46b1cd64daba5830ba4aac24c68045a6b5",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/bd53ee46b1cd64daba5830ba4aac24c68045a6b5"
+    },
+    {
+      "path": "app/src/test/java/com/shengid/liture/coursetable",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "365cdf3f9e2e03ad2004e007a5a7a6c2fe02680c",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/365cdf3f9e2e03ad2004e007a5a7a6c2fe02680c"
+    },
+    {
+      "path": "app/src/test/java/com/shengid/liture/coursetable/ExampleUnitTest.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "98cb42c9eb968c6a2eb1e3446599332f6fdc2491",
+      "size": 391,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/98cb42c9eb968c6a2eb1e3446599332f6fdc2491"
+    },
+    {
+      "path": "build.gradle",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "879b613694162c0b682b086f6a7c137cdb8a11dc",
+      "size": 573,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/879b613694162c0b682b086f6a7c137cdb8a11dc"
+    },
+    {
+      "path": "gradle.properties",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ebf54aa20e95628166c30303a81c64e7de8d998",
+      "size": 741,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/6ebf54aa20e95628166c30303a81c64e7de8d998"
+    },
+    {
+      "path": "gradle",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b2023d378ce7e54a39caa88bb75df44b5ce24620",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/b2023d378ce7e54a39caa88bb75df44b5ce24620"
+    },
+    {
+      "path": "gradle/wrapper",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c0f7e41ea960c78157ddfb8d13076455b1414e74",
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/trees/c0f7e41ea960c78157ddfb8d13076455b1414e74"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f6b961fd5a86aa5fbfe90f707c3138408be7c718",
+      "size": 54329,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/f6b961fd5a86aa5fbfe90f707c3138408be7c718"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a4163a4f5ee222ba10e7c7c2f4de529dc0b52a1",
+      "size": 200,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/9a4163a4f5ee222ba10e7c7c2f4de529dc0b52a1"
+    },
+    {
+      "path": "gradlew",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cccdd3d517fc5249beaefa600691cf150f2fa3e6",
+      "size": 5296,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/cccdd3d517fc5249beaefa600691cf150f2fa3e6"
+    },
+    {
+      "path": "gradlew.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e95643d6a2ca62258464e83c72f5156dc941c609",
+      "size": 2260,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/e95643d6a2ca62258464e83c72f5156dc941c609"
+    },
+    {
+      "path": "local.properties",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c6cab30ec5aa9c5455daf086d88f9150c24c34a",
+      "size": 368,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/7c6cab30ec5aa9c5455daf086d88f9150c24c34a"
+    },
+    {
+      "path": "settings.gradle",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d3db1092cf4f5689e1a06500484e3f03ba7a6bf6",
+      "size": 16,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/d3db1092cf4f5689e1a06500484e3f03ba7a6bf6"
+    },
+    {
+      "path": "x.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bb7ae0694dfaaf07aed8bb99b371b2e33fc1e944",
+      "size": 113,
+      "url": "https://api.github.com/repos/canliture/CrawlerCourseTable/git/blobs/bb7ae0694dfaaf07aed8bb99b371b2e33fc1e944"
+    }
+  ],
+  "truncated": false
+}

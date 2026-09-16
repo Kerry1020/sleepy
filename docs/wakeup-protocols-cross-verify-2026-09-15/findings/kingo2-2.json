@@ -1,0 +1,14 @@
+{
+  "repo_name": "52funny/KINGOSOFT-LOGIN",
+  "stars": 2,
+  "default_branch": "master",
+  "license": null,
+  "relevant_files": [
+    {"path": "main.go", "purpose": "KINGOSOFT cas 登录全链 (DES 加密参数 + token 签名) + 注释掉的课表抓取", "lines_with_protocol": [31, 36, 45, 57, 66, 79, 91, 96, 103, 121, 127]},
+    {"path": "Utils/Des.go", "purpose": "KINGOSOFT SetKingoEncypt.jsp 的 DES 加密 Go 移植 (StrEnc, 4 字符分块 bt64ToHex)", "lines_with_protocol": [1, 10]}
+  ],
+  "protocol_approach": "Go 模拟登录, 宿州学院 suzxyjw KINGOSOFT 实例 (211.86.128.194)。流程: (1) GET /cas/login.action 拿 JSESSIONID cookie + 从 HTML regex 抠 SetKingoEncypt.jsp?t=<时间戳>; (2) GET 该 JSP 拿 keys='...';nowtime='...'; DES 密钥与时间戳; (3) 验证码 GET /cas/genValidateCode?dateTime=...; (4) 密码 = md5(md5(pwd)+md5(lower(randnumber))), 用户名 = base64(user+\";;\"+sessionid) 塞 _u<randnumber>, 密码塞 _p<randnumber>, 附 randnumber/isPasswordPolicy=1/txt_mm_expression(字符类型位掩码)/txt_mm_length/txt_mm_userzh; (5) 参数整体 DES(StrEnc) 加密再 base64, token = md5(md5(params)+md5(nowtime)); (6) POST /cas/logon.action {params,token,timestamp}, JSON status==200 为成功。注释代码里有课表端点: POST /frame/desk/showLessonScheduleDetail.action {weeks:N}, goquery 解析 tbody .mykb td[style*=background-color] 的 ul 文本。",
+  "exact_regex_or_code_snippet": "regexp.MustCompile(`/suzxyjw/custom/js/SetKingoEncypt.jsp\\?t=[0-9]+`) ; password = md5sum(md5sum(password) + md5sum(strings.ToLower(randnumber))) ; username = base64_encode(username + \";;\" + sessionid) ; token := md5sum(md5sum(data) + md5sum(nowtime)) ; POST .../cas/logon.action {params, token, timestamp} ; //getkb: POST /frame/desk/showLessonScheduleDetail.action weeks -> query.Find(\"tbody\").Find(\".mykb\").Find(\"td[style*=background-color]\")",
+  "verdict": "POSITIVE",
+  "verdict_reason": "KINGOSOFT 登录协议直接证据: SetKingoEncypt.jsp DES 密钥发现 + cas/logon.action 加密参数三件套 (params/token/timestamp) + 登录态 cookie 会话; 另附 (注释) 课表端点 /frame/desk/showLessonScheduleDetail.action?weeks=N — 证明 KINGOSOFT 课表存在按周参数的 showLessonScheduleDetail 形态, 是 TaskActivity 网格之外的另一条线。"
+}

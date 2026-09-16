@@ -1,0 +1,40 @@
+{
+  "repo_name": "XingHeYuZhuan/shiguang_Tester",
+  "stars": 10,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    {
+      "path": "CourseImporterTestTool/school.js",
+      "purpose": "Demo/placeholder adapter script developers replace with their real adapter; demonstrates full bridge API (showAlert/showPrompt/showSingleSelection/saveImportedCourses/savePresetTimeSlots/saveCourseConfig/notifyTaskCompletion) and the course-object JSON schema with inline sample courses (lines 93-294) and preset time slots (lines 315-332)",
+      "lines_with_protocol": [48, 93, 94, 99, 100, 101, 108, 109, 110, 111, 298, 336, 366, 420]
+    },
+    {
+      "path": "CourseImporterTestTool/injected_bridge.js",
+      "purpose": "Page-side bridge shim emulating the Android shiguangBridge/shiguangBridgePromise; contains the authoritative course-data validation contract (required fields, custom-time HH:mm regex, section fields) and CourseConfigJsonModel defaults",
+      "lines_with_protocol": [25, 48, 50, 54, 68, 71, 75, 157, 158, 159, 160, 161, 162, 254, 285, 311]
+    },
+    {
+      "path": "CourseImporterTestTool/background.js",
+      "purpose": "Service worker caching courses/timeSlots/config from bridge calls and merging them into the downloadable CourseTableExport.json consumed by the app's file import",
+      "lines_with_protocol": [9, 12, 13, 14, 15, 24, 28]
+    },
+    {
+      "path": "CourseImporterTestTool/content-script.js",
+      "purpose": "Injects injected_bridge.js + school.js into the logged-in jw page and relays ANDROID_BRIDGE_CALL messages to the extension; the 'runs the adapter inside a real jiaowu session' execution model",
+      "lines_with_protocol": [341]
+    },
+    {
+      "path": "README.md",
+      "purpose": "Confirms the workflow: replace school.js with your adapter code, run against the logged-in jiaowu page, export CourseTableExport.json which is compatible with the app's file import; Alpha-stage adapter testing",
+      "lines_with_protocol": []
+    }
+  ],
+  "protocol_approach": "This is a Chrome MV3 extension test harness, not an adapter collection: the developer pastes their JS adapter into school.js, the extension injects it into the logged-in jiaowu page alongside injected_bridge.js (a JS shim emulating the app's Android bridge), and the adapter's output is captured via shiguangBridgePromise.saveImportedCourses/savePresetTimeSlots/saveCourseConfig, merged, and downloaded as CourseTableExport.json ({courses, timeSlots, config}) for import into the app. It therefore fixes the ADAPTER OUTPUT CONTRACT — course objects with name/teacher/position/day/weeks and either startSection/endSection or isCustomTime+customStartTime/customEndTime — but the committed school.js is demo data and the repo contains zero jiaowu endpoint fixtures: no Kingosoft TaskActivity HTML, no dgData table, no CourseFormTable.",
+  "exact_regex_or_code_snippet": "// injected_bridge.js L25 & L48:\nconst TIME_REGEX = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;\nconst requiredFields = ['name', 'teacher', 'position', 'day', 'weeks'];\n// school.js L94-101 sample course object:\n{\n  \"name\": \"高等数学\", \"teacher\": \"张教授\", \"position\": \"教101\",\n  \"day\": 1, \"startSection\": 1, \"endSection\": 2,\n  \"weeks\": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]\n}\n// background.js L12-16 export shape:\nconst exportData = { courses: cachedCourses, timeSlots: cachedTimeSlots, config: cachedCourseConfig };",
+  "verdict": "INDIRECT",
+  "verdict_reason": "Repo contains zero jiaowu protocol fixtures (grep for kingo/taskactivity/dgdata/courseformtable/jwglxt across all JS: no hits) — school.js is demo data — so it cannot corroborate the specific TaskActivity/dgData/CourseFormTable parsing claims; but it independently confirms the harness architecture around which the shiguang_warehouse adapters are written (JS adapter executed in-browser against the logged-in jiaowu page, emitting the {courses, timeSlots, config} JSON contract), which is consistent with and indirectly supports that POSITIVE verdict.",
+  "sleepy_claim_check": {
+    "shiguang_warehouse 适配协议族佐证": "INDIRECT only. The harness corroborates the workflow and output contract of shiguang_warehouse's JS adapters (browser-injected bridge scripts producing courses/timeSlots/config JSON importable by the app) — notably the course model (day 1-7, startSection/endSection, weeks array, isCustomTime with strict HH:mm regex) matches the WakeUp/shiguang adapter family Sleepy ports. However it holds no inline Kingosoft TaskActivity / dgData / CourseFormTable fixtures, so the day=floor(idx/unitCount)+1, rowspan, and CourseFormTable claims must rest on the shiguang_warehouse repo verdict itself; this repo neither confirms nor contradicts them."
+  }
+}

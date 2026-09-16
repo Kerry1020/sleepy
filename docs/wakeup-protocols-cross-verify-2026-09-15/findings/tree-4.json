@@ -1,0 +1,31 @@
+{
+  "sha": "b8ec3ee137c0e471806a2e6e1310201e05e64b99",
+  "url": "https://api.github.com/repos/ceresOPA/MI_AI_Course_Schedule/git/trees/b8ec3ee137c0e471806a2e6e1310201e05e64b99",
+  "tree": [
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78966c70e1d7f46e3c3d357c3f5d66505f6bd2b2",
+      "size": 368,
+      "url": "https://api.github.com/repos/ceresOPA/MI_AI_Course_Schedule/git/blobs/78966c70e1d7f46e3c3d357c3f5d66505f6bd2b2"
+    },
+    {
+      "path": "parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "479a30af61d7cde17cc5444144f797dd12aff42f",
+      "size": 4666,
+      "url": "https://api.github.com/repos/ceresOPA/MI_AI_Course_Schedule/git/blobs/479a30af61d7cde17cc5444144f797dd12aff42f"
+    },
+    {
+      "path": "provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "18a51882535c836449af052d91394edf2a691178",
+      "size": 258,
+      "url": "https://api.github.com/repos/ceresOPA/MI_AI_Course_Schedule/git/blobs/18a51882535c836449af052d91394edf2a691178"
+    }
+  ],
+  "truncated": false
+}

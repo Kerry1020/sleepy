@@ -1,0 +1,37 @@
+{
+  "repo_name": "jiangyiqi99/CourseHelper",
+  "stars": 2,
+  "default_branch": "main",
+  "license": "GPL-3.0",
+  "relevant_files": [
+    {
+      "path": "CourseHelper/Ecnu.swift",
+      "purpose": "华东师大 EAMS: WebView XHR hook courseTableForStd!courseTable.action, TaskActivity+index 网格解析",
+      "lines_with_protocol": [48, 105, 136, 257, 260, 302, 384]
+    },
+    {
+      "path": "CourseHelper/Sufe.swift",
+      "purpose": "上海财大 EAMS: 同一协议族, 另有 sufe.edu.cn SSL 忽略 + 体育III周次+1 hack",
+      "lines_with_protocol": [48, 116, 143, 265, 268, 314, 437]
+    },
+    {
+      "path": "CourseHelper/Shmtu.swift",
+      "purpose": "上海海事: 同一协议族(courseTableForStd!courseTable.action), TaskActivity 7 参严格 8 组匹配",
+      "lines_with_protocol": [52, 94, 141, 263, 266, 309]
+    },
+    {
+      "path": "CourseHelper/ContentView.swift",
+      "purpose": "三校课表入口 URL 硬编码处",
+      "lines_with_protocol": [94, 105, 116]
+    },
+    {
+      "path": "CourseHelper/Ext.swift",
+      "purpose": "NSRegularExpression matches(for:) 通用封装",
+      "lines_with_protocol": [13]
+    }
+  ],
+  "protocol_approach": "WebView 加载 courseTableForStd.action, 注入 JS 重写 XHR open/send 拦截 POST courseTableForStd!courseTable.action 的 requestBody(含 semester.id=N)与 responseText; 返回为 HTML 内嵌 JS 课表网格(activity = new TaskActivity(...) + index = day*unitCount+session), Swift 正则切片解析出课程 7 字段、星期/节次坐标、二进制周次串后逐周展开成日历事件",
+  "exact_regex_or_code_snippet": "拦截条件: this._method === 'POST' && this._url.includes('courseTableForStd!courseTable.action') | 学期: let pattern = \"semester\\\\.id=(\\\\d+)\" | 任务字段: let taskActivityPattern = #\"TaskActivity\\(\"([^\"]*)\",\\s*\"([^\"]*)\",\\s*\"([^\"]*)\",\\s*\"([^\"]*)\",\\s*\"([^\"]*)\",\\s*\"([^\"]*)\",\\s*\"([^\"]*)\"(?:\\s*,\\s*(?:\"[^\"]*\"|null))*\\);\"# | 坐标: let indexPattern = #\"index\\s*=\\s*(\\d+)\\s*\\*\\s*unitCount\\s*\\+\\s*(\\d+);\"#  (dayOfWeek=match[1], 0=周一; session=match[2]+1, 0起) | 切片锚点: targetLine=\"table0.marshalTable\" → 截断后以 \"(?<=activity = new)(.*?)(?=activity = new)\" 分块 | 周次: schedule 二进制串逐字符, index>0 且 char==\"1\" → weekNumbers.append(index); 无显式单双周逻辑(单双周即该串对应位为1) | 入口 URL: https://jwxt.shmtu.edu.cn/shmtu/courseTableForStd.action · https://applicationnewjw.ecnu.edu.cn/eams/courseTableForStd.action · https://eams.sufe.edu.cn/eams/courseTableForStd!index.action",
+  "verdict": "POSITIVE",
+  "verdict_reason": "三校独立实现交叉印证 Sleepy kingo_new 预期: 课表数据确在 HTML 内嵌 JS 中, 以 TaskActivity(...) 构造调用携带课程字段、index=day*unitCount+session 网格坐标、二进制周次串, 经 Struts2 action courseTableForStd!courseTable.action POST(semester.id) 获取"
+}

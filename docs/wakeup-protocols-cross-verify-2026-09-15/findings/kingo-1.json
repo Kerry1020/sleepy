@@ -1,0 +1,11 @@
+{
+  "repo_name": "NYIST-CIPS/CourseTable",
+  "stars": 4,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": ["AISchedule/scheduleHtmlProvider.js", "AISchedule/scheduleHtmlParser.js", "Wakeup/NYISTParser.kt"],
+  "protocol_approach": "青果+服务大厅 HTML DOM 抓取: provider 从当前页面收集 .course-content 节点 outerHTML, 无网络请求/无 JSON 接口; Wakeup 端 jsoup 解析同一 HTML",
+  "exact_regex_or_code_snippet": "provider: dom.getElementsByClassName('course-content')[i].outerHTML; parser 时间串 '第[19]周 周日 5-6节 14:30~16:00'.split(\" \"), 周次 origin.replace('单周','') 后 split('-') 区间, 单周 if(j%2) 双周 if(j%2==0); KT: it.getElementsByClass('course-item-list'), div.time>div.address>div.teacher>p.content, weekText.contains('单')→type=1",
+  "verdict": "POSITIVE",
+  "verdict_reason": "确证青果/服务大厅页面 DOM 协议(course-content/course-item-list+中文时间串), 但走 HTML 抓取非 kingosoft JSON 接口"
+}

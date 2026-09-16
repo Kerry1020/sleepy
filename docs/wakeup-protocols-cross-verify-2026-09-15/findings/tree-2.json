@@ -1,0 +1,238 @@
+{
+  "sha": "fd55ed872a1339ff941f27df6de0949799698e9a",
+  "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/fd55ed872a1339ff941f27df6de0949799698e9a",
+  "tree": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0af229ba2b60275ecbed5ab369455433c18d5f01",
+      "size": 33,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/0af229ba2b60275ecbed5ab369455433c18d5f01"
+    },
+    {
+      "path": ".vscode",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7b3e77e8f4790caea7619b1af8b688f6c045fc92",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/7b3e77e8f4790caea7619b1af8b688f6c045fc92"
+    },
+    {
+      "path": ".vscode/launch.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "56852013f14f117d33ca3e66f0dc19a13c7bae69",
+      "size": 474,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/56852013f14f117d33ca3e66f0dc19a13c7bae69"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c17f0b2664f919261fe102fa5402cfb59fc02ecb",
+      "size": 1084,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/c17f0b2664f919261fe102fa5402cfb59fc02ecb"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8ba140669174a1e2602a62e27b14803c970532ca",
+      "size": 737,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/8ba140669174a1e2602a62e27b14803c970532ca"
+    },
+    {
+      "path": "package-lock.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eab2ce8ac482366a80e0aae3644e18896f3167be",
+      "size": 10656,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/eab2ce8ac482366a80e0aae3644e18896f3167be"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29ceea70ce1a6ae59dfeca2ec8b887c028aebcc3",
+      "size": 61,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/29ceea70ce1a6ae59dfeca2ec8b887c028aebcc3"
+    },
+    {
+      "path": "parserResult.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "574d3edead80dff58e140da2cc965aa3d293a881",
+      "size": 8699,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/574d3edead80dff58e140da2cc965aa3d293a881"
+    },
+    {
+      "path": "providerResult.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12510992e6adfe5feed06735f5aa6647967433e6",
+      "size": 33277,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/12510992e6adfe5feed06735f5aa6647967433e6"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1831d99ff05b219361a9c230d97e6147c16b0e7d",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/1831d99ff05b219361a9c230d97e6147c16b0e7d"
+    },
+    {
+      "path": "src/强智教务",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "db6cc6dd07b661bd695101ce8ff346ed10ab6df3",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/db6cc6dd07b661bd695101ce8ff346ed10ab6df3"
+    },
+    {
+      "path": "src/强智教务/南充职业技术学院",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "868135964f695a8407a98de6b60523728b4c038e",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/868135964f695a8407a98de6b60523728b4c038e"
+    },
+    {
+      "path": "src/强智教务/南充职业技术学院/parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ab485ab23ba868fcdcb20d5e4bdf6d38077cbaa9",
+      "size": 4238,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/ab485ab23ba868fcdcb20d5e4bdf6d38077cbaa9"
+    },
+    {
+      "path": "src/强智教务/南充职业技术学院/provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b31a078cd96102ddc1d44c0662b23f2173550034",
+      "size": 2897,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/b31a078cd96102ddc1d44c0662b23f2173550034"
+    },
+    {
+      "path": "src/强智教务/南充职业技术学院/timer.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a71ff6b005cc7b8a15a623253492d0b8ca7ac87f",
+      "size": 2031,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/a71ff6b005cc7b8a15a623253492d0b8ca7ac87f"
+    },
+    {
+      "path": "src/强智教务/南华大学",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5269e148a4edbf264c9415d3ec340bd1d724f2a5",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/5269e148a4edbf264c9415d3ec340bd1d724f2a5"
+    },
+    {
+      "path": "src/强智教务/南华大学/parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a8268ab417b7a283fb4c73100939324b7110bb1",
+      "size": 4596,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/9a8268ab417b7a283fb4c73100939324b7110bb1"
+    },
+    {
+      "path": "src/强智教务/南华大学/provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64379491b19bc9f1e04815d1a1fe1cfc26375ab5",
+      "size": 3564,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/64379491b19bc9f1e04815d1a1fe1cfc26375ab5"
+    },
+    {
+      "path": "src/强智教务/南华大学/timer.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e8e20f5fb1932db3f96e87bc219176759dc8bfd0",
+      "size": 2291,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/e8e20f5fb1932db3f96e87bc219176759dc8bfd0"
+    },
+    {
+      "path": "src/强智教务/新疆师范大学",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2f9e1fedffe690684702dacfe3761233619cf395",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/2f9e1fedffe690684702dacfe3761233619cf395"
+    },
+    {
+      "path": "src/强智教务/新疆师范大学/parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f4f43fff42c6a86359a2183845b678f38990fcd3",
+      "size": 4772,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/f4f43fff42c6a86359a2183845b678f38990fcd3"
+    },
+    {
+      "path": "src/强智教务/新疆师范大学/provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "552cb037d625790d3e777cec6ba231e14c59c3ab",
+      "size": 4357,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/552cb037d625790d3e777cec6ba231e14c59c3ab"
+    },
+    {
+      "path": "src/强智教务/新疆师范大学/timer.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8e6ea20bd184375013dd2a6d2684bb8eb58dd7e9",
+      "size": 2294,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/8e6ea20bd184375013dd2a6d2684bb8eb58dd7e9"
+    },
+    {
+      "path": "test.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c9c80027b7193305b300ad1726a1f99c94bf3b6a",
+      "size": 243,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/c9c80027b7193305b300ad1726a1f99c94bf3b6a"
+    },
+    {
+      "path": "页面采集样例",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "dac0c0f65ad40ca6203a8d2be1a9e851002d0c19",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/dac0c0f65ad40ca6203a8d2be1a9e851002d0c19"
+    },
+    {
+      "path": "页面采集样例/强智教务",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "53f994375dbff11300968ab7b196599c1d948bae",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/53f994375dbff11300968ab7b196599c1d948bae"
+    },
+    {
+      "path": "页面采集样例/强智教务/新疆师范",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1075a470bc7154499476d5fcdcd6ccc29ac217f9",
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/trees/1075a470bc7154499476d5fcdcd6ccc29ac217f9"
+    },
+    {
+      "path": "页面采集样例/强智教务/新疆师范/202203.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a6166bd7f609efaae50fe802b6b29b5ecb108aea",
+      "size": 42920,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/a6166bd7f609efaae50fe802b6b29b5ecb108aea"
+    },
+    {
+      "path": "页面采集样例/强智教务/新疆师范/202303.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02ddbdd1493f86e2b1e99b2ff81ac4413fae1893",
+      "size": 37838,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/02ddbdd1493f86e2b1e99b2ff81ac4413fae1893"
+    },
+    {
+      "path": "页面采集样例/强智教务/新疆师范/202502教师端.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d001a3238b10a200197207d316c9005346fb262a",
+      "size": 18779,
+      "url": "https://api.github.com/repos/ltxhhz/AISchedule-xjsf/git/blobs/d001a3238b10a200197207d316c9005346fb262a"
+    }
+  ],
+  "truncated": false
+}

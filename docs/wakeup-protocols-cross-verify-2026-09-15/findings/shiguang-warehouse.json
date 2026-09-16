@@ -1,0 +1,23 @@
+{
+  "repo_name": "XingHeYuZhuan/shiguang_warehouse",
+  "stars": 56,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    {"path": "resources/HUNNU/hunnu.js", "purpose": "Kingosoft EAMS courseTableForStd 页 TaskActivity JS 块解析 + 50位周次位图 + index=day*unitCount+section 坐标还原", "protocol_class": "A", "lines_with_protocol": [12, 36, 75, 97, 102]},
+    {"path": "resources/HPU/hpu.js", "purpose": "Kingosoft 全链路: AJAX 拿 ids → courseTable!courseTable.action → var unitCount 抓取 + TaskActivity 块 + #manualArrangeCourseTable 节次时间", "protocol_class": "A", "lines_with_protocol": [8, 111, 116, 132, 297, 348]},
+    {"path": "resources/NEUQ/neuq.js", "purpose": "Kingosoft TaskActivity 解析, unitCount 缺省12, 参数按逗号分割取 args[6]=周次位图", "protocol_class": "A", "lines_with_protocol": [137, 141, 177]},
+    {"path": "resources/UESTC/uestc.js", "purpose": "Kingosoft TaskActivity: 单双周文字(\"单1-17\"/\"双2-16\")另路解析 + index=D*unitCount+P 正则", "protocol_class": "A", "lines_with_protocol": [121, 130, 165, 169, 208]},
+    {"path": "resources/SCUEC/scuec.js", "purpose": "金智式 HTML 课表 table.CourseFormTable + <hr> 分格多课 + 周次(单|双) 后缀 regex", "protocol_class": "B", "lines_with_protocol": [15, 31, 130, 229]},
+    {"path": "resources/SDDFVC/sddfvc.js", "purpose": "xq1..xq7 JSON + 排课明细 pkmx + zc.zc 周次串 + dsz 单双周枚举(0全/1单/2双)", "protocol_class": "B", "lines_with_protocol": [10, 12, 27, 57]},
+    {"path": "resources/UPC/upc_graduate.js", "purpose": "ASP.NET 研究生教务 ctl00_contentParent_dgData DOM 表格: 动态节次td定位 + rowspan 推 endSection + 第X周[教师:..,地点:..] 单元格文本", "protocol_class": "C", "lines_with_protocol": [67, 94, 128, 147, 186]},
+    {"path": "resources/CUG/cug_postgraduate.js", "purpose": "同款 ctl00_contentParent_dgData: 9列占用计数器 occ[] 还原 rowspan 网格 + 课程名｛N-M周[教师:x,地点:y]｝regex", "protocol_class": "C", "lines_with_protocol": [4, 96, 104, 137, 218]},
+    {"path": "resources/UJS/ujs_yjs_v1.0.js", "purpose": "研究生教务 #MainWork_DataGrid1 单元格自述文本解析 + dgListSw/Xw/Ws 作息三表 + 单双周词先剔除再判单/双", "protocol_class": "C", "lines_with_protocol": [69, 295, 300, 310]},
+    {"path": "resources/ZJSRU/zjsru_01.js", "purpose": "经典正方 WebForms xskbcx.aspx?xh=..&type=1 + __EVENTTARGET/xnd/xqd + __VIEWSTATE 回发切学期 + table#Table1.schedule", "protocol_class": "D", "lines_with_protocol": [8, 306, 335, 346]},
+    {"path": "resources/FAFU/FAFU.js", "purpose": "经典正方教务 default2.aspx 入口适配", "protocol_class": "D", "lines_with_protocol": [3]}
+  ],
+  "protocol_approach": "时光仓库每校一个注入式 JS 适配脚本: 在教务页面上下文里用 fetch/DOMParser 抓课表, 按协议族解析(Kingosoft=TaskActivity JS块+周次位图, 金智式=CourseFormTable HTML表+单双周后缀, dgData系=ASP.NET DataGrid DOM+rowspan网格还原, 正方=kbList JSON 或 xskbcx.aspx 回发), 统一产出 {name,teacher,position,day,startSection,endSection,weeks} 经 shiguangBridge.saveImportedCourses 交 App。",
+  "exact_regex_or_code_snippet": "A(HUNNU:75): var\\s+actTeachers\\s*=\\s*\\[[^\\]]*?name\\s*:\\s*\"([^\"]+)\"[\\s\\S]*?activity\\s*=\\s*new\\s+TaskActivity\\s*\\(([\\s\\S]*?)\\)\\s*;[\\s\\S]*?(?=var\\s+(?:actTeachers|teachers)|table0\\.marshalTable|$)\\nA(HPU:132): /index\\s*=\\s*(?:(\\d+)\\s*\\*\\s*unitCount\\s*\\+\\s*(\\d+)|(\\d+))\\s*;/g → day=floor(idx/unitCount)+1, section=idx%unitCount+1\\nA(NEUQ:177): /index\\s*=\\s*(\\d+)\\s*\\*\\s*unitCount\\s*\\+\\s*(\\d+)/g + bitmap[i]===\"1\"→weeks.push(i) (0-index 位图, HUNNU 为 1-index)\\nB(SCUEC:31): part.match(/^(\\d+)(?:[-~](\\d+))?(?:\\((单|双)\\))?$/) → 单跳偶 双跳奇\\nB(SDDFVC:10): @param {number} dsz 0: 全周, 1: 单周, 2: 双周, -1: 全周; parseWeeks(detail.zc.zc, detail.zc.dsz)\\nC(UPC:67): doc.getElementById(\"ctl00_contentParent_dgData\") + rowspan→endSection=startSection+rowspan-1, 列序 0:周日|1..6:周一..周六\\nC(UJS:300): doc.querySelector(\"#MainWork_DataGrid1\"); 作息表 #MainWork_dgListSw/dgListXw/dgListWs\\nD(ZJSRU:346): body.set(\"__EVENTTARGET\",\"xnd\"); body.set(\"__VIEWSTATE\",pick(\"__VIEWSTATE\")) 回发 xskbcx.aspx",
+  "verdict": "POSITIVE",
+  "verdict_reason": "A/C/D 三类协议在 6+ 个优先学校文件里找到与 Sleepy 实现同源的关键 token、坐标公式与周次解析原文; B 类为部分命中(CourseFormTable 表格 SCUEC + dsz 单双周枚举 SDDFVC, 但 qmz 全仓 0 命中、djj 仅 AUFE 的 djjc 节次序号属不同语义)。"
+}

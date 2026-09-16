@@ -1,0 +1,14 @@
+{
+  "repo_name": "RekaYOO/NEU-JWXT-Toolkit",
+  "stars": 5,
+  "default_branch": "main",
+  "license": "MIT",
+  "relevant_files": [
+    "docs/开发/第三方接口参数索引.md",
+    "backend/core/timetable/api.py"
+  ],
+  "protocol_approach": "东北大学教务系统第三方工具箱(Python FastAPI 后端 + Android 前端), 2026-09 仍活跃维护。基址 https://jwxt.neu.edu.cn/jwapp/sys, 统一会话 NEUAuthClient(WebVPN/CAS, 支持二次认证 form#second_auth_form), 响应包装 code/datas/rows, code=='0' 成功。课表走正方新一代 jwapp 移动端 .do 接口族(POST form): 学期 /jwpubapp/modules/zdgl/xnxqcx.do(SFSY=1)+/jwpubapp/modules/gg/cxmrxnxq.do(CSDM=SYS,ZCSDM=DQXNXQDM); 教学周 /kbbpapp/api/schoolCalendar/getTermWeeks.do(XNXQDM); 我的课表 /kbapp/api/wdkbcx/getMyScheduledCampus.do → getMySectionList.do → getMyScheduleDetail.do(XNXQDM,XQDM,ZC 可选); 目标(班/师/室)课表 /kbapp/api/qxkbcx/getMyScheduledCampus.do → getScheduleDetail.do(加 CODE + KBLX: class=05/teacher=02/room=01)。返回 datas.arrangedList/notArrangeList/practiceList 三列表; 行字段 KCM/KCH/SKXQ(dayOfWeek)/KSJC-JSJC(beginSection-endSection)/KSSJ-JSSJ/JASMC/XQMC/XKZT_DISPLAY/titleDetail/cellDetail/weeksAndTeachers。",
+  "exact_regex_or_code_snippet": "// timetable/api.py:149-158\nBASE_URL = \"https://jwxt.neu.edu.cn/jwapp/sys\"\nTERMS_URL = f\"{BASE_URL}/jwpubapp/modules/zdgl/xnxqcx.do\"\nWEEKS_URL = f\"{BASE_URL}/kbbpapp/api/schoolCalendar/getTermWeeks.do\"\nPERSONAL_SCHEDULE_URL = f\"{BASE_URL}/kbapp/api/wdkbcx/getMyScheduleDetail.do\"\nTARGET_SCHEDULE_URL = f\"{BASE_URL}/kbapp/api/qxkbcx/getScheduleDetail.do\"\n// KBLX 模式表: \"class\": {\"schedule_type\": \"05\"}, \"teacher\": {\"schedule_type\": \"02\"}, \"room\": {\"schedule_type\": \"01\"}\n// get_schedule() params: {XNXQDM: term, XQDM: campus, ZC?: week} + target: {CODE, KBLX}\n// _schedule_lists(): data = body.get(\"datas\", body); for key in (\"arrangedList\",\"notArrangeList\",\"practiceList\")\n// _course_from_row(): weekday=row.dayOfWeek|SKXQ, start/end_section=KSJC|JSJC, week_text=row.weeks|weekList|weekText, teachers from weeksAndTeachers",
+  "verdict": "POSITIVE",
+  "verdict_reason": "docs/开发/第三方接口参数索引.md §2'课表接口'逐条列出端点+参数+字段, backend/core/timetable/api.py 1075 行给出完整可运行实现(含 KBLX=05/02/01 语义、datas.arrangedList 三列表结构、ZC 周次过滤)。NEU 属正方新一代 jwapp 系(kbapp/wdkbcx/qxkbcx), 印证 Sleepy 已适配的 NEU 协议路径一致, 且补充了 KBLX 取值、XQDM 空串=全部校区、personal 课表 XNXQDM+ZC 可选等细节。"
+}

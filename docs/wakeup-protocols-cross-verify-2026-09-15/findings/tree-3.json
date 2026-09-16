@@ -1,0 +1,259 @@
+{
+  "sha": "82dce2f01cd5b26c2085ba8e1665fc4f34dfb885",
+  "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/trees/82dce2f01cd5b26c2085ba8e1665fc4f34dfb885",
+  "tree": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c3629e647f5ddf82548912e337bea9826b434af",
+      "size": 13,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/3c3629e647f5ddf82548912e337bea9826b434af"
+    },
+    {
+      "path": "README-tools.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd42b0639a022d92af86da5f1742ea7db14fae91",
+      "size": 922,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/cd42b0639a022d92af86da5f1742ea7db14fae91"
+    },
+    {
+      "path": "README.MD",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb41212f5bbc8f23a2e6b01f5c59ee3cd243e986",
+      "size": 2411,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/cb41212f5bbc8f23a2e6b01f5c59ee3cd243e986"
+    },
+    {
+      "path": "README.assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "808b621629c232e4c84d6896c11d3cffb9427634",
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/trees/808b621629c232e4c84d6896c11d3cffb9427634"
+    },
+    {
+      "path": "README.assets/common_error_json.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc0206785fa2eb44e1b4d7a4d39a15f05c403f6c",
+      "size": 283324,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/dc0206785fa2eb44e1b4d7a4d39a15f05c403f6c"
+    },
+    {
+      "path": "cheerio.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0d73fe2159b5ca2ad266d2692ff70b03e3047760",
+      "size": 423551,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/0d73fe2159b5ca2ad266d2692ff70b03e3047760"
+    },
+    {
+      "path": "config.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7cdd931afdf2808d50cbd7b9bcc98fd108ecdb9",
+      "size": 190,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/c7cdd931afdf2808d50cbd7b9bcc98fd108ecdb9"
+    },
+    {
+      "path": "index.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ef70be58b88cca1025a600153467fc280374132",
+      "size": 1421,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/6ef70be58b88cca1025a600153467fc280374132"
+    },
+    {
+      "path": "index.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "33e063ae6a1cedfc9e1626fc8da51991da6fc2f4",
+      "size": 1450,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/33e063ae6a1cedfc9e1626fc8da51991da6fc2f4"
+    },
+    {
+      "path": "lib",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ea44af0e59264b24278f35de5daca714318a4944",
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/trees/ea44af0e59264b24278f35de5daca714318a4944"
+    },
+    {
+      "path": "lib/AIScheduleTools.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5486479c163de8cb87be2a5c245380f564636800",
+      "size": 12546,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/5486479c163de8cb87be2a5c245380f564636800"
+    },
+    {
+      "path": "lib/cheerio_bundle.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1849982bb9a2c415825d71afc3fc1ff7ff4be74",
+      "size": 1901982,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/c1849982bb9a2c415825d71afc3fc1ff7ff4be74"
+    },
+    {
+      "path": "lib/prism.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "483d00c436649b5b1fa46dcd9064f02587999729",
+      "size": 1901,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/483d00c436649b5b1fa46dcd9064f02587999729"
+    },
+    {
+      "path": "lib/prism.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "386fe140913c5d88100f58a713e2080d9cb0acbc",
+      "size": 17135,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/386fe140913c5d88100f58a713e2080d9cb0acbc"
+    },
+    {
+      "path": "main.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d3187b2883b5fcf5749b9c24b3013bbcc317584",
+      "size": 5759,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/9d3187b2883b5fcf5749b9c24b3013bbcc317584"
+    },
+    {
+      "path": "package-lock.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbfd4c30636133878f5f729d84bba7fe9a023637",
+      "size": 4048,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/dbfd4c30636133878f5f729d84bba7fe9a023637"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dff7d3d6ef8aa711d41647833a4d21d27730060c",
+      "size": 268,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/dff7d3d6ef8aa711d41647833a4d21d27730060c"
+    },
+    {
+      "path": "post.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2825a4c787591dd8c0b749a12f8b20fb0ba205cc",
+      "size": 134350,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/2825a4c787591dd8c0b749a12f8b20fb0ba205cc"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "98da4ad80ad0648451ce1aed6f953f962396eea3",
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/trees/98da4ad80ad0648451ce1aed6f953f962396eea3"
+    },
+    {
+      "path": "src/parser.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e828d3e0ac01cfdba65f447000b467640be338c",
+      "size": 5807,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/9e828d3e0ac01cfdba65f447000b467640be338c"
+    },
+    {
+      "path": "src/provider.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ee21f0012d58aa66fce92f8beada39724ad50c0",
+      "size": 1130,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/7ee21f0012d58aa66fce92f8beada39724ad50c0"
+    },
+    {
+      "path": "src/resources",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a68fbc69f6e1816d02b3277cfd10d2d532addd7d",
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/trees/a68fbc69f6e1816d02b3277cfd10d2d532addd7d"
+    },
+    {
+      "path": "src/resources/20220217.htm",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b61ee2f1172d9ea794ce75b064581669fc86195c",
+      "size": 122119,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/b61ee2f1172d9ea794ce75b064581669fc86195c"
+    },
+    {
+      "path": "src/resources/20220218.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91d358e7531baf1d6adcd4c96beeed9fc42189c5",
+      "size": 106329,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/91d358e7531baf1d6adcd4c96beeed9fc42189c5"
+    },
+    {
+      "path": "src/resources/friday-pm-conflict-hidden.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bcd75ef0f18af17c5e06a73843d14aa5f3e8d726",
+      "size": 65362,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/bcd75ef0f18af17c5e06a73843d14aa5f3e8d726"
+    },
+    {
+      "path": "src/resources/raw_source.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83c0408a0683efda1b6e1b8ab2bdd2822d637dd2",
+      "size": 26256,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/83c0408a0683efda1b6e1b8ab2bdd2822d637dd2"
+    },
+    {
+      "path": "src/resources/raw_source_2.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "802f29069aabe2e872afc8c649f2e67da7ba23d0",
+      "size": 102314,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/802f29069aabe2e872afc8c649f2e67da7ba23d0"
+    },
+    {
+      "path": "src/resources/sample1.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "55e1e9374ca3ecc9b182db79e0d1f70f1ec5433d",
+      "size": 64104,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/55e1e9374ca3ecc9b182db79e0d1f70f1ec5433d"
+    },
+    {
+      "path": "src/resources/sample2.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7058f405a99e1677c6d5c96e2c2a6e5132a6a3dd",
+      "size": 66756,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/7058f405a99e1677c6d5c96e2c2a6e5132a6a3dd"
+    },
+    {
+      "path": "src/timer.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4daaa99066da7d3054fde457da0a7d42dc8d62c6",
+      "size": 1868,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/4daaa99066da7d3054fde457da0a7d42dc8d62c6"
+    },
+    {
+      "path": "tempres.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d49928449394f398c09eca6c3112c546439d55cd",
+      "size": 7348,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/d49928449394f398c09eca6c3112c546439d55cd"
+    },
+    {
+      "path": "教务系统截图.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ba4b330ccc40d1692ba49eb03959aaf34c6a1cf",
+      "size": 161769,
+      "url": "https://api.github.com/repos/greyovo/AIScheduleSCAU/git/blobs/3ba4b330ccc40d1692ba49eb03959aaf34c6a1cf"
+    }
+  ],
+  "truncated": false
+}

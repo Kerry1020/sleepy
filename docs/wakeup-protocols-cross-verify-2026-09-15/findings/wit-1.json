@@ -1,0 +1,20 @@
+{
+  "repo_name": "DOROMOLLL/WITClassScheduleToCalendar",
+  "stars": 1,
+  "default_branch": "master",
+  "license": "MIT",
+  "relevant_files": [
+    {
+      "path": "main.py",
+      "purpose": "Full pipeline: reads a manually downloaded .xls course-table export (via xlrd), locates the day-of-week header row and period-label column by scanning cell text, splits each cell's multi-line lesson string into name/subtitle/weeks/sections/location by line index, expands week ranges, and writes an .ics calendar. The QiangZhi connection is offline only: the user logs into http://jwxt.wit.edu.cn/jsxsd in a browser and clicks 打印 to download the .xls.",
+      "lines_with_protocol": [17, 82, 91, 93, 96, 98, 100, 103, 110, 129, 148]
+    }
+  ],
+  "protocol_approach": "No network protocol at all: the repo never calls any 教务 endpoint; the user manually exports the QiangZhi timetable as .xls from jwxt.wit.edu.cn/jsxsd via the print button, and main.py parses the spreadsheet offline with xlrd. Grid semantics are auto-detected, not hard-coded: cells containing 星期一..星期日 mark the day header (row_start=row+1), cells containing both 第 and 节 mark the period column (col_start=col+1), and the lesson cell text is split on newlines with positional access (lesson[0]=name, lesson[2]=week line, lesson[3]=location, lesson[4]=section line). Weeks are parsed with a bare \\d\\d? scan of the week line: two numbers = one contiguous range, four numbers = two ranges; there is NO 单周/双周 (odd/even) logic and no modulo filtering.",
+  "exact_regex_or_code_snippet": "pattern2 = re.compile(r'\\d\\d?')\nw = pattern2.findall(lesson[2])\norder = pattern1.findall(lesson[4])\norder_start, order_end = int(order[0]), int(order[1])\nif len(w) == 2:\n    availWeeks = list(range(int(w[0]), int(w[1]) + 1))\nelif len(w) == 4:\n    availWeeks = list(range(int(w[0]), int(w[1]) + 1)) + list(range(int(w[2]), int(w[3]) + 1))",
+  "verdict": "INDIRECT",
+  "verdict_reason": "Confirmed QiangZhi-family (武汉工程大学 jwxt.wit.edu.cn/jsxsd, README self-describes as 强智) but the parsing target is an offline .xls export, not the xskb_list.do endpoint nor .kbcontent HTML cells, and it lacks 单周/双周 odd/even semantics, so it neither confirms nor contradicts Sleepy's QiangZhi HTTP parsing claims.",
+  "sleepy_claim_check": {
+    "强智 xskb_list.do + .kbcontent 解析形态": "differs vs this repo — this repo has zero HTTP code and no xskb_list.do or .kbcontent references anywhere in main.py; its only overlap with Sleepy is the QiangZhi vendor identity and the week-range + section-coordinate concept"
+  }
+}

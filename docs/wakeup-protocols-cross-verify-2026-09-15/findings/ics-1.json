@@ -1,0 +1,20 @@
+{
+  "repo_name": "Konata09/getICS",
+  "stars": 1,
+  "default_branch": "master",
+  "license": "NOASSERTION",
+  "relevant_files": [
+    {
+      "path": "getICS.js",
+      "purpose": "Single-file Node.js script: logs into 强智 教务 via app.do authUser, fetches timetable week-by-week via app.do getKbcxAzc JSON API, converts each course entry (kcsj/kssj/jssj/jsmc/jsxm/kcmc) to an iCalendar VEVENT. README confirms 适用于强智教务系统.",
+      "lines_with_protocol": [55, 58, 80, 82, 85, 86, 91, 94, 117, 128]
+    }
+  ],
+  "protocol_approach": "This repo does NOT parse the 强智 web timetable HTML (no xskb_list.do, no .kbcontent, no HTML regexes). It uses the 强智 mobile-app JSON API instead: POST-free GET login at /app.do?method=authUser&xh=&pwd= returning a token, then /app.do?method=getKbcxAzc&xh=&xnxqid=&zc= queried once per week (zc=1..31). Odd/even-week (单/双周) courses are handled implicitly by the per-week loop — a course only appears in the weeks it actually meets — rather than by parsing week-token strings. Day coordinate is taken as the first character of the kcsj field (weekday 1-7), mapped to an absolute date by adding day-1 to the configured first-semester Monday.",
+  "exact_regex_or_code_snippet": "url: `http://${conf.site}/app.do?method=getKbcxAzc&xh=${conf.xh}&xnxqid=${conf.xnxqid}&zc=${zc}` ; login: url: `http://${conf.site}/app.do?method=authUser&xh=${conf.xh}&pwd=${conf.password}` ; day mapping: let day = data[event].kcsj.slice(0, 1); curday = monday.add(day - 1, 'day'); ; only regexes present are time-formatting: data[event].kssj.replace(/:/, '') and data[event].jssj.replace(/:/, '')",
+  "verdict": "INDIRECT",
+  "verdict_reason": "Genuinely a 强智 (QiangZhi) timetable-to-ICS exporter confirming the vendor's ecosystem, but it implements the app.do mobile JSON protocol variant (getKbcxAzc/authUser), not Sleepy's claimed xskb_list.do + .kbcontent HTML parsing form; it contains zero HTML regexes and zero 单/双周 token logic, so it neither matches nor contradicts the specific claim.",
+  "sleepy_claim_check": {
+    "强智 xskb_list.do + .kbcontent 解析形态": "differs vs this repo — repo uses /app.do?method=getKbcxAzc (mobile JSON API, per-week zc loop with implicit odd/even handling) instead of xskb_list.do HTML form with .kbcontent cells and 单/双周 token parsing"
+  }
+}
