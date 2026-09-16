@@ -57,6 +57,7 @@ import com.lingion.sleepy.data.jw.JwSchoolInfo
 import com.lingion.sleepy.data.jw.UcasDetailFetch
 import com.lingion.sleepy.data.parser.ScheduleParser
 import com.lingion.sleepy.ui.component.DatePickerField
+import com.lingion.sleepy.ui.component.PeriodTableOption as TimeSlotEditorPeriodTableOption
 import com.lingion.sleepy.ui.component.TimeSlotEditor
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -111,6 +112,8 @@ class JwImportActivity : ComponentActivity() {
             SleepyThemeProvider(darkTheme = dark, themeKey = themeKey) {
                 val jwViewModel: JwImportViewModel = viewModel()
                 val scheduleViewModel: ScheduleViewModel = viewModel()
+                // v1.0.56 T6: 第三 Tab「作息表」数据源 — 绑定现有作息表直接用
+                val allPeriodTables by scheduleViewModel.allPeriodTables.collectAsState(initial = emptyList())
                 val scope = rememberCoroutineScope()
                 val draftRepository = SleepyApp.get().importDraftRepository
                 val incomingDraftId = intent.getStringExtra(EXTRA_DRAFT_ID)
@@ -137,6 +140,8 @@ class JwImportActivity : ComponentActivity() {
                 // issue#28 P2: 自动模式"添加课间"的状态 — 旧代码没传 smartConfig/
                 // onSmartConfigChange, 落到默认 no-op 回调, 点击无效。
                 var configSmartConfig by remember { mutableStateOf(SmartPeriodConfig()) }
+                // v1.0.56 T6: 第三 Tab 绑定选择 — null=未绑定(用教务解析出的节次); 落库时同步 periodTableId
+                var configBindPeriodTableId by remember { mutableStateOf<Long?>(null) }
                 // 用户可改的导入课表名; 初值 = "教务导入 - {学校名}"; 留空 = 沿用初值
                 var configTableName by remember(parsedSchool) {
                     mutableStateOf(
@@ -293,7 +298,14 @@ class JwImportActivity : ComponentActivity() {
                                             checkpointDraft()
                                         },
                                         smartConfig = configSmartConfig,
-                                        onSmartConfigChange = { configSmartConfig = it; checkpointDraft() }
+                                        onSmartConfigChange = { configSmartConfig = it; checkpointDraft() },
+                                        // v1.0.56 T6: 第三 Tab「作息表」— 选一张现有作息表直接用;
+                                        // 不选 = 用教务解析出的节次(内置)
+                                        periodTableOptions = allPeriodTables.map {
+                                            TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                        },
+                                        selectedPeriodTableId = configBindPeriodTableId,
+                                        onSelectPeriodTable = { configBindPeriodTableId = it }
                                     )
                                 }
                             },
@@ -332,6 +344,10 @@ class JwImportActivity : ComponentActivity() {
                                                 nodesPerDay = maxNode,
                                                 smartConfigJson = Json.encodeToString(configSmartConfig)
                                             )
+                                            // v1.0.56 T6: 选了作息表 Tab → 导入的课表直接绑定该表(节次以表为准)
+                                            if (configBindPeriodTableId != null) {
+                                                scheduleViewModel.bindPeriodTable(tableId, configBindPeriodTableId)
+                                            }
                                             draftId?.let { draftRepository.delete(it) }
                                             Log.d("JwImport", "importAsNewTable tableId=$tableId courses=${parsedCourses.size}")
                                             statusMsg = getString(R.string.jw_import_success, parsedCourses.size)

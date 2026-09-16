@@ -60,6 +60,7 @@ import com.lingion.sleepy.data.entity.TimeTableEntity
 import com.lingion.sleepy.util.DateUtils
 import com.lingion.sleepy.util.TimeTableUtils
 import com.lingion.sleepy.ui.component.DatePickerField
+import com.lingion.sleepy.ui.component.PeriodTableOption as TimeSlotEditorPeriodTableOption
 import com.lingion.sleepy.ui.component.TimeSlotEditor
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -112,7 +113,7 @@ fun EditTableScreen(
     // issue#40: 换绑选择(§5.3) — null 起始 = 未动过; 确认时才写 periodTableId。
     // pendingBind != table.periodTableId 时保存流程走换绑分支。
     var pendingBind by remember(table.id, table.periodTableId) { mutableStateOf<Long?>(table.periodTableId) }
-    var bindExpanded by remember { mutableStateOf(false) }
+    // v1.0.56 T6: bindExpanded 已随独立换绑卡拆除 — 绑定入口唯一化(第三 Tab)
     // issue#40 §5.3: 换绑确认弹窗 — 非 null 时弹「确认换绑」, 确认才真正写 periodTableId
     var pendingRebind by remember { mutableStateOf<Long?>(null) }
 
@@ -220,66 +221,8 @@ fun EditTableScreen(
                 }
             }
 
-            // issue#40 §4.3: 时间节次表选择项 — 选择只改 periodTableId, 课程行不复制不搬移
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(SleepyTheme.shapes.extraLarge)
-                        .background(colors.surfaceContainer)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .noRippleClickable { bindExpanded = !bindExpanded }
-                            .padding(16.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.period_table_bind_label),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = colors.onSurface
-                            )
-                            Text(
-                                text = allPeriodTables.find { it.id == pendingBind }?.name
-                                    ?: stringResource(R.string.period_table_unbound),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            Icons.Outlined.ExpandMore,
-                            contentDescription = null,
-                            tint = colors.onSurfaceVariant,
-                            modifier = Modifier.rotate(if (bindExpanded) 180f else 0f)
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = bindExpanded,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                            // 未绑定选项 = 解绑(回退本表兼容列)
-                            BindOptionRow(
-                                title = stringResource(R.string.period_table_unbound),
-                                selected = pendingBind == null,
-                                onClick = { pendingBind = null }
-                            )
-                            allPeriodTables.forEach { pt ->
-                                BindOptionRow(
-                                    title = pt.name,
-                                    selected = pendingBind == pt.id,
-                                    onClick = { pendingBind = pt.id }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            // v1.0.56 T6: 原独立「时间节次表」换绑卡已拆 — 绑定选择收编进下方节次编辑卡
+            // 的第三 Tab「作息表」(未绑定/选中语义零变化, pendingBind 保存链原样)
 
             // 节次时间表（可折叠）
             item {
@@ -325,6 +268,8 @@ fun EditTableScreen(
                         Column(
                             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                         ) {
+                            // v1.0.56 T6: 第三 Tab「作息表」= 原独立换绑卡收编于此(卡已拆,
+                            // 未绑定/选中语义零变化, pendingBind 保存链原样)
                             TimeSlotEditor(
                                 rows = slotRows.toList(),
                                 onRowsChange = { newRows ->
@@ -332,7 +277,12 @@ fun EditTableScreen(
                                     slotRows.addAll(newRows)
                                 },
                                 smartConfig = smartConfig.value,
-                                onSmartConfigChange = { smartConfig.value = it }
+                                onSmartConfigChange = { smartConfig.value = it },
+                                periodTableOptions = allPeriodTables.map {
+                                    TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                },
+                                selectedPeriodTableId = pendingBind,
+                                onSelectPeriodTable = { pendingBind = it }
                             )
                         }
                     }
@@ -506,35 +456,5 @@ private fun CardSection(title: String, subtitle: String, content: @Composable ()
     }
 }
 
-/** issue#40 §4.3: 换绑下拉的选项行 — 选中态=primaryContainer 色块+对勾(UI 纯色块禁描边规则) */
-@Composable
-private fun BindOptionRow(title: String, selected: Boolean, onClick: () -> Unit) {
-    val colors = SleepyTheme.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(SleepyTheme.shapes.medium)
-            .background(if (selected) colors.primaryContainer else colors.surface)
-            .noRippleClickable(onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (selected) colors.onPrimaryContainer else colors.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        if (selected) {
-            Icon(
-                Icons.Outlined.Check,
-                contentDescription = null,
-                tint = colors.onPrimaryContainer,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-    }
-}
-
-
+// BindOptionRow 已删(issue#40 §4.3 换绑卡拆除) — 选项行 UI 由 TimeSlotEditor 第三 Tab
+// 的 BindChoiceRow 接管(v1.0.56 T6, 样式同构 primaryContainer 色块+对勾)
