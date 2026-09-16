@@ -1,0 +1,30 @@
+{
+  "issue": 46,
+  "verdicts": [
+    {"repo": "Chiu-xaH/HFUT-Schedule", "verdict": "POSITIVE", "protocol_features": ["timetable-layout POST {timeTableLayoutId}", "courseUnitList 节次表", "datum 四段链"], "reuse": "协议对齐参照 (不抄代码): 布局端点 + courseUnitList 数据形态"},
+    {"repo": "hfut-soft-ware/hfut-api", "verdict": "POSITIVE", "protocol_features": ["timetable-layout", "bizTypeId 2=合肥 23=宣城"], "reuse": "bizTypeId 校区语义旁证"},
+    {"repo": "SnowingFox/hfut-api", "verdict": "POSITIVE", "protocol_features": ["timetable-layout"], "reuse": "同上"},
+    {"repo": "onlineG2/hfut_api_service", "verdict": "POSITIVE", "protocol_features": ["timetable-layout"], "reuse": "同上"},
+    {"repo": "BrikerMan/HFUTer", "verdict": "POSITIVE", "protocol_features": ["startTime==unit.startTime → index 精确映射节次"], "reuse": "布局查表映射算法参照"},
+    {"repo": "ssyu0808/HFUTICS", "verdict": "POSITIVE", "protocol_features": ["四段链同款"], "reuse": "现网链正确性旁证"},
+    {"repo": "imnuke/AiSchedule-for-hfut", "verdict": "INDIRECT", "protocol_features": ["sectionTimes 硬编码 11 节"], "reuse": "反面教材佐证: 硬编码节次表不可移植"},
+    {"repo": "HualiNox/AISchedule", "verdict": "POSITIVE", "protocol_features": ["timeTableLayout → courseUnitList sections"], "reuse": "同族部署 (安庆师大) 布局端点通用性旁证"},
+    {"repo": "luyishui/classduck", "verdict": "POSITIVE", "protocol_features": ["kcjson.timeTableLayoutId → timetable-layout → courseUnitList"], "reuse": "布局+datum 联合回传形态旁证"},
+    {"repo": "abydym/Ahu_Plus", "verdict": "POSITIVE", "protocol_features": ["courseUnitList ?: defaultUnitTimes() 兜底"], "reuse": "服务端布局优先+本地兜底的双层结构参照"},
+    {"repo": "kirsh1/ustc-timetable", "verdict": "POSITIVE", "protocol_features": ["byStartTime=unit.startTime→indexNo; 查不到按区间落点"], "reuse": "节点解析算法同构参照 (USTC 同金智族)"},
+    {"repo": "HowardZorn/ustc-course-timetable", "verdict": "INDIRECT", "protocol_features": ["ics 绝对时间"], "reuse": "无"},
+    {"repo": "wjh776a68/HFUT-Class-Schedule", "verdict": "NEGATIVE", "protocol_features": [], "reuse": "无"},
+    {"repo": "chiseisyu0420/HFUT-Campus-iOS", "verdict": "NEGATIVE", "protocol_features": [], "reuse": "无"}
+  ],
+  "root_cause": {
+    "defect": "D1: inferNodes 硬编码 985 标准 5 段节次表 (08:00/10:10/14:00/16:10/19:00), 合工大宣城校区实际 12 节次布局 (courseUnitList: 800/855/1000/1055/1400/1455/1550/1645/1740/1920/2015/2110)",
+    "evidence": "采集包 datum 122 行: (1550,1730)×10 行 → 现 heuristic 落 null → 兜底 node1..periods (错到上午); (1920,2100)×8 行 → section4 → node 9-10 (差 1, 真值 10-11); 共 18/122 行 (15%) 节次错",
+    "fix": "JS 链第 3.5 段: get-data 响应里的 timeTableLayoutId → POST /ws/schedule-table/timetable-layout → result.courseUnitList; ①嵌入 datum payload 顶层 courseUnitList 供 parser 精确映射 ②以 periods[] 回传供确认页作息表预填; parser 无 courseUnitList 时走原 heuristic (CUMTB/老包不回归)"
+  },
+  "secondary_findings": [
+    {"id": "D2", "finding": "门户 one.hfut.edu.cn 上线课表预览卡 GET /api/operation/course-timetable/search/1/<date> (Bearer token, 本周+下周共 12 行, skjc=起始节次/cxjc=节数)", "action": "拦截策略不变 (门户数据非全学期); 文案从「门户没有课表数据」改为准确表述"},
+    {"id": "V1", "finding": "现网四段链在本包完全走通: studentId=178619, bizTypeId=23, get-data lessonIds 13, datum 122 行全 publish (服务端已按 lessonId2Flag 过滤, 客户端无需过滤)", "action": "无改动 — #25 修复实锤有效"},
+    {"id": "V2", "finding": "dataId=studentId=178619 实锤 (info 页 URL /info/178619 与 get-data dataId 同值)", "action": "无改动"},
+    {"id": "V3", "finding": "datum lessonList: courseName=课程名, name=教学班 (adminclass 逗号串); parser 读 courseName 正确", "action": "无改动"}
+  ]
+}
