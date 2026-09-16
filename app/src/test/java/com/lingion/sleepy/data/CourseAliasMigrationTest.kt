@@ -149,10 +149,7 @@ class CourseAliasMigrationTest {
                 )
             }
         }
-        assertTrue(
-            "chain must reach version 6 (AppDatabase current)",
-            chain.last().endVersion >= 6
-        )
+        assertEquals("migration chain must reach version 8 (AppDatabase current)", 8, chain.last().endVersion)
         assertTrue(
             "MIGRATION_5_6 must be registered in ALL_MIGRATIONS",
             chain.any { it.startVersion == 5 && it.endVersion == 6 }

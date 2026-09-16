@@ -82,6 +82,10 @@ internal object SleepyNativeParser {
         val nodeTimes = sortedMapOf<Int, Pair<LocalTime, LocalTime>>()
         val ndApplied = mutableSetOf<Int>()
         var ndSeen = false
+        // issue#40: P 区块解析态
+        var pdSeen = false
+        val periodHeaders = mutableListOf<PeriodHeaderInfo>()
+        val periodNodeTimes = sortedMapOf<Int, Pair<LocalTime, LocalTime>>()
         val seenExactLines = mutableSetOf<String>()
         var seenCourseLines = false
         var secondTableHeader = false
@@ -127,6 +131,20 @@ internal object SleepyNativeParser {
                         parseNodeLine(line, nodeTimes, dropped)
                     }
                 }
+                "P" -> {
+                    // issue#40 §6: 独立时间节次表区块 — P(头) / Pd(预设) / Pn(逐节)。
+                    // 旧版本把 P 系行走"未知行类型"通道丢弃并上报; 本版本解析恢复共享关系。
+                    if (line.length >= 2 && (line[1] == 'd' || line[1] == 'D')) {
+                        pdSeen = true
+                    } else if (line.length >= 3 && (line[1] == 'n' || line[1] == 'N') && line[2] !in "|\\") {
+                        parsePeriodNodeLine(line.substring(2), periodNodeTimes, dropped)
+                    } else if (line.contains('|')) {
+                        parsePeriodHeader(line, periodHeaders, dropped, warnings)
+                    } else {
+                        // 裸 P / Pd 变体残缺 — 上报不硬拒
+                        dropped.add(shorten(line))
+                    }
+                }
                 "C" -> {
                     seenCourseLines = true
                     seenExactLines.add(line)
@@ -149,6 +167,26 @@ internal object SleepyNativeParser {
                     nodeTimes[node] = SleepyNativeFormat.ND_PRESET[i]
                 }
             }
+        }
+
+        // issue#40: Pd 展开(同 ND_PRESET 常量) + periodTable 组装
+        if (pdSeen && periodHeaders.isNotEmpty()) {
+            for (i in SleepyNativeFormat.ND_PRESET.indices) {
+                val node = i + 1
+                if (!periodNodeTimes.containsKey(node)) {
+                    periodNodeTimes[node] = SleepyNativeFormat.ND_PRESET[i]
+                }
+            }
+        }
+        val periodTable: ScheduleParser.ParsedPeriodTable? = periodHeaders.firstOrNull()?.let { h ->
+            if (periodNodeTimes.isEmpty()) null else ScheduleParser.ParsedPeriodTable(
+                sourceId = h.sourceId,
+                name = h.name,
+                nodesPerDay = h.nodesPerDay,
+                timeJson = periodNodeTimes.entries.joinToString(",", "[", "]") { (node, se) ->
+                    """{"node":$node,"start":"${SleepyNativeFormat.fmtTime(se.first)}","end":"${SleepyNativeFormat.fmtTime(se.second)}"}"""
+                }
+            )
         }
 
         // chk 校验(§6.3-Q: 警告不硬拒)
@@ -220,7 +258,8 @@ internal object SleepyNativeParser {
             droppedLines = dropped,
             warnings = warnings,
             maxWeek = maxWeekClamped ?: 20,
-            groupIdsAuthoritative = true
+            groupIdsAuthoritative = true,
+            periodTable = periodTable
         )
     }
 
@@ -282,6 +321,59 @@ internal object SleepyNativeParser {
         }
         if (nodeTimes.containsKey(nodeNo)) {
             dropped.add(shorten(line))  // 重复节号: 首行生效
+            return
+        }
+        nodeTimes[nodeNo!!] = start!! to end!!
+    }
+
+    // ---- P 区块 (issue#40 §6: 独立时间节次表) ----
+
+    /** P 行表级信息(名/源 id/节数) */
+    private data class PeriodHeaderInfo(
+        val name: String,
+        val sourceId: Long,
+        val nodesPerDay: Int
+    )
+
+    /** P|name|id|nodesPerDay — 形状非法 → dropped(不硬拒, 退回兼容列) */
+    private fun parsePeriodHeader(
+        line: String,
+        into: MutableList<PeriodHeaderInfo>,
+        dropped: MutableList<String>,
+        warnings: MutableList<String>
+    ) {
+        // into 最多收一条 — 二次 P 头 = 形状异常, 丢弃上报
+        if (into.isNotEmpty()) { dropped.add(shorten(line)); return }
+        val body = line.substring(1)
+        val cols = splitRespectingEscape(body)
+        val name = SleepyNativeFormat.unescape(cols.getOrNull(0)?.trim() ?: "")
+        val id = cols.getOrNull(1)?.trim()?.toLongOrNull()
+        val npd = cols.getOrNull(2)?.trim()?.toIntOrNull()
+        if (name.isEmpty() || id == null || id < 1) {
+            dropped.add(shorten(line))
+            warnings.add("时间节次表区块无法解析，已退回课程表内作息")
+            return
+        }
+        into.add(PeriodHeaderInfo(name, id, npd ?: 12))
+    }
+
+    /** Pn 节次行: 同 N 行文法(node|start|end) */
+    private fun parsePeriodNodeLine(
+        body: String,
+        nodeTimes: MutableMap<Int, Pair<LocalTime, LocalTime>>,
+        dropped: MutableList<String>
+    ) {
+        val cols = splitRespectingEscape(body)
+        val nodeNo = cols.getOrNull(0)?.trim()?.toIntOrNull()
+        val start = cols.getOrNull(1)?.let { SleepyNativeFormat.parseClock(it) }
+        val end = cols.getOrNull(2)?.let { SleepyNativeFormat.parseClock(it) }
+        val ok = nodeNo != null && nodeNo > 0 && start != null && end != null && start.isBefore(end)
+        if (!ok) {
+            dropped.add(shorten("Pn$body"))
+            return
+        }
+        if (nodeTimes.containsKey(nodeNo)) {
+            dropped.add(shorten("Pn$body"))  // 重复节号: 首行生效
             return
         }
         nodeTimes[nodeNo!!] = start!! to end!!

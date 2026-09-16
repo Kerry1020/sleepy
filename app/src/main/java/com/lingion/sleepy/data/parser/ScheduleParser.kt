@@ -1319,6 +1319,19 @@ object ScheduleParser {
         /** sleepy-v1: 总周数由解析端声明(修 P2 "maxWeek 写不读"); 0 = 旧路径未声明 */
         val maxWeek: Int = 0,
         /** sleepy-v1: groupId 已由解析端权威生成, 落库必须绕过 assignGroupIds (§3.4 契约一) */
-        val groupIdsAuthoritative: Boolean = false
+        val groupIdsAuthoritative: Boolean = false,
+        /**
+         * issue#40 §6: sleepy-v1 P 区块解析出的独立时间节次表。
+         * null = 旧格式/未携带 — 导入流程须为每张课表各建一张(不误共享)。
+         */
+        val periodTable: ParsedPeriodTable? = null
+    )
+
+    /** P 区块解析产物: sourceId = 导出时的 period_tables.id(恢复共享关系的键) */
+    data class ParsedPeriodTable(
+        val sourceId: Long,
+        val name: String,
+        val nodesPerDay: Int,
+        val timeJson: String
     )
 }

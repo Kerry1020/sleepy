@@ -6,20 +6,23 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.lingion.sleepy.data.dao.CourseDao
 import com.lingion.sleepy.data.dao.ImportDraftDao
+import com.lingion.sleepy.data.dao.PeriodTableDao
 import com.lingion.sleepy.data.dao.TimeTableDao
 import com.lingion.sleepy.data.entity.CourseEntity
 import com.lingion.sleepy.data.entity.ImportDraftEntity
+import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.TimeTableEntity
 
 @Database(
-    entities = [CourseEntity::class, TimeTableEntity::class, ImportDraftEntity::class],
-    version = 7,                            // 6 → 7: 持久化导入草稿快照
+    entities = [CourseEntity::class, TimeTableEntity::class, PeriodTableEntity::class, ImportDraftEntity::class],
+    version = 8,                            // 7 → 8: 独立时间节次表 (issue#40; v7 已被 issue#39 import_drafts 占用)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
     abstract fun timeTableDao(): TimeTableDao
+    abstract fun periodTableDao(): PeriodTableDao
     abstract fun importDraftDao(): ImportDraftDao
 
     companion object {
