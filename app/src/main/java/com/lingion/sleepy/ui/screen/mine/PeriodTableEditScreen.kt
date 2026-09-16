@@ -397,12 +397,27 @@ fun PeriodTableEditScreen(
                         ),
                         color = colors.onSurfaceVariant
                     )
-                    // 逐课旧时间→新时间(§5.2), 最多列 8 行防溢出
+                    // 逐课旧时间→新时间(§5.2) + 变化节次标注, 最多列 8 行防溢出。
+                    // 2026-09-16 用户要求: 改早八必须列出所有第一节课的课程名+几点到几点。
                     pendingPreview!!.changedCourses.take(8).forEach { change ->
+                        val oldT = change.oldTime ?: "?"
+                        val newT = change.newTime ?: "?"
+                        val nodesTag = if (change.changedNodes.size == 1) {
+                            context.getString(R.string.course_node_format, change.changedNodes.first().toString())
+                        } else {
+                            "${change.changedNodes.first()}-${change.changedNodes.last()}"
+                        }
                         Text(
-                            "${change.courseName}: ${change.oldTime ?: "?"} → ${change.newTime ?: "?"}",
+                            "${change.courseName}($nodesTag): $oldT → $newT",
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.onSurface
+                        )
+                    }
+                    if (pendingPreview!!.changedCourses.size > 8) {
+                        Text(
+                            stringResource(R.string.period_table_preview_more, pendingPreview!!.changedCourses.size - 8),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant
                         )
                     }
                 }

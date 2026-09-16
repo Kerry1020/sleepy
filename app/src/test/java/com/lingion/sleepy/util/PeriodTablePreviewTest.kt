@@ -123,4 +123,68 @@ class PeriodTablePreviewTest {
         assertTrue(preview.changedCourses.isEmpty())
         assertEquals(0, preview.unchangedCount)
     }
+
+    // ========== 2026-09-16 用户实测报障: 改早八(第1节)时间, 预览报 0 变化 41 不变 ==========
+
+    /** 用户场景: 第1节结束时间改掉(拉长早八), 第一节的课必须全部列出旧→新 */
+    @Test
+    fun user_scenario_editing_first_period_lists_all_first_period_courses() {
+        // 新表: 第1节 08:00-08:45 → 08:00-09:20 (用户拉长早八), 其余节原样
+        val edited = """
+            [{"node":1,"start":"08:00","end":"09:20"},
+             {"node":2,"start":"08:55","end":"09:40"},
+             {"node":3,"start":"10:00","end":"10:45"},
+             {"node":4,"start":"10:55","end":"11:40"}]
+        """.trimIndent()
+        val courses = listOf(
+            course("高数", startNode = 1, step = 1),
+            course("英语", startNode = 1, step = 2),
+            course("体育", startNode = 3, step = 2)
+        )
+        val preview = TimeTableUtils.previewPeriodTableChange(oldJson, edited, courses)
+        assertEquals("第一节相关课必须全部报变化", 2, preview.changedCourses.size)
+        val names = preview.changedCourses.map { it.courseName }.sorted()
+        assertEquals(listOf("英语", "高数"), names)
+        val gaoshu = preview.changedCourses.first { it.courseName == "高数" }
+        assertEquals("08:00-08:45", gaoshu.oldTime)
+        assertEquals("08:00-09:20", gaoshu.newTime)
+        assertEquals(1, preview.unchangedCount)
+    }
+
+    /** 41 门课全量走一遍 — 真实数据规模(连堂 1-2 节为主)下第一节变化必须全部被检出 */
+    @Test
+    fun large_batch_first_period_change_not_swallowed() {
+        val edited = oldJson.replace("08:45", "09:20")
+        // 用户真实形态: 40 门全是 1-2 节连堂早八 + 1 门 3-4 节课
+        val courses = (1..40).map { course("课$it", startNode = 1, step = 2) } +
+            listOf(course("体育", startNode = 3, step = 2))
+        val preview = TimeTableUtils.previewPeriodTableChange(oldJson, edited, courses)
+        assertEquals("40 门早八连堂课必须全部报变化", 40, preview.changedCourses.size)
+        assertEquals(1, preview.unchangedCount)
+    }
+
+    /** 周次类型(0/1/2/3)不影响时间解释 — 双周课的早八同样要报变化 */
+    @Test
+    fun week_type_does_not_block_time_interpretation() {
+        val edited = oldJson.replace("08:45", "09:20")
+        val base = course("大物", startNode = 1, step = 2)
+        val variants = listOf(0, 1, 2, 3).map { t -> base.copy(type = t) }
+        val preview = TimeTableUtils.previewPeriodTableChange(oldJson, edited, variants)
+        assertEquals("四种周次类型的早八课全部要报变化", 4, preview.changedCourses.size)
+    }
+
+    /** 编辑页面 newTimeJson 由 buildTimeJsonFromRows 生成 — 往返后预览必须仍能检出 */
+    @Test
+    fun roundtrip_through_buildTimeJsonFromRows_preserves_change_detection() {
+        val editedRows = TimeTableUtils.parseTimeSlotRows(oldJson).map {
+            if (it.node == 1) it.copy(end = "09:20") else it
+        }
+        val editedJson = TimeTableUtils.buildTimeJsonFromRows(editedRows)
+        val courses = listOf(course("高数", startNode = 1, step = 2))
+        val preview = TimeTableUtils.previewPeriodTableChange(oldJson, editedJson, courses)
+        assertEquals(1, preview.changedCourses.size)
+        // 连堂课展示对 = 首节开始-末节结束(1-2 节 → 08:00-09:40, 末节未动)
+        assertEquals("08:00-09:40", preview.changedCourses.first().newTime)
+        assertEquals("变化节次必须精确指向第 1 节", listOf(1), preview.changedCourses.first().changedNodes)
+    }
 }

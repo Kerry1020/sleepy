@@ -762,6 +762,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="period_table_nodes_count">%1$d períodos/día</string>
     <string name="period_table_save_preview_title">Vista previa</string>
     <string name="period_table_preview_summary">Afecta a %1$d horario(s): %2$d cursos cambian de hora, %3$d sin cambios</string>
+    <string name="period_table_preview_more">…y %1$d cursos más</string>
     <string name="period_table_preview_confirm">Guardar</string>
     <string name="period_table_bind_preview_title">Confirmar cambio</string>
     <string name="period_table_bind_preview_body">Tras cambiar, este horario interpreta los períodos según el nuevo horario de períodos; los cursos con hora propia no se afectan</string>

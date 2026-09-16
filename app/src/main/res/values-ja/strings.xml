@@ -762,6 +762,7 @@
     <string name="period_table_nodes_count">%1$d 時限/日</string>
     <string name="period_table_save_preview_title">保存前に確認</string>
     <string name="period_table_preview_summary">%1$d 件の時間割に影響：%2$d 件の時刻が変化、%3$d 件は変更なし</string>
+    <string name="period_table_preview_more">…ほか %1$d 件のコマ</string>
     <string name="period_table_preview_confirm">保存</string>
     <string name="period_table_bind_preview_title">切り替え確認</string>
     <string name="period_table_bind_preview_body">切り替え後、この時間割は新しい時程表で時限を解釈します。カスタム時刻の授業は影響しません</string>
