@@ -56,6 +56,13 @@ class AboutLicenseAttributionTest {
         Attribution("HfutOpenApi", "BoynChan"),
         Attribution("hfut_schedule_hacker", "Aoi-cn"),
         Attribution("django-hfut-auth", "elonzh"),
+        Attribution("hfut-api", "hfut-soft-ware"),
+        Attribution("hfut_api_service", "onlineG2"),
+        Attribution("HFUTer", "BrikerMan"),
+        Attribution("HFUTICS", "ssyu0808"),
+        Attribution("AiSchedule-for-hfut", "imnuke"),
+        Attribution("AISchedule", "HualiNox"),
+        Attribution("classduck", "luyishui"),
         // 东南大学 SEU
         Attribution("SEUTimetable", "Apache-2.0"),
         Attribution("Aetik-yue/hormone", ""),
@@ -64,6 +71,8 @@ class AboutLicenseAttributionTest {
         Attribution("zju-ical-py", "LGPL-2.1"),
         // 中国科学技术大学 USTC
         Attribution("USTC-timetable-to-ics", ""),
+        Attribution("ustc-course-timetable", "HowardZorn"),
+        Attribution("ustc-timetable", "kirsh1"),
         // 四川大学 SCU
         Attribution("ScuTimetable", ""),
         // 东北大学 NEU
@@ -144,6 +153,7 @@ class AboutLicenseAttributionTest {
         Attribution("Bloomberg2000/bjfu_util.py", ""),
         // 安徽大学 AHU
         Attribution("Tonyseth/AHU_JW_GPA_Calculator", ""),
+        Attribution("Ahu_Plus", "abydym"),
         // 东北林业大学 NEFU
         Attribution("bboy-xp/nefu-crawler", ""),
         Attribution("heyMahalo/crouse_select", ""),

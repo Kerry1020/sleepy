@@ -164,7 +164,32 @@ fun JwWebViewLoginScreen(
                         scope.launch { snackbar.showSnackbar(fetchNoCoursesMsg) }
                     }
                     val termStartDate = obj.optString("startDate", "")
-                    onHtmlCaptured(data, school, periods, termStartDate)
+                    // YETHAN: config 抓了但旧实现无人消费 (死载荷)。采集包
+                    // yethan_common-config.json 实锤 data.termLessonStr =
+                    // "08:00-08:45,08:50-09:35,…" (courseSysDayLesson 个 HH:MM-HH:MM 槽),
+                    // data.termStartDate = 开学日 → 填 periods/startDate, 用户免手填节次。
+                    var termStart = termStartDate
+                    if (periods.isEmpty() && school.type == JwProtocol.TYPE_YETHAN) {
+                        try {
+                            val cfg = obj.optJSONObject("yethanConfig")?.optJSONObject("data")
+                            val lessonStr = cfg?.optString("termLessonStr").orEmpty()
+                            if (lessonStr.isNotBlank()) {
+                                val slots = lessonStr.split(',').mapNotNull { seg ->
+                                    val p = seg.trim().split('-')
+                                    if (p.size == 2) p[0].trim() to p[1].trim() else null
+                                }
+                                periods.addAll(slots.mapIndexed { i, (s, e) ->
+                                    Triple(i + 1, s, e)
+                                })
+                            }
+                            val cfgStart = cfg?.optString("termStartDate").orEmpty()
+                            if (termStart.isBlank() && cfgStart.isNotBlank()) termStart = cfgStart
+                        } catch (e: Exception) {
+                            Log.w("JwWebView", "yethanConfig parse failed", e)
+                        }
+                    }
+                    val effectiveStartDate = termStart.ifBlank { termStartDate }
+                    onHtmlCaptured(data, school, periods, effectiveStartDate)
                 }
             } else {
                 val err = obj.optString("err", "")
@@ -776,7 +801,21 @@ private const val YETHAN_FETCH_JS = """
     var token = '';
     try { token = localStorage.getItem('ytoken') || ''; } catch(e) {}
     if (!token) {
-      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'未取到登录凭据，请先登录逐专平台后再点导入'}));
+      // 按页面标记区分卡点 (2026-09-16 用户复测: 微信扫码页点导入, 旧文案不指路):
+      //   ① 微信扫码页: 「使用微信扫一扫登录」/「微信登录」入口标记
+      //   ② 账号密码页: password 输入框
+      //   ③ 其余: 通用文案
+      var pageHint = '';
+      try {
+        var lower = (document.body ? document.body.innerText : '') || '';
+        if (lower.indexOf('使用微信扫一扫登录') >= 0 || lower.indexOf('微信登录') >= 0) {
+          pageHint = '当前停在微信扫码登录页：请用微信扫码并确认，或点「微信登录」旁的切换按钮改用账号密码登录，登录完成后再点导入';
+        } else if (document.querySelector('input[type="password"]')) {
+          pageHint = '当前停在账号密码登录页：请输入学号密码和验证码完成登录，登录完成后再点导入';
+        }
+      } catch(e2) {}
+      if (!pageHint) pageHint = '未取到登录凭据，请先登录逐专平台后再点导入';
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:pageHint}));
       return;
     }
     var headers = {Accept:'application/json', 'ytoken':token};
@@ -1278,11 +1317,12 @@ private const val EAMS5_FETCH_JS = """
 (function(){
   try {
     if (location.hostname === 'one.hfut.edu.cn') {
-      // issue #25: 门户 (统一信息门户) 不是教务 — 门户 SPA 无课表数据,
-      // 且 'one.hfut.edu.cn'.indexOf('hfut.edu.cn') >= 0 会误过下方弱包含守卫。
-      // 显式拦截并引导用户去 jxglstu 教务入口。
+      // issue #25: 门户 (统一信息门户) 不是教务 — 且 'one.hfut.edu.cn'.indexOf('hfut.edu.cn')
+      // >= 0 会误过下方弱包含守卫。显式拦截并引导用户去 jxglstu 教务入口。
+      // issue #46 (2026-09): 门户上线了课表预览卡 (/api/operation/course-timetable/search/<n>/<date>,
+      // Bearer token, 只有本周+下周), 全学期课表仍只有 jxglstu 的 datum 有 — 拦截策略不变, 文案改准确。
       window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false,
-        err:'检测到您在合工大统一信息门户 (one.hfut.edu.cn), 门户没有课表数据。请到"我的学校"选择合肥工业大学, 直接进入 jxglstu 教务系统后再点导入'}));
+        err:'检测到您在合工大统一信息门户 (one.hfut.edu.cn)。门户里只有本周/下周的课表预览, 完整学期课表请到"我的学校"选择合肥工业大学, 进入 jxglstu 教务系统后再点导入'}));
       return;
     }
     if (location.hostname.indexOf('hfut.edu.cn') < 0 && location.hostname.indexOf('jxglstu') < 0
@@ -1365,31 +1405,81 @@ private const val EAMS5_FETCH_JS = """
           : Promise.resolve('');
         return chain.then(function(txt){
           var ids = [];
+          var layoutId = null;
           try {
             var j = JSON.parse(txt);
             var got = j && (j.lessonIds || (j.result && j.result.lessonIds));
             if (got && got.length) ids = got;
+            // issue #46: get-data 顶层带 timeTableLayoutId (采集包实锤 122),
+            // 供第 3.5 段拉服务端权威节次表
+            if (j && typeof j.timeTableLayoutId === 'number') layoutId = j.timeTableLayoutId;
           } catch (e) { /* get-data 异常 → 空数组兜底 */ }
-          // 4) POST schedule-table/datum — lessonIds 为真课时数组; 纯数字学号按 int 提交
-          return fetch(PREFIX + '/ws/schedule-table/datum', {
-            method:'POST',
-            credentials:'include',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-              lessonIds: ids,
-              studentId: /^\d+$/.test(sid) ? Number(sid) : sid,
-              weekIndex: ''
-            })
-          }).then(function(r){
-            if (!r.ok) throw new Error('POST schedule-table/datum 失败 HTTP ' + r.status + ' (lessonIds:' + ids.length + ')');
-            return r.text();
+          // 3.5) POST timetable-layout 拿 courseUnitList (各校区节次表, 宣城 12 节 ≠ 合肥 10 节)。
+          //      参照 HFUTer/HFNewParserViewModel + 小爱系 provider + kirsh1/ustc-timetable 共识:
+          //      节次不能客户端硬编码, 以 {timeTableLayoutId} 换取 courseUnitList。
+          //      失败可降级: layoutId 空/接口 500 → units 留空, parser 走旧 heuristic 兜底。
+          var layoutChain = layoutId
+            ? fetch(PREFIX + '/ws/schedule-table/timetable-layout', {
+                method:'POST',
+                credentials:'include',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({timeTableLayoutId: layoutId})
+              }).then(function(r){ return r.ok ? r.json() : null; })
+                .catch(function(){ return null; })
+            : Promise.resolve(null);
+          return layoutChain.then(function(layout){
+            var units = (layout && layout.result && layout.result.courseUnitList) || [];
+            // 4) POST schedule-table/datum — lessonIds 为真课时数组; 纯数字学号按 int 提交
+            return fetch(PREFIX + '/ws/schedule-table/datum', {
+              method:'POST',
+              credentials:'include',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                lessonIds: ids,
+                studentId: /^\d+$/.test(sid) ? Number(sid) : sid,
+                weekIndex: ''
+              })
+            }).then(function(r){
+              if (!r.ok) throw new Error('POST schedule-table/datum 失败 HTTP ' + r.status + ' (lessonIds:' + ids.length + ')');
+              return r.text().then(function(datumTxt){
+                if (!units.length) return datumTxt;                 // 无布局 → 原样 (parser heuristic)
+                var periodUnits = units.map(function(u){            // 布局节次升序, 与 datum 原文合并
+                  return {indexNo:u.indexNo, startTime:u.startTime, endTime:u.endTime};
+                }).sort(function(a,b){ return a.indexNo - b.indexNo; });
+                var merged;
+                try {
+                  var dj = JSON.parse(datumTxt);
+                  dj.courseUnitList = periodUnits;                  // parser 精确查表锚点
+                  merged = JSON.stringify(dj);
+                } catch (e2) { merged = datumTxt; }
+                return JSON.stringify({__layout: periodUnits, __datum: merged});
+              });
+            });
           });
         });
       });
     })
     .then(function(txt){
       if (!txt) return;
-      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:true, data:txt, periods:[]}));
+      // issue #46: 有布局时把 courseUnitList 转成 periods[] 供确认页作息表预填
+      // (HHmm → 'HH:MM', 与 session-time-pattern 形态一致); 无布局 = 原行为 periods:[]
+      var periods = [];
+      var dataTxt = txt;
+      try {
+        var o = JSON.parse(txt);
+        if (o && o.__layout && o.__datum) {
+          dataTxt = o.__datum;
+          for (var i = 0; i < o.__layout.length; i++) {
+            var u = o.__layout[i];
+            periods.push({
+              node: u.indexNo,
+              start: Math.floor(u.startTime/100) + ':' + (u.startTime%100 < 10 ? '0' : '') + (u.startTime%100),
+              end: Math.floor(u.endTime/100) + ':' + (u.endTime%100 < 10 ? '0' : '') + (u.endTime%100)
+            });
+          }
+        }
+      } catch (e) { /* 非 merged 形态 (CUMTB/AHU/无布局) → 原样 */ }
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:true, data:dataTxt, periods:periods}));
     })
     .catch(function(e){
       window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:String(e)}));

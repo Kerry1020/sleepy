@@ -359,7 +359,7 @@ private data class PerSchoolEntry(val id: String, val title: String, val usage: 
 private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     PerSchoolEntry(
         "school-hfut", "合肥工业大学 HFUT",
-        "HFUT-Schedule (Chiu-xaH, MIT)\nHfutOpenApi (BoynChan, MIT)\nhfut_schedule_hacker (Aoi-cn)\ndjango-hfut-auth (elonzh, MIT)"
+        "HFUT-Schedule (Chiu-xaH, MIT)\nHfutOpenApi (BoynChan, MIT)\nhfut_schedule_hacker (Aoi-cn)\ndjango-hfut-auth (elonzh, MIT)\nhfut-api (hfut-soft-ware)\nhfut-api (SnowingFox)\nhfut_api_service (onlineG2)\nHFUTer (BrikerMan)\nHFUTICS (ssyu0808)\nAiSchedule-for-hfut (imnuke, GPL-3.0)\nAISchedule (HualiNox)\nclassduck (luyishui)"
     ),
     PerSchoolEntry(
         "school-seu", "东南大学 SEU",
@@ -371,7 +371,7 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     ),
     PerSchoolEntry(
         "school-ustc", "中国科学技术大学 USTC",
-        "USTC-timetable-to-ics (1970633640)"
+        "USTC-timetable-to-ics (1970633640)\nustc-course-timetable (HowardZorn, GPL-3.0)\nustc-timetable (kirsh1, AGPL-3.0)"
     ),
     PerSchoolEntry(
         "school-scu", "四川大学 SCU",
@@ -439,7 +439,7 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     ),
     PerSchoolEntry(
         "school-ahu", "安徽大学 AHU",
-        "Tonyseth/AHU_JW_GPA_Calculator"
+        "Tonyseth/AHU_JW_GPA_Calculator\nAhu_Plus (abydym, GPL-3.0)"
     ),
     PerSchoolEntry(
         "school-nefu", "东北林业大学 NEFU",
