@@ -106,6 +106,24 @@ class JwEams5Parser(source: String) : JwParser(source) {
         // HFUT 形态: result.lessonList[] + result.scheduleList[] (双层)
         val result = root["result"]?.jsonObject ?: return emptyList()
 
+        // issue #46: 布局查表 (服务端权威节次表)。JS 链第 3.5 段 POST
+        // /ws/schedule-table/timetable-layout 拿 result.courseUnitList 后并入 payload 顶层;
+        // 有则 startTime→indexNo 精确映射 (HFUTer/kirsh1 社区共识算法),
+        // 无则 fallback heuristic (inferNodes), CUMTB/老包零回归。
+        val unitByStart = mutableMapOf<Int, Int>()
+        val unitEnds = mutableListOf<Pair<Int, Int>>()   // (endTime, indexNo)
+        (root["courseUnitList"] as? JsonArray)?.let { units ->
+            for (u in units) {
+                val o = runCatching { u.jsonObject }.getOrNull() ?: continue
+                val idx = o["indexNo"]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }?.toIntOrNull() ?: continue
+                val st = o["startTime"]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }?.toIntOrNull() ?: continue
+                val et = o["endTime"]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }?.toIntOrNull() ?: continue
+                unitByStart[st] = idx
+                unitEnds += et to idx
+            }
+            unitEnds.sortBy { it.first }
+        }
+
         // lessonList → lessonId (String) → courseName (HFUT 用 String, scheduleList 用 Int — 注意互转)
         val nameMap = mutableMapOf<String, String>()
         val lessonArr = result["lessonList"] as? JsonArray
@@ -146,7 +164,14 @@ class JwEams5Parser(source: String) : JwParser(source) {
             val endTime = o["endTime"]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }?.toIntOrNull() ?: 0
             val periods = o["periods"]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }?.toIntOrNull() ?: 1
 
-            val inferred = inferNodes(startTime, endTime, periods)
+            // issue #46: 布局查表优先 — schedule.startTime 精确等于 unit.startTime (采集包 122/122);
+            // endUnit = endTime >= unit.endTime 的最大 indexNo (11 仓实测零失败)。
+            // 查表不完整 (start 缺 / end 无覆盖) → 整行走旧 heuristic。
+            val inferred: Pair<Int, Int>? = if (unitByStart.isNotEmpty()) {
+                val su = unitByStart[startTime]
+                val eu = if (su != null) unitEnds.lastOrNull { it.first <= endTime }?.second else null
+                if (su != null && eu != null && eu >= su) su to eu else inferNodes(startTime, endTime, periods)
+            } else inferNodes(startTime, endTime, periods)
             if (inferred == null) continue
 
             out += JwCourse(

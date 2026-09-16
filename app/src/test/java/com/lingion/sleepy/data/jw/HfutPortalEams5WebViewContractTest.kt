@@ -86,6 +86,18 @@ class HfutPortalEams5WebViewContractTest {
 
     // -------- Test 3: cross-language regex invariant --------
 
+    /** issue #46: JS 链第 3.5 段必须存在 — layout 抓取 + courseUnitList 并入 payload + periods 预填 */
+    @Test
+    fun `EAMS5_FETCH_JS fetches timetable layout and merges courseUnitList`() {
+        val js = extractEams5FetchJs(webViewSource())
+        assertTrue("JS 必须带 timeTableLayoutId 从 get-data 提取", js.contains("j.timeTableLayoutId"))
+        assertTrue("JS 必须 POST timetable-layout", js.contains("/ws/schedule-table/timetable-layout"))
+        assertTrue("layout body 必须是 {timeTableLayoutId: …}", js.contains("timeTableLayoutId: layoutId"))
+        assertTrue("payload 必须并入 courseUnitList (parser 查表锚点)", js.contains("dj.courseUnitList = periodUnits"))
+        assertTrue("periods 预填必须从布局生成 (确认页作息表)", js.contains("node: u.indexNo"))
+        assertTrue("layout 失败必须可降级 (catch → null → units 空)", js.contains("Promise.resolve(null)"))
+    }
+
     @Test
     fun `JVM and WebView studentId regex literals are character identical`() {
         val jvm = loadJvmStudentIdRegex()
