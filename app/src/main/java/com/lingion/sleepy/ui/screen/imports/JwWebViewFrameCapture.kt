@@ -114,15 +114,22 @@ object FrameTraversalTree {
      * 锚点集 — 与 parser 容器选择器对齐
      * (Table1→JwOldZfParser, blacktab→T1 兜底链, kbtable→JwQzParser,
      *  kbgrid_table_0/kblist_table→T4, kbList→JwNewZfParser JSON 路径,
-     *  kbxx→CF/T8 之前 JwNewZfParser 会误命中, T7 仅收集不解析)。
+     *  kbxx→CF/T8 之前 JwNewZfParser 会误命中, T7 仅收集不解析,
+     *  _dgdata→xju_post/UPC/CUG 同族 dgData 表 — ASP.NET 命名容器把 id 渲染成
+     *  ctl00_contentParent_dgData 等带前缀形态, 故锚点取尾部子串 _dgdata 做 id= 包含匹配)。
      * 匹配语义: 对 frame 的 outerHTML 小写化后做 id="/class=" 属性子串匹配; 不做裸子串匹配。
      */
     val ANCHORS: List<String> = listOf(
-        "Table1", "blacktab", "kbtable", "kbgrid_table_0", "kblist_table", "kbList", "kbxx", "timetable"
+        "Table1", "blacktab", "kbtable", "kbgrid_table_0", "kblist_table", "kbList", "kbxx", "timetable", "_dgdata"
     )
 
     private fun anchorNeedle(anchor: String): List<String> =
-        listOf("id=\"$anchor\"", "id='$anchor'", "class=\"$anchor\"", "class='$anchor'")
+        if (anchor.startsWith("_")) {
+            // 尾部子串锚点 (ASP.NET 命名容器前缀): id="..._dgdata" — 引号内以锚点结尾即命中
+            listOf("$anchor\"", "$anchor'")
+        } else {
+            listOf("id=\"$anchor\"", "id='$anchor'", "class=\"$anchor\"", "class='$anchor'")
+        }
 
     /** 扫锚点: 返回 ANCHORS 的命中子集, 顺序保持 ANCHORS 原序(测试断言依赖稳定序) */
     fun findAnchors(html: String): List<String> {

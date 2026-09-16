@@ -265,6 +265,36 @@ class JwWebViewFrameCaptureTest {
         assertEquals(FrameCaptureStatus.WRONG_PAGE, r.status)
     }
 
+    @Test
+    fun `aspnet named container dgData table is captured as anchor`() {
+        // xju_post 族 (新疆大学/UPC/CUG): ASP.NET 命名容器把 id 渲染成
+        // ctl00_contentParent_dgData — 锚点取尾部子串 _dgdata, 引号内以锚点结尾即命中。
+        // 旧逻辑 ANCHORS 无此项 → WRONG_PAGE → 「没有识别到课程表」, 自定义 URL 死路。
+        val html = """<html><body>
+            <table id="ctl00_contentParent_dgData" border="1">
+            <tr><th>节次</th><th>星期日</th><th>星期一</th></tr>
+            <tr><td align="center">1</td><td></td><td>｛高等数学(1-16周)[教师：张三,地点：X101]｝</td></tr>
+            </table></body></html>"""
+        val anchors = FrameTraversalTree.findAnchors(html)
+        assertTrue("id 尾部子串 _dgdata 必须命中, got $anchors", anchors.contains("_dgdata"))
+        val snaps = FrameSnapshot.fromJson(json(
+            f("(top)", "https://jws.xju.edu.cn/xskb.aspx", 0, emptyList(), html)
+        ))
+        val r = FrameTraversalTree.selectBestFrame(snaps)
+        assertEquals("dgData 页面必须 OK 不再 WRONG_PAGE", FrameCaptureStatus.OK, r.status)
+        // 抓到的 HTML 必须能被 JwXjuParser 解出课程 (registry 兜底链最终裁决者)
+        val courses = com.lingion.sleepy.data.jw.JwXjuParser(r.html).generateCourseList()
+        assertEquals(1, courses.size)
+        assertEquals("高等数学", courses[0].name)
+    }
+
+    @Test
+    fun `dgdata suffix anchor does not false positive on unrelated ids`() {
+        // 反向: id="widget" 等以 dgdata 开头之外的无辜 id 不得命中; 中段含 _dgdata_ 也不算
+        val html = """<html><body><div id="badge"></div><div id="_dgdatax"></div></body></html>"""
+        assertFalse(FrameTraversalTree.findAnchors(html).contains("_dgdata"))
+    }
+
     // ---------- fromJson 容错 ----------
 
     @Test

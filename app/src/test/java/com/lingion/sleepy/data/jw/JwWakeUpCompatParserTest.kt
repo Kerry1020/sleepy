@@ -222,4 +222,26 @@ class JwWakeUpCompatParserTest {
         assertEquals(2, courses[1].type)
         assertEquals(16, courses[1].endWeek)
     }
+
+    @Test
+    fun `xju dgData html routes through registry fallback to xju parser`() {
+        // 自定义 URL 场景: detectProtocol URL/HTML 两层都无 xju_post 锚点,
+        // type=null → selectBest 全候选裁决必须落到 JwXjuParser (sundayFirst 翻转 day)
+        val source = """
+            <html><head><title>学生课表查询</title></head><body>
+            <table id="ctl00_contentParent_dgData" border="1">
+            <tr><th>节次</th><th>星期日</th><th>星期一</th><th>星期二</th><th>星期三</th><th>星期四</th><th>星期五</th><th>星期六</th></tr>
+            <tr><td align="center">1</td><td></td><td>｛高等数学(1-16周)[教师：张三,地点：X101]｝</td><td></td><td></td><td></td><td></td><td></td></tr>
+            </table></body></html>
+        """.trimIndent()
+
+        val (courses, attempts) = JwParserRegistry.selectBest(source, declaredType = null)
+
+        assertTrue("应解析出课程, 实际 attempts=${attempts.map { it.parserName to it.courseCount }}", courses.isNotEmpty())
+        val best = attempts.filter { it.courseCount == courses.size }.maxByOrNull { it.confidence }
+        assertEquals("xju_post", best?.type)
+        assertEquals("高等数学", courses[0].name)
+        // sundayFirst: 周日列在周一前, 课程在"星期一"列(col=2) → 翻转 col2→day1... 实际 Sunday-first TABLE: col1=周日→day7
+        assertEquals(1, courses[0].day)
+    }
 }

@@ -47,6 +47,7 @@ class SchoolsJsonConsistencyTest {
             JwProtocol.TYPE_WHUT, JwProtocol.TYPE_CLASSIC_EAMS,
             JwProtocol.TYPE_BJTU,
             JwProtocol.TYPE_YETHAN,
+            JwProtocol.TYPE_XJU_POST,
         )
         val bad = loadEntries().filter { it.type != null && it.type !in declared }
         assertEquals("type 未在 JwProtocol 声明的条目: ${bad.map { it.name to it.type }}", 0, bad.size)
