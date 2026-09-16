@@ -65,7 +65,7 @@
 
 ## Phase 5 收口
 
-- [ ] T12 全量验证
+- [x] T12 全量验证(模拟器人工验证待用户)
   - Accept: assembleDebug 0 err;testDebugUnitTest 全绿;lint 新增 0;feature-baseline.md §5.2/相关节同步七项
   - Verify: 三命令输出留证
   - Files: docs/sop/feature-baseline.md
