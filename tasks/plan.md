@@ -1,59 +1,48 @@
-# Implementation Plan: WakeUp Protocol Coverage
+# v1.0.56 七项需求实现计划
 
-## Overview
-在当前 Sleepy 工作区基础上，新增 WakeUp 中尚未覆盖且学校数量最多的 8 个协议族，并将 WakeUp 对现有协议的不同解析形态纳入有序 fallback；保留当前用户未提交改动，不回退无关文件。
+基线: main @ 7ddb6254(分支另含 edbf1f69 教务修复,不冲突)· 分支 `feat/v1.0.56-seven`(worktree /private/tmp/sleepy-v1056-wt)· 主仓 ~/sleepy 有并行会话脏文件,禁止在那边动手。
 
-## Architecture Decisions
-- 以 `JwParser`/`JwParserRegistry` 为统一解析层；每个 WakeUp 构造变体保留独立 parser 或独立 fallback 顺序。
-- 显式学校 type 优先使用声明 parser；声明 parser 无课程或异常时，再按特征置信度/结果数量进入 fallback。
-- 新增协议先覆盖可由 WebView 已采集 source 解析的 parser 逻辑；需要专门登录/fetch endpoint 的协议单独接入 `JwFetchProtocol`/WebView，不伪造直连数据。
-- 8 个目标协议按 WakeUp 学校数排序：`kingo_new`、`jz`、`south_soft`、`login_chaoxing`、`shuwei`、`suda_post`、`cumtb`、`xju_post`。其中 `shuwei` 族需拆为 WakeUp 的不同构造变体。
+## 架构决策
 
-## Task List
+1. **全局唯一名是应用层约束,不动 DB schema**(period_tables/time_tables 都无 UNIQUE(name),Room 加唯一索引要迁移+老数据撞名会炸)。落点:repo 层新增 `isNameTaken(name, excludeTableId, excludePeriodTableId)` 查全库两表;所有手动命名入口(复制弹窗/作息表编辑页名称框/课表编辑页名称框/新建)保存前调它,撞名拒存+错误文案;导入自动建表仍走后缀顺延,但**预览框阶段**就把顺延后的名字算出来给用户看。
+2. **第三 Tab 在 TimeSlotEditor 组件内做**,新增可选参数组(不传=两 Tab,旧行为;传=三 Tab)。四个调用点全传新参数:JwImportActivity(绑定=选一张,不选=教务解析节次)、ImportSheet 预览框(同)、EditTableScreen(绑定卡整体拆掉,选中态+未绑定项收进 Tab)、PeriodTableEditScreen(排除自己;选中=把该表节次取入当前编辑内容,非活绑)。
+3. **纯作息导入走 ImportPreview 之外的独立轻路径**:SleepyNativeParser 已支持 0 C 行成功(P 块独立),parse 成功且 `courses.isEmpty() && periodTable != null` = 纯作息 → 直接弹独立的「导入作息表」确认弹窗(名称框预填+顺延后缀+预览列表),确认后 `insertPeriodTable` + 成功提示,**不建空课表**。
+4. **作息表单独导出**:SleepyNativeExporter 加 `exportPeriodTableOnly`(纯 P 块 sleepy-v1 文本: magic+T空+z|chk)与 `exportPeriodTableJson`(JSON 载体: {name,nodesPerDay,time[]});PeriodTableEditScreen TopBar 加分享键 → 选择格式弹窗 → 走现有 shareText 机制。
+5. **捏放手势开关只挂/不挂手势**,已存数值不动:CourseTreeView 增 `pinchEnabled: Boolean` 参数,内部 verticalResizeGesture 的 modifier 条件化;ScheduleScreen 从 AppPrefs 读新 KEY_GRID_PINCH_ZOOM(默认 false)传入;实验室分组加 SettingToggleRow。
+6. **语言折叠**:GeneralSettingsScreen 语言卡改折叠卡(rememberSaveable collapsed 态,收起显示当前语言名,点开 5 项)。
+7. **改名「作息表」**:17 键 ×6 locale 全改;values/values-zh-rCN/values-zh-rTW 改「作息表」系,en/ja/es 保留原译法只把「时间表」字面理顺。feature-baseline.md 同步(6 处)。StringsKeyParityTest 的 periodTableKeys 清单加新键。
 
-### Phase 1: Baseline and protocol contracts
-- [ ] 建立本轮范围与 WakeUp→Sleepy 现状矩阵，确认 8 个目标及现有同族协议。
-- [ ] 阅读现有 parser、WebView fetch、fixture 和测试，记录每个可复用入口及错误路径。
-- [ ] 将 WakeUp 每个 parser 变体的关键 selector/JSON schema/作息规则转成可测试的 Kotlin contract。
+## 任务序列(依赖序)
 
-### Checkpoint: Baseline
-- [ ] 现有 focused parser tests pass
-- [ ] 工作区原有改动保持不变
+```
+T1 字符串改名(纯文案,零逻辑) → T2 唯一名基建(repo查询+UI错误文案)
+T3 捏放开关(AppPrefs+实验室UI+手势条件化)
+T4 语言折叠(设置页)
+T5 TimeSlotEditor 三Tab组件化(参数+BindTab UI)
+T6 四调用点接线(EditTable拆绑定卡/双导入框/作息表编辑页)
+T7 管理页(新建作息表卡+列表删键挪编辑页底)
+T8 复制改名弹窗(顺延预填+确认才建+留管理页)
+T9 纯作息导入路径(检测+确认弹窗+入库+预览)
+T10 混合导入自动建作息表(JW路径+ImportSheet P块/wakeUpJson time→建表绑定+预览框名称顺延可见)
+T11 作息表单独导出(sleepy-v1+JSON 两格式)
+T12 测试全量+lint+基线文档同步
+```
 
-### Phase 2: New protocol slices
-- [ ] 实现 `kingo_new` parser 与其 3 层回退（o00oO0o 0/12/14）。
-- [ ] 实现 `jz` parser wrapper 与变体 fallback。
-- [ ] 实现 `south_soft`（o00000O0 variant 10）和 `login_chaoxing` JSON parser。
-- [ ] 实现 shuwei shared parser variants，并覆盖数维 JSON/HTML 两种形态。
-- [ ] 实现 `suda_post`、`cumtb`、`xju_post` parser/fetch contract。
-- [ ] 注册 8 个协议及学校 type，补显示名、分类、URL/HTML 检测和 WebView fetch routing。
+Checkpoint: T2 后(唯一名查询+单测绿) · T6 后(三Tab全UI接线编译过) · T12(全量1830测试+lint 新增为零)
 
-### Checkpoint: New protocols
-- [ ] 每个新增 parser 至少有真实形态 fixture 和反例 fixture
-- [ ] 每个新增 type 可由 registry 路由
-- [ ] focused parser tests pass
+## 风险与缓解
 
-### Phase 3: Existing protocol parity and fallback
-- [ ] 对 WakeUp 已有同族实现逐一比较字段优先级、周次/单双周、节次和失败判定。
-- [ ] 更优逻辑更新现有 parser；不同但合法形态作为有序 fallback，不覆盖现有成功结果。
-- [ ] 增加 registry attempts/diagnostics 测试，锁定 fallback 顺序和 declared type 优先级。
-- [ ] 补齐 WakeUp 学校 type 与 Sleepy protocol mapping 的回归测试。
+| 风险 | 缓解 |
+|---|---|
+| EditTableScreen 拆绑定卡改坏 pendingBind 保存链 | pendingBind 状态保留原位,只挪展示进 Tab;保存逻辑零改动 |
+| JwImportActivity 确认框在 AlertDialog 里塞三Tab列表挤爆 | 作息表列表 maxHeight+scroll,复用 BindOptionRow 紧凑行高 |
+| 导入建表名顺延与用户编辑竞态 | 预览框显示顺延名,确认时再校验一次兜底(用户改回撞名→报错不落库) |
+| 老数据已有重名(用户历史同名作息表) | 只拦新建/改名,不清洗存量;isNameTaken(exclude self) 保证编辑自己不算撞 |
+| strings 改动爆 parity 测试 | 新键全部 6 locale 同步;改值不改键名,parity 只查键存在性 |
 
-### Phase 4: Attribution and verification
-- [ ] 按 SOP 记录触达的上游项目并在改代码前完成 attribution 清单；同步 license UI、locale strings 和 attribution tests。
-- [ ] 补齐协议 fixture 矩阵与跨语言 invariant（若新增 WebView regex）。
-- [ ] 运行 attribution、目标 parser、全部 parser、lint 和 build 验证。
-- [ ] 更新 SOP 版本和本轮 docs 归档；只在用户明确要求时 commit/push。
+## 验证标准(全局)
 
-## Risks and Mitigations
-| Risk | Impact | Mitigation |
-|---|---|---|
-| WakeUp 混淆类同名但构造参数不同 | High | 用 `(class, args)` 作为协议身份，独立 fixtures |
-| 8 个协议含登录/抓取而非纯 parser | High | parser 与 fetch 分层，先验证 source contract，不伪造 endpoint |
-| fallback 误抢其他 HTML | High | 独特 marker + confidence，保留 attempts 诊断 |
-| 当前工作区有未提交改动 | High | 已从当前 HEAD 开新分支，编辑前逐文件核对，绝不清理用户改动 |
-| 多校协议差异导致单一 regex 漏解析 | Medium | 每种 form 单独 fixture，正反例锁定顺序与覆盖 |
-
-## Open Questions
-- 8 个新协议中需要真实登录/fetch 的协议，若当前 WebView 没有统一采集入口，将按现有 source 回调契约先落 parser，再补 endpoint-specific fetch。
-- 上游仓库检索候选数量和致谢范围需在正式跨仓检索后以实际结果为准，不手工削减候选。
+- `./gradlew :app:assembleDebug` 0 error
+- `./gradlew :app:testDebugUnitTest` 全绿(基线 1830,含新增)
+- lint: 新增告警为 0(以 main@7ddb6254 为基线 diff)
+- 模拟器: 七项逐条人工验证(截图存证,APK 指纹先行核对——并行会话共用模拟器的包身份战争教训)

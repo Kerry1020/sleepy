@@ -1,146 +1,70 @@
-# Todo: 独立时间节次表（Issue #40）
+# v1.0.56 七项需求 todo
 
-## Task 1: Period-table entity + DAO + Room migration + undo snapshot
+分支 feat/v1.0.56-seven · worktree /private/tmp/sleepy-v1056-wt · 主仓不动
 
-**Description:** 新增 `PeriodTableEntity`（period_tables 表）、`PeriodTableDao`，并把 AppDatabase 升版本挂 MIGRATION_6_7；迁移时为每张旧课表生成独立时间节次表并把 `TimeTableEntity.periodTableId` 指过去；扩展 UndoManager 快照覆盖 period_tables。
+## Phase 1 基建
 
-**Acceptance criteria:**
-- [ ] `PeriodTableEntity` 含 id/name/nodesPerDay/timeJson/smartConfigJson/createdAt/updatedAt。
-- [ ] `TimeTableEntity` 新增 `periodTableId: Long?`（可空，默认 null）。
-- [ ] MIGRATION_6_7 为每张旧课表插入一张独立 `period_tables` 行（继承 timeJson/smartConfigJson/nodesPerDay），并回填 periodTableId。
-- [ ] 撤回快照含 period_tables；恢复顺序 period_tables → time_tables → courses（外键顺序）。
-- [ ] 旧数据升级后每张课表的节次、课程、绑定时间表都不变。
+- [ ] T1 改名「作息表」(17键×6 locale + feature-baseline.md)
+  - Accept: 全库 grep 无「节次时间表/时间节次表」UI 文案;assembleDebug 绿
+  - Verify: grep + assembleDebug + parity test
+  - Files: 6×strings.xml, docs/sop/feature-baseline.md, StringsKeyParityTest(仅当加新键)
+- [ ] T2 全局唯一名基建
+  - Accept: repo.isNameTaken(两表全域查, exclude self); 单测覆盖(撞/不撞/排己)
+  - Verify: 新单测红→绿
+  - Files: ScheduleRepository.kt(+ScheduleViewModel 暴露), 新测试文件
+- [ ] T3 捏放→实验室开关
+  - Accept: KEY_GRID_PINCH_ZOOM 默认 false;关=捏不动(手势不挂),开=现行为;实验室多一行开关;存量行高不清
+  - Verify: 单测 AppPrefs 默认值 + 模拟器手动验证
+  - Files: AppPrefs.kt, GeneralSettingsScreen.kt, CourseTableView.kt, ScheduleScreen.kt, 6×strings
+- [ ] T4 语言折叠
+  - Accept: 默认收起只显当前语言;展开 5 项;选择后收起;跨页恢复
+  - Verify: 模拟器
+  - Files: GeneralSettingsScreen.kt
 
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*Migration*"` 0 failures
-- [ ] `./gradlew :app:compileDebugKotlin` exit 0
-- [ ] 手动核对迁移测试输出
+## Checkpoint A(T2-T4): 编译+全测试绿
 
-**Dependencies:** None
-**Files likely touched:** `data/entity/PeriodTableEntity.kt`（新）、`data/dao/PeriodTableDao.kt`（新）、`data/entity/TimeTableEntity.kt`、`data/AppDatabase.kt`、`data/Migrations.kt`、`data/repository/UndoManager.kt`、`data/repository/ScheduleRepository.kt`
-**Estimated scope:** Medium (5-7 files)
+## Phase 2 第三 Tab
 
-## Task 2: Repository reads + one-way binding
+- [ ] T5 TimeSlotEditor 三 Tab 组件化
+  - Accept: 新可选参数(periodTables 列表/selectedId/ onSelect/排除id);不传=旧两Tab;新 Tab 列表 UI(未绑定+全部,复用 BindOptionRow 风格)
+  - Verify: 编译+现有 TimeSlotEditor 相关测试零回归
+  - Files: TimeSlotEditor.kt
+- [ ] T6 四调用点接线
+  - Accept: EditTable 拆绑定卡(未绑定/选中态原语义进 Tab);JW 确认框/导入预览框/作息表编辑页(排除自己,选中=取入内容)全有第三Tab
+  - Verify: 编译+模拟器四屏逐个点
+  - Files: EditTableScreen.kt, JwImportActivity.kt, ImportSheet.kt, PeriodTableEditScreen.kt, 6×strings
 
-**Description:** 仓库层新增“有效时间节次表”读取（优先 periodTableId → 独立表，异常回退旧 timeJson）；新增 bind/unbind、复制时间节次表、删除被引用时间表的守卫逻辑。
+## Checkpoint B(T5-T6): 编译+全测试绿+模拟器四屏
 
-**Acceptance criteria:**
-- [ ] `effectivePeriodTable(tableId)` 返回绑定时间表或 null（回退旧列）。
-- [ ] `bindPeriodTable(timeTableId, periodTableId)` 仅改 periodTableId，课程行零改动。
-- [ ] `copyPeriodTable(sourceId)` 新建副本，不动原绑定。
-- [ ] 删除被引用时间表被拒绝；未引用可删。
-- [ ] 一张时间表可绑定 2+ 张课表（测试锁）。
+## Phase 3 管理流
 
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*PeriodTable*"` 0 failures
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*ScheduleRepository*"` 0 failures
+- [ ] T7 管理页:新建作息表卡+删除键挪编辑页
+  - Accept: 卡序 导入/新建课表/新建作息表/手动/编辑/导出;列表行=编辑+复制;删除键在编辑页底部(已保存才显),拦截弹窗保留
+  - Verify: 编译+模拟器
+  - Files: ManagementPage.kt, PeriodTablesScreen.kt, PeriodTableEditScreen.kt, MainActivity.kt(接线), 6×strings
+- [ ] T8 复制作息表弹窗
+  - Accept: 复制→命名弹窗(预填顺延 2/3/4 可编辑,实时查重标错)→确认才建,留管理页;编辑页 TopBar 复制键同步改弹窗
+  - Verify: 编译+单测(顺延逻辑)+模拟器
+  - Files: PeriodTablesScreen.kt, PeriodTableEditScreen.kt, ScheduleViewModel/Repository, 6×strings
 
-**Dependencies:** Task 1
-**Files likely touched:** `data/repository/ScheduleRepository.kt`、`data/dao/PeriodTableDao.kt`、测试
-**Estimated scope:** Medium (3-5 files)
+## Phase 4 导入导出
 
-## Task 3: Route all consumers through effective period table
+- [ ] T9 纯作息导入
+  - Accept: sleepy-v1 P块无C行 → 独立确认弹窗(名称预填顺延+可改+查重)→确认=insertPeriodTable+提示,不建课表
+  - Verify: 单测(解析0课程+periodTable非空判定)+模拟器全链
+  - Files: ImportSheet.kt, 6×strings
+- [ ] T10 混合导入自动建作息表
+  - Accept: sleepy-v1 P+C 与 WakeUp JSON tableInfo.time → 自动建作息表(同名,撞名顺延,预览框可见后缀)+建课表+绑定;导入确认框第三Tab默认选中解析出的表
+  - Verify: 单测+模拟器
+  - Files: ImportSheet.kt, JwImportViewModel.kt/JwImportActivity.kt, 6×strings
+- [ ] T11 作息表单独导出
+  - Accept: 编辑页分享键→格式选择(sleepy-v1 文本/JSON)→shareText;导出的纯作息文本可被 T9 路径吃回(往返)
+  - Verify: 单测(导出体格式+parser 吃回)+模拟器往返
+  - Files: SleepyNativeExporter.kt, PeriodTableEditScreen.kt, 6×strings
 
-**Description:** 逐文件盘查 timeJson 消费方（ScheduleViewModel/CourseDetailSheet/ConflictLayoutEngine/CourseNotificationScheduler/widget 系/JwImportViewModel/ScheduleExporter/parser 系），统一改走“有效时间节次表”，异常回退旧列。改前 grep 全部消费方。
+## Phase 5 收口
 
-**Acceptance criteria:**
-- [ ] grep 显示核心渲染路径不再直接读 `TimeTableEntity.timeJson` 作为最终来源。
-- [ ] 绑定切换后课表显示与时间域按新表解释。
-- [ ] 自定义时间课程不受影响。
-
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest` 全绿
-- [ ] `./gradlew :app:compileDebugKotlin` exit 0
-
-**Dependencies:** Task 2
-**Files likely touched:** ScheduleViewModel.kt、CourseTableView.kt、CourseDetailSheet.kt、ConflictDetailReporter.kt、ConflictLayoutEngine.kt、CourseNotificationScheduler.kt、widget/WidgetContent.kt、widget 系其余文件、JwImportViewModel.kt、parser 系
-**Estimated scope:** Large (5-8+ files，纯读取改道，无逻辑重写)
-
-## Task 4: Preview + transactional save with cancel
-
-**Description:** 实现时间节次表保存前的纯函数预览（新旧两份 timeJson 对同一批节次编号解析出 旧时间→新时间），确认后事务内写入并刷新全部绑定课表；取消则不写库。
-
-**Acceptance criteria:**
-- [ ] 纯函数 preview 计算：受影响课表列表 + 每课程旧时间→新时间。
-- [ ] 取消不写库、不进撤回快照。
-- [ ] 确认后单事务保存 period_tables + 兼容列，立即对全部绑定课表生效。
-- [ ] 课程行 startNode/step 零改动（逐行 diff = 0，测试锁）。
-
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*Preview*"` 0 failures
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*PeriodTable*"` 0 failures
-
-**Dependencies:** Task 2
-**Files likely touched:** `util/TimeTableUtils.kt`（纯函数）、ScheduleRepository.kt、ScheduleViewModel.kt、测试
-**Estimated scope:** Medium (3-5 files)
-
-## Task 5: Independent period-table list + editor UI
-
-**Description:** 我的页新增“时间节次表”入口；列表显示各时间表与“已绑定 N 张课表”；编辑页复用既有节次编辑控件（TimeSlotEditor），支持手动/智慧节次、复制时间表、保存前预览。
-
-**Acceptance criteria:**
-- [ ] 我的页出现入口，进列表后可新建/编辑/复制/删除（删除守卫同 Task 2）。
-- [ ] 列表显示每张时间表已绑定课表数。
-- [ ] 编辑保存走 Task 4 的预览+事务。
-- [ ] strings 新 key 全 6 locale 同步（StringsKeyParityTest 锁）。
-
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*StringsKeyParity*"` 0 failures
-- [ ] `./gradlew :app:compileDebugKotlin` exit 0
-
-**Dependencies:** Task 4
-**Files likely touched:** MineScreen.kt、MainActivity.kt（新 OverlayScreen 枚举+栈接线）、新 PeriodTablesScreen.kt、PeriodTableEditScreen.kt（复用 TimeSlotEditor）、strings ×6
-**Estimated scope:** Medium (5-7 files)
-
-## Task 6: Course-table binding selector + copy + safe delete/rebind
-
-**Description:** EditTableScreen 加“时间节次表”选择项（下拉选表 + 复制时间节次表按钮），保存走预览确认；AllTables/删除动线补改绑守卫。
-
-**Acceptance criteria:**
-- [ ] 课程表编辑页可换绑/复制时间节次表。
-- [ ] 换绑保存前预览该课表各课程时间变化，可取消。
-- [ ] 删除被引用时间表先显示绑定课表并提供改绑入口。
-- [ ] 复制课程表默认复用原绑定时间表。
-
-**Verification:**
-- [ ] `./gradlew :app:compileDebugKotlin` exit 0
-- [ ] 相关 UI/仓库测试全绿
-
-**Dependencies:** Tasks 2, 4
-**Files likely touched:** EditTableScreen.kt、AllTablesScreen.kt、ScheduleViewModel.kt、strings ×6
-**Estimated scope:** Medium (3-5 files)
-
-## Task 7: Import/export formats + round-trip
-
-**Description:** sleepy-v1/原生导出加可选 periodTable(s) 区块；旧格式保持每张课表各自 timeJson；导入时旧格式每张课表各建一张时间节次表，新格式恢复共享关系；往返测试锁无损。
-
-**Acceptance criteria:**
-- [ ] 新格式含 periodTable(s) 且旧版本可读（兼容 timeJson 保留）。
-- [ ] 旧格式导入：每张课表独立时间表，不误共享。
-- [ ] 导出导入往返：绑定关系、节次、课程无损（Extend RoundTrip 测试风格）。
-
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*RoundTrip*"` 0 failures
-- [ ] `./gradlew :app:testDebugUnitTest --tests "*Import*"` 0 failures
-
-**Dependencies:** Tasks 1-2
-**Files likely touched:** SleepyNativeFormat.kt、SleepyNativeExporter.kt、SleepyNativeParser.kt、ScheduleExporter.kt、parser 系、测试
-**Estimated scope:** Medium (4-6 files)
-
-## Task 8: Contract tests + baseline + full verification
-
-**Description:** 设计文档 §10 验收契约逐条落测试；feature-baseline.md 同步新实体/入口/行为；全量验证。
-
-**Acceptance criteria:**
-- [ ] §10 每条契约有对应测试或既有测试引用。
-- [ ] feature-baseline.md §6/相关章新增 PeriodTable 记录。
-- [ ] 全量单测+编译绿。
-
-**Verification:**
-- [ ] `./gradlew :app:testDebugUnitTest` 全绿
-- [ ] `./gradlew :app:compileDebugKotlin` exit 0
-- [ ] 逐条核对 §10
-
-**Dependencies:** Tasks 1-7
-**Files likely touched:** 测试、docs/sop/feature-baseline.md
-**Estimated scope:** Medium
+- [ ] T12 全量验证
+  - Accept: assembleDebug 0 err;testDebugUnitTest 全绿;lint 新增 0;feature-baseline.md §5.2/相关节同步七项
+  - Verify: 三命令输出留证
+  - Files: docs/sop/feature-baseline.md
