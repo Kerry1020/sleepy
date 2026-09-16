@@ -164,7 +164,32 @@ fun JwWebViewLoginScreen(
                         scope.launch { snackbar.showSnackbar(fetchNoCoursesMsg) }
                     }
                     val termStartDate = obj.optString("startDate", "")
-                    onHtmlCaptured(data, school, periods, termStartDate)
+                    // YETHAN: config 抓了但旧实现无人消费 (死载荷)。采集包
+                    // yethan_common-config.json 实锤 data.termLessonStr =
+                    // "08:00-08:45,08:50-09:35,…" (courseSysDayLesson 个 HH:MM-HH:MM 槽),
+                    // data.termStartDate = 开学日 → 填 periods/startDate, 用户免手填节次。
+                    var termStart = termStartDate
+                    if (periods.isEmpty() && school.type == JwProtocol.TYPE_YETHAN) {
+                        try {
+                            val cfg = obj.optJSONObject("yethanConfig")?.optJSONObject("data")
+                            val lessonStr = cfg?.optString("termLessonStr").orEmpty()
+                            if (lessonStr.isNotBlank()) {
+                                val slots = lessonStr.split(',').mapNotNull { seg ->
+                                    val p = seg.trim().split('-')
+                                    if (p.size == 2) p[0].trim() to p[1].trim() else null
+                                }
+                                periods.addAll(slots.mapIndexed { i, (s, e) ->
+                                    Triple(i + 1, s, e)
+                                })
+                            }
+                            val cfgStart = cfg?.optString("termStartDate").orEmpty()
+                            if (termStart.isBlank() && cfgStart.isNotBlank()) termStart = cfgStart
+                        } catch (e: Exception) {
+                            Log.w("JwWebView", "yethanConfig parse failed", e)
+                        }
+                    }
+                    val effectiveStartDate = termStart.ifBlank { termStartDate }
+                    onHtmlCaptured(data, school, periods, effectiveStartDate)
                 }
             } else {
                 val err = obj.optString("err", "")
@@ -776,7 +801,21 @@ private const val YETHAN_FETCH_JS = """
     var token = '';
     try { token = localStorage.getItem('ytoken') || ''; } catch(e) {}
     if (!token) {
-      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:'未取到登录凭据，请先登录逐专平台后再点导入'}));
+      // 按页面标记区分卡点 (2026-09-16 用户复测: 微信扫码页点导入, 旧文案不指路):
+      //   ① 微信扫码页: 「使用微信扫一扫登录」/「微信登录」入口标记
+      //   ② 账号密码页: password 输入框
+      //   ③ 其余: 通用文案
+      var pageHint = '';
+      try {
+        var lower = (document.body ? document.body.innerText : '') || '';
+        if (lower.indexOf('使用微信扫一扫登录') >= 0 || lower.indexOf('微信登录') >= 0) {
+          pageHint = '当前停在微信扫码登录页：请用微信扫码并确认，或点「微信登录」旁的切换按钮改用账号密码登录，登录完成后再点导入';
+        } else if (document.querySelector('input[type="password"]')) {
+          pageHint = '当前停在账号密码登录页：请输入学号密码和验证码完成登录，登录完成后再点导入';
+        }
+      } catch(e2) {}
+      if (!pageHint) pageHint = '未取到登录凭据，请先登录逐专平台后再点导入';
+      window.__sleepyBridge.onWiseduResult(JSON.stringify({ok:false, err:pageHint}));
       return;
     }
     var headers = {Accept:'application/json', 'ytoken':token};
