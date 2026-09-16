@@ -16,10 +16,11 @@
   - Accept: KEY_GRID_PINCH_ZOOM 默认 false;关=捏不动(手势不挂),开=现行为;实验室多一行开关;存量行高不清
   - Verify: GridPinchZoomKeyTest 3项 + assembleDebug + 全量1915测试绿; 模拟器验证随 T12
   - Files: AppPrefs.kt, GeneralSettingsScreen.kt, CourseTableView.kt, ScheduleScreen.kt, 6×strings
-- [ ] T4 语言折叠
+- [x] T4 语言折叠 — 语言折叠卡(默认收起,行为原样)
   - Accept: 默认收起只显当前语言;展开 5 项;选择后收起;跨页恢复
   - Verify: 模拟器
   - Files: GeneralSettingsScreen.kt
+
 
 ## Checkpoint A(T2-T4): 编译+全测试绿
 
