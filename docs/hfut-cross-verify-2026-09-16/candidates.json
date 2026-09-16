@@ -1,0 +1,39 @@
+{
+  "issue": 46,
+  "school": "HFUT (jxglstu.hfut.edu.cn, eams5; 用户报的是门户 one.hfut.edu.cn)",
+  "date": "2026-09-16",
+  "search_matrix": [
+    {"q": "hfut timetable", "api": "search/repositories", "hits": 1},
+    {"q": "hfut schedule", "api": "search/repositories", "hits": 5},
+    {"q": "jxglstu", "api": "search/repositories", "hits": 0},
+    {"q": "合肥工业大学 课表", "api": "search/repositories", "hits": 1},
+    {"q": "hfut course", "api": "search/repositories", "hits": 8},
+    {"q": "hfut jwgl", "api": "search/repositories", "hits": 0},
+    {"q": "jxglstu.hfut.edu.cn", "api": "search/repositories", "hits": 0},
+    {"q": "one.hfut.edu.cn", "api": "search/repositories", "hits": 0},
+    {"q": "hfut 宣城", "api": "search/repositories", "hits": 8},
+    {"q": "\"timetable-layout\" eams5", "api": "search/code", "hits": 8},
+    {"q": "\"ws/schedule-table/datum\"", "api": "search/code", "hits": 48},
+    {"q": "\"timeTableLayoutId\" \"courseUnitList\"", "api": "search/code", "hits": 9}
+  ],
+  "candidates": [
+    {"repo": "Chiu-xaH/HFUT-Schedule", "stars": 159, "lang": "Kotlin", "license": "Apache-2.0", "pushed": "2026-09-16", "verdict": "POSITIVE", "evidence": "JxglstuService.kt:364-365 LessonTimeRequest(timeTableLayoutId) POST timetable-layout; JxglstuCourseTimeResponse 解析 result.courseUnitList; DataAdapter jxglstuToTimeTableData 消费 datum"},
+    {"repo": "hfut-soft-ware/hfut-api", "stars": 10, "lang": "TypeScript", "license": null, "pushed": "2024-07-20", "verdict": "POSITIVE", "evidence": "eam_courseList_layout.ts POST timetable-layout {timeTableLayoutId}; eam_coursesList.ts get-data bizTypeId 2/23(合肥/宣城)+datum"},
+    {"repo": "SnowingFox/hfut-api", "stars": 2, "lang": "TypeScript", "license": null, "pushed": "2022-07-07", "verdict": "POSITIVE", "evidence": "eam_courseList_layout.ts 同上 (hfut-soft-ware 同源 fork 形态)"},
+    {"repo": "onlineG2/hfut_api_service", "stars": 14, "lang": "JavaScript", "license": null, "pushed": "2022-12-11", "verdict": "POSITIVE", "evidence": "src/module/web/time-table.js POST timetable-layout {timeTableLayoutId}"},
+    {"repo": "BrikerMan/HFUTer", "stars": 5, "lang": "Swift", "license": null, "pushed": "2019-06-19", "verdict": "POSITIVE", "evidence": "HFNewParserViewModel.swift: schedule.startTime==unit.startTime → startIndex=index (布局表精确映射节次); timetable_layout 端点常量; getDataJson.timeTableLayoutId → POST layout"},
+    {"repo": "ssyu0808/HFUTICS", "stars": 4, "lang": "Python", "license": null, "pushed": "2020-12-31", "verdict": "POSITIVE", "evidence": "jxglstu.py 四段链同款 (course-table studentId/semesterId/bizTypeId regex → get-data lessonIds → POST datum); 未做 layout"},
+    {"repo": "imnuke/AiSchedule-for-hfut", "stars": 2, "lang": "JavaScript", "license": "GPL-3.0", "pushed": "2020-09-18", "verdict": "INDIRECT", "evidence": "小爱适配器: scheduleHtmlParser 不解析 datum 时间, 改解析 #lessons 表格文本(第X节~第Y节中文数字); sectionTimes 11 节硬编码 — 佐证各校节次表不能硬编码"},
+    {"repo": "HualiNox/AISchedule", "stars": 0, "lang": "JavaScript", "license": null, "pushed": "2024-12-14", "verdict": "POSITIVE", "evidence": "localTools/code/provider.js: lesson.timeTableLayout.id → POST timetable-layout → result.courseUnitList → sections {indexNo,startTimeText,endTimeText} (安庆师大部署同族)"},
+    {"repo": "luyishui/classduck", "stars": 1, "lang": "JavaScript/Python", "license": null, "pushed": "2026-09-08", "verdict": "POSITIVE", "evidence": "ais_system_47c35f_provider.js: kcjson.timeTableLayoutId → POST timetable-layout → startTimeJson=courseUnitList 连同 datum 一起回传"},
+    {"repo": "abydym/Ahu_Plus", "stars": 2, "lang": "Kotlin", "license": "GPL-3.0", "pushed": "2026-06-24", "verdict": "POSITIVE", "evidence": "JwModels.kt TimeTableLayout/CourseUnit(indexNo/startTime/endTime/dayPart); CourseRepository layout.courseUnitList ?: defaultUnitTimes() 兜底模式 (与服务端布局优先+本地兜底同构)"},
+    {"repo": "kirsh1/ustc-timetable", "stars": 1, "lang": "Kotlin", "license": "AGPL-3.0", "pushed": "2026-09-06", "verdict": "POSITIVE", "evidence": "USTC(jw.ustc.edu.cn 同金智族) UstcTimetablePageParser: layout.byStartTime=startUnit→indexNo 映射, standardStart 查表→startPeriod, periods→endPeriod; 查不到再按区间落点 singleOrNull"},
+    {"repo": "HowardZorn/ustc-course-timetable", "stars": 2, "lang": "Python", "license": "GPL-3.0", "pushed": "2021-09-19", "verdict": "INDIRECT", "evidence": "parse.py 不映射节次, 直接用 date+HHMM 生成 ics 绝对时间 (ics 场景无需节次)"},
+    {"repo": "wjh776a68/HFUT-Class-Schedule", "stars": 0, "lang": "Terra", "license": null, "pushed": "2018-10-31", "verdict": "NEGATIVE", "evidence": "code search 0 命中 schedule-table/datum/courseUnitList; 功能有限, 未见协议代码"},
+    {"repo": "chiseisyu0420/HFUT-Campus-iOS", "stars": 0, "lang": "Swift", "license": "Apache-2.0", "pushed": "2026-09-11", "verdict": "NEGATIVE", "evidence": "code search 0 命中 jxglstu/datum; 疑似纯客户端查询类, 未触协议"}
+  ],
+  "excluded": [
+    {"repos": "课程资料类 (mox-hub/hfut-cs, Tuning-Luna, thinkinglf, ll519257 等)", "reason": "课程资料/答案库, 非教务协议实现, v1.5 非教务仓边界"}
+  ],
+  "gate_note": "本轮为修 bug 类(协议族已在库): 检索矩阵增量复核, 14 候选全量纳入 verdict; 新触达 11 仓 (issue #25 轮未触达), 致谢见 attribution-candidates.json"
+}

@@ -1,0 +1,29 @@
+{
+  "issue": 46,
+  "policy": "v1.5 边界: 调研触达即致谢; 非教务仓/NEGATIVE 仓记排除不致谢; 已致谢仓沿用不重复",
+  "prior_art_already_attributed": [
+    {"repo": "Chiu-xaH/HFUT-Schedule", "since": "EAMS5 初次适配"},
+    {"repo": "BoynChan/HfutOpenApi", "since": "EAMS5 初次适配"},
+    {"repo": "Aoi-cn/hfut_schedule_hacker", "since": "EAMS5 初次适配"},
+    {"repo": "elonzh/django-hfut-auth", "since": "EAMS5 初次适配"},
+    {"repo": "MoeclubM/AHU-AIO + qiqqqqq517 + abydym/Ahu_Plus + Landon-3314 + Zeraora-807 (AHU 轮)", "since": "AHU 适配 2026-09-06"}
+  ],
+  "new_attributions_this_issue": [
+    {"repo": "hfut-soft-ware/hfut-api", "license": null, "used_for": "timetable-layout 端点 + bizTypeId 2/23 校区语义", "site": "LicenseScreen HFUT 卡 + 6 语 strings + AboutLicenseAttributionTest"},
+    {"repo": "SnowingFox/hfut-api", "license": null, "used_for": "timetable-layout 同源旁证", "site": "同上 (hfut-api (SnowingFox))"},
+    {"repo": "onlineG2/hfut_api_service", "license": null, "used_for": "time-table.js layout POST", "site": "同上"},
+    {"repo": "BrikerMan/HFUTer", "license": null, "used_for": "startTime==unit.startTime → index 精确映射算法", "site": "同上"},
+    {"repo": "ssyu0808/HFUTICS", "license": null, "used_for": "四段链 python 同款旁证", "site": "同上"},
+    {"repo": "imnuke/AiSchedule-for-hfut", "license": "GPL-3.0", "used_for": "硬编码节次表反面佐证 (INDIRECT)", "site": "同上"},
+    {"repo": "HualiNox/AISchedule", "license": null, "used_for": "courseUnitList sections 通用族旁证", "site": "同上"},
+    {"repo": "luyishui/classduck", "license": null, "used_for": "布局+datum 联合回传形态", "site": "同上"},
+    {"repo": "HowardZorn/ustc-course-timetable", "license": "GPL-3.0", "used_for": "USTC 同金智族 datum (INDIRECT, ics 绝对时间无节次映射)", "site": "LicenseScreen USTC 卡"},
+    {"repo": "kirsh1/ustc-timetable", "license": "AGPL-3.0", "used_for": "byStartTime 布局查表 + periods 推 endPeriod 算法参照 (POSITIVE)", "site": "LicenseScreen USTC 卡"}
+  ],
+  "excluded_no_attribution": [
+    {"repos": ["wjh776a68/HFUT-Class-Schedule", "chiseisyu0420/HFUT-Campus-iOS"], "reason": "NEGATIVE: code search 0 协议命中, 无协议启发"},
+    {"repos": ["mox-hub/hfut-cs", "Tuning-Luna/HFUT_XC_Study_Things", "thinkinglf/HFUT-22CS", "ll519257/HFUT-EISAT-CoursesData 等"], "reason": "v1.5 非教务仓: 课程资料/答案库"},
+    {"repos": ["Tonyseth/AHU_JW_GPA_Calculator"], "reason": "AHU 轮已致谢, 沿用"}
+  ],
+  "ahu_card_note": "Ahu_Plus (abydym) 在 strings 6 语 AHU 段已有 (AHU 适配轮), 但 LicenseScreen perSchoolEntries AHU 卡与测试 token 集此前未收录 — 本轮补齐三处一致性 (layout ?: defaultUnitTimes 兜底结构参照)"
+}
