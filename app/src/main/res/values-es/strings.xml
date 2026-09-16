@@ -774,7 +774,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="import_draft_saved_at">Guardado %1$s</string>
     <string name="jw_import_exit_title">¿Salir de la importación?</string>
     <string name="jw_import_exit_message">La importación no ha terminado. Puedes conservar un borrador para continuar más tarde.</string>
-    <string name="jw_import_exit_continue">Continuar importando</string>
-    <string name="jw_import_exit_keep_draft">Salir y conservar borrador</string>
-    <string name="jw_import_exit_delete_draft">Salir y eliminar borrador</string>
+    <string name="jw_import_exit_continue">Continuar</string>
+    <string name="jw_import_exit_keep_draft">Conservar</string>
+    <string name="jw_import_exit_delete_draft">Eliminar</string>
 </resources>

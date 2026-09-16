@@ -774,7 +774,7 @@
     <string name="import_draft_saved_at">保存日時: %1$s</string>
     <string name="jw_import_exit_title">インポートを終了しますか？</string>
     <string name="jw_import_exit_message">インポートはまだ完了していません。下書きを保存して後で続行できます。</string>
-    <string name="jw_import_exit_continue">インポートを続ける</string>
-    <string name="jw_import_exit_keep_draft">終了して下書きを保存</string>
-    <string name="jw_import_exit_delete_draft">終了して下書きを削除</string>
+    <string name="jw_import_exit_continue">続ける</string>
+    <string name="jw_import_exit_keep_draft">下書き保存</string>
+    <string name="jw_import_exit_delete_draft">下書き削除</string>
 </resources>

@@ -838,6 +838,6 @@
     <string name="jw_import_exit_title">退出导入？</string>
     <string name="jw_import_exit_message">当前导入尚未完成，退出后可以保留草稿供稍后继续。</string>
     <string name="jw_import_exit_continue">继续导入</string>
-    <string name="jw_import_exit_keep_draft">退出并保留草稿</string>
-    <string name="jw_import_exit_delete_draft">退出并删除草稿</string>
+    <string name="jw_import_exit_keep_draft">保留草稿</string>
+    <string name="jw_import_exit_delete_draft">删除草稿</string>
 </resources>
