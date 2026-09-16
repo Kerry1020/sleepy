@@ -275,6 +275,25 @@ class ScheduleViewModel : ViewModel() {
         )
     )
 
+    /**
+     * v1.0.56 T7: 新建作息表(自动唯一命名) — 全局唯一名(课表∪作息表)顺延,
+     * 空 name 走默认名「新建作息表」参与顺延。新建入口(管理页卡/管理页按钮)统一走这里。
+     */
+    suspend fun insertPeriodTableWithUniqueName(
+        name: String,
+        defaultName: String,
+        timeJson: String = com.lingion.sleepy.util.TimeTableUtils.DEFAULT_TIME_JSON,
+        nodesPerDay: Int = 12,
+        smartConfigJson: String = ""
+    ): Long {
+        val courseNames = repo.getAllTables().map { it.name }
+        val periodNames = repo.getAllPeriodTables().map { it.name }
+        val unique = com.lingion.sleepy.util.TimeTableUtils.suggestUniqueName(
+            name, courseNames, periodNames, defaultName = defaultName
+        )
+        return insertPeriodTable(unique, timeJson, nodesPerDay, smartConfigJson)
+    }
+
     fun updateTable(table: TimeTableEntity) {
         viewModelScope.launch { repo.updateTable(table) }
     }

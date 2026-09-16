@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -112,6 +113,9 @@ fun PeriodTableEditScreen(
     // 语义 = 取入: 选中另一张作息表, 把它的节次内容拷进当前编辑区(成为本表内容的起点),
     // 非活绑 — period_tables 自身无绑定字段, 绑定只存在于课表上。排除自己禁自引用。
     var selectedImportTableId by remember(periodTable.id) { mutableStateOf<Long?>(null) }
+    // v1.0.56 T7: 删除入口迁入本页 — 确认弹窗 + 绑定拦截提示(从管理页列表行整体搬迁)
+    var showDeleteConfirm by remember(periodTable.id) { mutableStateOf(false) }
+    var deleteBlockedMsg by remember(periodTable.id) { mutableStateOf<String?>(null) }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -341,6 +345,26 @@ fun PeriodTableEditScreen(
                 }
             }
 
+            // v1.0.56 T7: 删除键从管理页列表行挪到这里(用户 2026-09-16)。
+            // 新建未保存的表不显示 — 退出即丢弃, 无"已存在的东西"可删。
+            // 删除成功后回管理页; 被绑定拦截时弹 blocked 提示(与原列表行删除同语义)。
+            if (!unsavedNew) {
+                item {
+                    Button(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier.fillMaxWidth().height(SleepyTheme.Buttons.regularHeight),
+                        shape = SleepyTheme.Buttons.shape,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = colors.errorContainer
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null, tint = colors.onErrorContainer)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.period_table_delete_confirm), color = colors.onErrorContainer)
+                    }
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(28.dp)) }
         }
     }
@@ -389,6 +413,44 @@ fun PeriodTableEditScreen(
                 TextButton(onClick = { pendingPreview = null; pendingSave = null }) {
                     Text(stringResource(R.string.cancel))
                 }
+            }
+        )
+    }
+
+    // v1.0.56 T7: 删除确认弹窗(原管理页逻辑整体迁移, 语义不变)
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(stringResource(R.string.period_table_delete_msg_body, periodTable.name), color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    scope.launch {
+                        val ok = viewModel.deletePeriodTable(periodTable.id)
+                        if (ok) {
+                            onBack()
+                        } else {
+                            val bound = scheduleState.tables.count { it.periodTableId == periodTable.id }
+                            deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
+                        }
+                    }
+                }) { Text(stringResource(R.string.delete), color = colors.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    // v1.0.56 T7: 绑定拦截提示(删不掉 = 仍有课表绑着本表)
+    deleteBlockedMsg?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { deleteBlockedMsg = null },
+            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
+            text = { Text(msg, color = colors.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
             }
         )
     }

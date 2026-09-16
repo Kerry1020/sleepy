@@ -34,6 +34,8 @@
     <string name="manage_import_sub">Importar desde archivo / texto / CSV</string>
     <string name="manage_new_table">Nuevo horario de períodos</string>
     <string name="manage_new_table_sub">Crear un horario vacío, añadir cursos manualmente</string>
+    <string name="manage_new_period_table">Nuevo horario de períodos</string>
+    <string name="manage_new_period_table_sub">Crea un horario de períodos vacío para compartir entre horarios</string>
     <string name="manage_edit_current">Editar actual</string>
     <string name="manage_edit_current_sub">Editar nombre, fechas y horarios</string>
     <string name="manage_export">Exportar horario actual</string>

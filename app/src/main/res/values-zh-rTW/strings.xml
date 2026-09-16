@@ -34,6 +34,8 @@
     <string name="manage_import_sub">從檔案 / 文字 / CSV 匯入課表</string>
     <string name="manage_new_table">建立課表</string>
     <string name="manage_new_table_sub">建立一張空白課表，手動新增課程</string>
+    <string name="manage_new_period_table">新增作息表</string>
+    <string name="manage_new_period_table_sub">建立一張空白作息表，供多張課表共用</string>
     <string name="manage_edit_current">編輯目前課表</string>
     <string name="manage_edit_current_sub">編輯課表名稱、日期、節次時間</string>
     <string name="manage_export">匯出目前課表</string>
