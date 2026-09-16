@@ -58,7 +58,7 @@
   - Accept: sleepy-v1 P+C 与 WakeUp JSON tableInfo.time → 自动建作息表(同名,撞名顺延,预览框可见后缀)+建课表+绑定;导入确认框第三Tab默认选中解析出的表
   - Verify: 单测+模拟器
   - Files: ImportSheet.kt, JwImportViewModel.kt/JwImportActivity.kt, 6×strings
-- [ ] T11 作息表单独导出
+- [x] T11 作息表单独导出
   - Accept: 编辑页分享键→格式选择(sleepy-v1 文本/JSON)→shareText;导出的纯作息文本可被 T9 路径吃回(往返)
   - Verify: 单测(导出体格式+parser 吃回)+模拟器往返
   - Files: SleepyNativeExporter.kt, PeriodTableEditScreen.kt, 6×strings
