@@ -75,6 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lingion.sleepy.R
 import com.lingion.sleepy.SleepyApp
 import com.lingion.sleepy.data.entity.CourseEntity
+import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.SmartPeriodConfig
 import com.lingion.sleepy.data.entity.TimeTableEntity
 import com.lingion.sleepy.util.DateUtils
@@ -126,6 +127,8 @@ fun ImportSheet(
     var confirmedTimeJson by remember { mutableStateOf("") }
     // v1.0.56 T6: 第三 Tab「作息表」— 绑定选择; 确认导入时传给 applyImportPreview 落绑定
     var confirmedBindPeriodTableId by remember { mutableStateOf<Long?>(null) }
+    // v1.0.56 T9: 纯作息导入 — 解析结果只有作息表没课程时, 走独立确认框(只建作息表)
+    var purePeriodName by remember { mutableStateOf("") }
     val allPeriodTables by viewModel.allPeriodTables.collectAsState(initial = emptyList())
     var importJustApplied by remember { mutableStateOf(false) }
     var showDrafts by remember { mutableStateOf(false) }
@@ -411,6 +414,77 @@ fun ImportSheet(
 
     // 预览对话框
     preview?.let { currentPreview ->
+        // v1.0.56 T9: 纯作息导入(只有 P 区块/节次, 零课程) — 不进课程确认框,
+        // 弹独立命名框(预填全局唯一名, 用户可改), 确认只建作息表不建空课表。
+        val isPurePeriod = currentPreview.parseResult.courses.isEmpty() &&
+            currentPreview.parseResult.periodTable != null
+        if (isPurePeriod) {
+            val pt = currentPreview.parseResult.periodTable!!
+            androidx.compose.runtime.LaunchedEffect(currentPreview) {
+                // 预填名 = 源名参与全局唯一名顺延(课程表∪作息表), 后缀 2/3 预览即可见
+                val courseNames = viewModel.getAllTableNamesOnce()
+                val periodNames = viewModel.getAllPeriodTableNamesOnce()
+                purePeriodName = TimeTableUtils.suggestUniqueName(pt.name, courseNames, periodNames)
+            }
+            val candidate = purePeriodName.trim()
+            val nameTaken = candidate.isNotBlank() && TimeTableUtils.isTableNameTaken(
+                candidate,
+                state.tables.map { it.name },
+                allPeriodTables.map { it.name }
+            )
+            AlertDialog(
+                onDismissRequest = { preview = null },
+                title = { Text(stringResource(R.string.period_table_import_title), color = colors.onSurface) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = stringResource(R.string.period_table_import_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant
+                        )
+                        TextField(
+                            value = purePeriodName,
+                            onValueChange = { purePeriodName = it },
+                            label = { Text(stringResource(R.string.period_table_name_label)) },
+                            singleLine = true,
+                            isError = nameTaken,
+                            supportingText = if (nameTaken) {
+                                { Text(stringResource(R.string.period_table_name_taken)) }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = SleepyTheme.fieldShape,
+                            colors = SleepyTheme.fieldColors()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        enabled = candidate.isNotBlank() && !nameTaken,
+                        onClick = {
+                            scope.launch {
+                                isLoading = true
+                                try {
+                                    applyPurePeriodImport(
+                                        name = candidate,
+                                        parsed = pt,
+                                        onImported = onImported,
+                                        onError = { msg -> errorMsg = msg }
+                                    )
+                                    preview = null
+                                    importJustApplied = true
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    ) { Text(stringResource(R.string.period_table_import_confirm)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { preview = null }) { Text(stringResource(R.string.cancel)) }
+                }
+            )
+            return@let
+        }
         ImportPreviewDialog(
             preview = currentPreview,
             onDismiss = { preview = null },
@@ -1330,6 +1404,37 @@ private suspend fun buildImportPreview(
             null
         }
     )
+}
+
+/**
+ * v1.0.56 T9: 纯作息导入 — 只建一张作息表, 不建空课表。
+ * 名字已由确认框查重; 落库前再走 suggestUniqueName 兜底(同屏并发导入等边缘)。
+ */
+private suspend fun applyPurePeriodImport(
+    name: String,
+    parsed: ScheduleParser.ParsedPeriodTable,
+    onImported: () -> Unit,
+    onError: (String) -> Unit
+) {
+    val repo = SleepyApp.get().repository
+    com.lingion.sleepy.data.undo.UndoManager.beginBatch()
+    try {
+        val courseNames = repo.getAllTables().map { it.name }
+        val periodNames = repo.getAllPeriodTables().map { it.name }
+        val unique = TimeTableUtils.suggestUniqueName(name, courseNames, periodNames)
+        repo.insertPeriodTable(
+            PeriodTableEntity(
+                name = unique,
+                nodesPerDay = parsed.nodesPerDay.coerceAtLeast(1),
+                timeJson = parsed.timeJson
+            )
+        )
+        onImported()
+    } catch (e: Exception) {
+        onError(e.message ?: "import failed")
+    } finally {
+        com.lingion.sleepy.data.undo.UndoManager.endBatch()
+    }
 }
 
 private suspend fun applyImportPreview(

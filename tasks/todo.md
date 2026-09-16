@@ -50,7 +50,7 @@
 
 ## Phase 4 导入导出
 
-- [ ] T9 纯作息导入
+- [x] T9 纯作息导入
   - Accept: sleepy-v1 P块无C行 → 独立确认弹窗(名称预填顺延+可改+查重)→确认=insertPeriodTable+提示,不建课表
   - Verify: 单测(解析0课程+periodTable非空判定)+模拟器全链
   - Files: ImportSheet.kt, 6×strings

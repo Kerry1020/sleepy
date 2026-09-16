@@ -322,6 +322,12 @@ class ScheduleViewModel : ViewModel() {
         return insertPeriodTable(unique, timeJson, nodesPerDay, smartConfigJson)
     }
 
+    /** v1.0.56 T9: 全局唯一名预填用 — 一次性取全部课表名 */
+    suspend fun getAllTableNamesOnce(): List<String> = repo.getAllTables().map { it.name }
+
+    /** v1.0.56 T9: 全局唯一名预填用 — 一次性取全部作息表名 */
+    suspend fun getAllPeriodTableNamesOnce(): List<String> = repo.getAllPeriodTables().map { it.name }
+
     fun updateTable(table: TimeTableEntity) {
         viewModelScope.launch { repo.updateTable(table) }
     }

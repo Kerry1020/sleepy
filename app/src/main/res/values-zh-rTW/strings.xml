@@ -742,6 +742,9 @@
     <string name="period_table_bound_count">已綁定 %1$d 張課表</string>
     <string name="period_table_new">新增作息表</string>
     <string name="period_table_copy">複製時間表</string>
+    <string name="period_table_import_title">匯入作息表</string>
+    <string name="period_table_import_body">偵測到輸入只包含作息表內容，將只建立一張作息表。</string>
+    <string name="period_table_import_confirm">確認匯入作息表</string>
     <string name="period_table_name_taken">該名稱已被其他課表或作息表使用</string>
     <string name="period_table_copy_dialog_title">複製作息表</string>
     <string name="period_table_name_label">作息表名稱</string>

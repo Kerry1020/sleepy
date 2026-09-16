@@ -760,6 +760,9 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="period_table_bound_count">Bound to %1$d timetable(s)</string>
     <string name="period_table_new">New bell schedule</string>
     <string name="period_table_copy">Duplicate bell schedule</string>
+    <string name="period_table_import_title">Import bell schedule</string>
+    <string name="period_table_import_body">Only bell schedule data was detected. Only one bell schedule will be created.</string>
+    <string name="period_table_import_confirm">Import bell schedule</string>
     <string name="period_table_name_taken">This name is already used by another table</string>
     <string name="period_table_copy_dialog_title">Copy bell schedule</string>
     <string name="period_table_name_label">Bell schedule name</string>
