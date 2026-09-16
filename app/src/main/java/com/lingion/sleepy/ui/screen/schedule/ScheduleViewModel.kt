@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -29,16 +30,24 @@ data class ScheduleState(
     val nodesPerDay: Int = 12,
     val selectedCourseId: Long? = null,
     val showCourseDialog: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    /** issue#40: 当前表绑定的独立时间节次表(null=未绑定/悬空, 渲染回退旧兼容列) */
+    val effectivePeriodTable: com.lingion.sleepy.data.entity.PeriodTableEntity? = null
 ) {
     val currentWeekCourses: List<CourseEntity>
         get() = courses.filter { it.inWeek(selectedWeek) }
             .let { list ->
-                val tj = currentTable?.timeJson
+                val tj = effectiveCurrentTable?.timeJson
                 if (tj == null) list else list.map { c -> c.normalizeNode(tj) }
             }
+
+    /** 原始行(库内数据, timeJson 兼容列可能过期) */
     val currentTable: TimeTableEntity?
         get() = tables.find { it.id == selectedTableId }
+
+    /** issue#40: 水合后的当前表 — 节次时间域一律从这里读, 不得直接读 currentTable.timeJson */
+    val effectiveCurrentTable: TimeTableEntity?
+        get() = currentTable?.hydratedWith(effectivePeriodTable)
 }
 
 class ScheduleViewModel : ViewModel() {
@@ -47,6 +56,14 @@ class ScheduleViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ScheduleState())
     val state: StateFlow<ScheduleState> = _state.asStateFlow()
+
+    /** issue#40: 全部独立时间节次表(管理页列表) */
+    val allPeriodTables = repo.observeAllPeriodTables()
+        .stateIn(
+            viewModelScope,
+            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
 
     /** Whether the user has explicitly selected a table (vs auto-picking default on load) */
     private var manualSelectDone = false
@@ -91,28 +108,37 @@ class ScheduleViewModel : ViewModel() {
         // 取消旧协程，避免多个 observeCourses 同时写 state.courses 互相覆盖
         coursesJob?.cancel()
         coursesJob = viewModelScope.launch {
-            repo.observeCourses(tableId).collect { courses ->
-                _state.update { st ->
-                    val table = st.tables.find { it.id == tableId }
-                    val week = table?.let { DateUtils.currentWeek(it.startDate) } ?: 1
-                    // v7.10.16s: 只更新真实周(currentWeek, 供"回到本周"), 不再重置 selectedWeek —
-                    // 用户在第 x 周编辑/删课, 保存回来仍停在 x 周(此前被拽回真实周=跳回第一周体验)。
-                    // 首次加载(initial=true)仍落真实周, 保持原行为
-                    st.copy(
-                        courses = courses,
-                        currentWeek = week,
-                        selectedWeek = if (st.initialWeekSettled) st.selectedWeek else week,
-                        initialWeekSettled = true,
-                        nodesPerDay = table?.nodesPerDay ?: 12
-                    )
+            // issue#40: 课程流与绑定时间节次表流合并 — 时间节次表改动会 emit 新值,
+            // 所有绑定课表立即按新作息解释节次(设计 §5.2 立即全部同步), 课程行不重算
+            combine(
+                repo.observeCourses(tableId),
+                repo.observeEffectivePeriodTable(tableId)
+            ) { courses, periodTable -> courses to periodTable }
+                .collect { (courses, periodTable) ->
+                    _state.update { st ->
+                        val rawTable = st.tables.find { it.id == tableId }
+                        // 水合: 绑定存在时 nodesPerDay/timeJson/smartConfigJson 以时间节次表为准
+                        val table = rawTable?.hydratedWith(periodTable)
+                        val week = table?.let { DateUtils.currentWeek(it.startDate) } ?: 1
+                        // v7.10.16s: 只更新真实周(currentWeek, 供"回到本周"), 不再重置 selectedWeek —
+                        // 用户在第 x 周编辑/删课, 保存回来仍停在 x 周(此前被拽回真实周=跳回第一周体验)。
+                        // 首次加载(initial=true)仍落真实周, 保持原行为
+                        st.copy(
+                            courses = courses,
+                            currentWeek = week,
+                            selectedWeek = if (st.initialWeekSettled) st.selectedWeek else week,
+                            initialWeekSettled = true,
+                            nodesPerDay = table?.nodesPerDay ?: 12,
+                            effectivePeriodTable = periodTable
+                        )
+                    }
+                    // 课程数据变更后刷新所有 widget
+                    try {
+                        com.lingion.sleepy.widget.WidgetUpdater.notifyDataChanged(
+                            com.lingion.sleepy.SleepyApp.get()
+                        )
+                    } catch (_: Exception) {}
                 }
-                // 课程数据变更后刷新所有 widget
-                try {
-                    com.lingion.sleepy.widget.WidgetUpdater.notifyDataChanged(
-                        com.lingion.sleepy.SleepyApp.get()
-                    )
-                } catch (_: Exception) {}
-            }
         }
     }
 
@@ -205,6 +231,49 @@ class ScheduleViewModel : ViewModel() {
         } catch (_: Exception) {}
         return id
     }
+
+    /** issue#40: 修改共享时间节次表内容 — 全部绑定课表立即生效, 课程行零改动 */
+    fun updatePeriodTableContent(table: com.lingion.sleepy.data.entity.PeriodTableEntity) {
+        viewModelScope.launch {
+            repo.savePeriodTable(table)
+        }
+    }
+
+    /** issue#40: 换绑课程表的时间节次表(只写 periodTableId, 课程行零改动) */
+    fun bindPeriodTable(timeTableId: Long, periodTableId: Long?) {
+        viewModelScope.launch { repo.bindPeriodTable(timeTableId, periodTableId) }
+    }
+
+    /** issue#40: 复制时间节次表, 返回新副本 id (-1 = 源不存在) */
+    suspend fun copyPeriodTable(sourceId: Long): Long = repo.copyPeriodTable(sourceId)
+
+    /** issue#40: 全库课程(保存预览用) — 预览须覆盖所有绑定表的课, state.courses 只装当前选中表 */
+    suspend fun getAllCourses(): List<com.lingion.sleepy.data.entity.CourseEntity> = repo.getAllCourses()
+
+    /** issue#40: 删除时间节次表(被引用时 false, UI 提示先改绑) */
+    suspend fun deletePeriodTable(id: Long): Boolean = repo.deletePeriodTable(id)
+
+    /**
+     * issue#40: 丢弃一个从未保存过的新建时间节次表(创建即落库的残留清理)。
+     * 与课表侧 [discardNewTable] 同语义 — 用户在编辑页点了返回(=放弃), 该空行
+     * 不应遗留在管理页列表里。丢弃不走删除守卫(刚建的表不可能有绑定)。
+     */
+    fun discardNewPeriodTable(id: Long) {
+        viewModelScope.launch { repo.deletePeriodTable(id) }
+    }
+
+    /** issue#40: 新建空白时间节次表 */
+    suspend fun insertPeriodTable(
+        name: String,
+        timeJson: String = com.lingion.sleepy.util.TimeTableUtils.DEFAULT_TIME_JSON,
+        nodesPerDay: Int = 12,
+        smartConfigJson: String = ""
+    ): Long = repo.insertPeriodTable(
+        com.lingion.sleepy.data.entity.PeriodTableEntity(
+            name = name, nodesPerDay = nodesPerDay,
+            timeJson = timeJson, smartConfigJson = smartConfigJson
+        )
+    )
 
     fun updateTable(table: TimeTableEntity) {
         viewModelScope.launch { repo.updateTable(table) }

@@ -96,11 +96,47 @@ class StringsKeyParityTest {
         File("src/main/res")
     ).first { it.isDirectory }
 
+    /**
+     * issue#40 独立时间节次表新增 string key (2026-09-15, feat/issue40-independent-timetable)。
+     * 全 6 locale 必须齐 — 缺任一 = MissingTranslation lint error 回归。
+     */
+    private val periodTableKeys = listOf(
+        "mine_period_tables",
+        "mine_period_tables_sub",
+        "period_tables_title",
+        "period_table_bound_count",
+        "period_table_new",
+        "period_table_copy",
+        "period_table_name_label",
+        "period_table_delete_confirm",
+        "period_table_delete_blocked",
+        "period_table_bind_label",
+        "period_table_unbound",
+        "period_table_save_preview_title",
+        "period_table_preview_summary",
+        "period_table_preview_confirm",
+        "period_table_bind_preview_title",
+        "period_table_bind_preview_body"
+    )
+
     @Test
     fun all_six_locale_dirs_exist() {
         for (locale in localeDirs) {
             val dir = File(basePath, locale)
             assertTrue("Missing locale dir $locale", dir.isDirectory)
+        }
+    }
+
+    @Test
+    fun period_table_keys_present_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in periodTableKeys) {
+                assertTrue(
+                    "period table key \"$key\" missing in $locale/strings.xml",
+                    text.contains("name=\"$key\"")
+                )
+            }
         }
     }
 

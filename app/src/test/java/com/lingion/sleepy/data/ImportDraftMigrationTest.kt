@@ -110,13 +110,13 @@ class ImportDraftMigrationTest {
     }
 
     @Test
-    fun migration_chain_reaches_v7_without_gaps() {
+    fun migration_chain_reaches_v8_without_gaps() {
         val chain = ALL_MIGRATIONS
         assertEquals(3, chain.first().startVersion)
         chain.forEachIndexed { index, migration ->
             assertEquals(migration.startVersion + 1, migration.endVersion)
             if (index > 0) assertEquals(chain[index - 1].endVersion, migration.startVersion)
         }
-        assertEquals(7, chain.last().endVersion)
+        assertEquals(8, chain.last().endVersion)
     }
 }

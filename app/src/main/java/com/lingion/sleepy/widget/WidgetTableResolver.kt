@@ -34,8 +34,16 @@ object WidgetTableResolver {
                 bestCount = count
             }
         }
-        return defaultHit ?: best.takeIf { bestCount > 0 }
+        // issue#40: 选出的表若绑定了独立时间节次表, 出口水合 —
+        // 节次时间/智慧节次/节次数按绑定表解释, 兼容列兜底。悬空引用静默回退旧列。
+        val chosen = defaultHit ?: best.takeIf { bestCount > 0 } ?: return null
+        return chosen.hydratedWith(repo.getPeriodTableOrNull(chosen.periodTableId))
     }
+
+    /** issue#40: null 安全取时间节次表 — id 为 null 或查无此行都返回 null */
+    private suspend fun com.lingion.sleepy.data.repository.ScheduleRepository.getPeriodTableOrNull(
+        periodTableId: Long?
+    ) = periodTableId?.let { runCatching { getPeriodTable(it) }.getOrNull() }
 
     /**
      * Resolve the table a specific widget instance is bound to.
@@ -52,6 +60,11 @@ object WidgetTableResolver {
     suspend fun resolveBoundTable(widgetId: Int): TimeTableEntity? {
         val app = SleepyApp.get()
         val boundId = WidgetBindingStore.get(app, widgetId) ?: return null
-        return runCatching { app.repository.getTable(boundId) }.getOrNull()
+        val table = runCatching { app.repository.getTable(boundId) }.getOrNull() ?: return null
+        // issue#40: 绑定实例同样按其绑定的独立时间节次表水合
+        val periodTable = table.periodTableId?.let {
+            runCatching { app.repository.getPeriodTable(it) }.getOrNull()
+        }
+        return table.hydratedWith(periodTable)
     }
 }

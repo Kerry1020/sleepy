@@ -1358,6 +1358,17 @@ private suspend fun applyImportPreview(
         }
         ImportApplyMode.ImportAsNew -> {
             val base = repo.getTable(preview.targetTableId)
+            // issue#40 §6: 新格式带 P 区块 → 建 period_tables 并绑定(恢复共享关系);
+            // 旧格式 periodTable=null → 不建(课表用自己兼容列, 不误共享)。
+            val importedPeriodTableId = preview.parseResult.periodTable?.let { pt ->
+                repo.insertPeriodTable(
+                    com.lingion.sleepy.data.entity.PeriodTableEntity(
+                        name = pt.name,
+                        nodesPerDay = pt.nodesPerDay,
+                        timeJson = pt.timeJson
+                    )
+                )
+            }
             val newTableId = repo.insertTable(
                 TimeTableEntity(
                     name = uniqueImportedTableName(confirmedTableName, repo.getAllTables().map { it.name }, context),
@@ -1365,7 +1376,8 @@ private suspend fun applyImportPreview(
                     maxWeek = if (preview.parseResult.maxWeek > 0) preview.parseResult.maxWeek else base?.maxWeek ?: 20,
                     timeJson = confirmedTimeJson,
                     color = base?.color ?: "#FF6750A4",
-                    isDefault = false
+                    isDefault = false,
+                    periodTableId = importedPeriodTableId
                 )
             )
             // sleepy-v1: groupId 权威时保留分区(ImportAsNew 全量落新课表, 等价 replace 语义)

@@ -82,6 +82,8 @@ fun EditTableScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    // issue#40: 全部时间节次表(换绑选择器数据源 §4.3)
+    val allPeriodTables by viewModel.allPeriodTables.collectAsState()
     val colors = SleepyTheme.colors
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -107,20 +109,36 @@ fun EditTableScreen(
     var timeSlotsExpanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    // issue#40: 换绑选择(§5.3) — null 起始 = 未动过; 确认时才写 periodTableId。
+    // pendingBind != table.periodTableId 时保存流程走换绑分支。
+    var pendingBind by remember(table.id, table.periodTableId) { mutableStateOf<Long?>(table.periodTableId) }
+    var bindExpanded by remember { mutableStateOf(false) }
+    // issue#40 §5.3: 换绑确认弹窗 — 非 null 时弹「确认换绑」, 确认才真正写 periodTableId
+    var pendingRebind by remember { mutableStateOf<Long?>(null) }
 
-    val timeJson = table.timeJson
-    val slotRows = remember(table.id) {
+    // issue#40: 编辑的就是"有效时间表" — 绑定了独立时间节次表时, 节次编辑区
+    // 展示/修改的是该时间节次表(多张绑定课表同享), 保存写回 period_tables;
+    // 未绑定时行为不变(编辑本表兼容列)。
+    // 换绑修复: 有效表跟随 pendingBind(用户在下拉里改选时立即切换编辑区来源),
+    // 否则已绑定的表 effectivePeriodTable 恒非空, 保存永远走"写回旧表"分支, 换绑成死代码。
+    val effectivePeriodTable = state.effectivePeriodTable?.takeIf {
+        pendingBind != null && it.id == pendingBind
+    } ?: allPeriodTables.find { it.id == pendingBind }
+    val timeJson = effectivePeriodTable?.timeJson ?: table.timeJson
+    val slotRows = remember(table.id, effectivePeriodTable?.id, timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
             addAll(TimeTableUtils.parseTimeSlotRows(timeJson))
         }
     }
     // v1.0.16 自动模式配置（编辑当前课表时使用）
-    val smartConfig = remember(table.id) {
+    val smartConfig = remember(table.id, effectivePeriodTable?.id, timeJson) {
         mutableStateOf(
             // 如果表里已存 smartConfigJson，反序列化恢复；否则从现有 slotRows 推断初始值
-            if (table.smartConfigJson.isNotBlank()) {
+            if ((effectivePeriodTable?.smartConfigJson ?: table.smartConfigJson).isNotBlank()) {
                 try {
-                    Json.decodeFromString<SmartPeriodConfig>(table.smartConfigJson)
+                    Json.decodeFromString<SmartPeriodConfig>(
+                        effectivePeriodTable?.smartConfigJson ?: table.smartConfigJson
+                    )
                 } catch (e: Exception) {
                     SmartPeriodConfig(
                         totalPeriods = slotRows.size.coerceAtLeast(1),
@@ -198,6 +216,67 @@ fun EditTableScreen(
                             shape = SleepyTheme.fieldShape,
                             colors = fieldColors
                         )
+                    }
+                }
+            }
+
+            // issue#40 §4.3: 时间节次表选择项 — 选择只改 periodTableId, 课程行不复制不搬移
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(SleepyTheme.shapes.extraLarge)
+                        .background(colors.surfaceContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .noRippleClickable { bindExpanded = !bindExpanded }
+                            .padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.period_table_bind_label),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = colors.onSurface
+                            )
+                            Text(
+                                text = allPeriodTables.find { it.id == pendingBind }?.name
+                                    ?: stringResource(R.string.period_table_unbound),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = colors.onSurfaceVariant,
+                            modifier = Modifier.rotate(if (bindExpanded) 180f else 0f)
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = bindExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                            // 未绑定选项 = 解绑(回退本表兼容列)
+                            BindOptionRow(
+                                title = stringResource(R.string.period_table_unbound),
+                                selected = pendingBind == null,
+                                onClick = { pendingBind = null }
+                            )
+                            allPeriodTables.forEach { pt ->
+                                BindOptionRow(
+                                    title = pt.name,
+                                    selected = pendingBind == pt.id,
+                                    onClick = { pendingBind = pt.id }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -284,17 +363,39 @@ fun EditTableScreen(
                         } catch (e: Exception) {
                             ""
                         }
+                        val newTimeJson = TimeTableUtils.buildTimeJsonFromRows(slotRows.toList())
                         val updated = table.copy(
                             name = name.ifBlank { table.name },
                             startDate = DateUtils.normalizeStartDate(startDate),
                             maxWeek = maxWeek,
-                            timeJson = TimeTableUtils.buildTimeJsonFromRows(slotRows.toList()),
+                            timeJson = newTimeJson,
                             smartConfigJson = smartConfigJson
                         )
+                        val bindChanged = pendingBind != table.periodTableId
+                        if (bindChanged && pendingBind != null) {
+                            // issue#40 §5.3: 换绑须先预览确认 — 弹换绑确认框, 确认才写
+                            pendingRebind = pendingBind
+                            return@Button
+                        }
                         scope.launch {
-                            // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
-                            // 课程不能再停在 13-16 节)
-                            viewModel.updateTableRemappingCourses(updated)
+                            if (bindChanged) {
+                                // issue#40 §5.3: 解绑 — 只写 periodTableId=null, 课程行零改动
+                                viewModel.bindPeriodTable(table.id, null)
+                            } else if (effectivePeriodTable != null) {
+                                // issue#40: 节次编辑区改的是共享时间节次表 — 写回 period_tables +
+                                // 同步全部绑定课表兼容列(§5.2); 课程行零改动(§9.1)
+                                viewModel.updatePeriodTableContent(
+                                    effectivePeriodTable.copy(
+                                        timeJson = newTimeJson,
+                                        smartConfigJson = smartConfigJson,
+                                        nodesPerDay = slotRows.size.coerceAtLeast(1)
+                                    )
+                                )
+                            } else {
+                                // issue#28 P3: timeJson 变了课程节次必须自适应(16→12 节后
+                                // 课程不能再停在 13-16 节)
+                                viewModel.updateTableRemappingCourses(updated)
+                            }
                             onSaved()
                         }
                     },
@@ -358,6 +459,33 @@ fun EditTableScreen(
             }
         )
     }
+
+    // issue#40 §5.3: 换绑确认 — 换绑后本课表按新节次表解释节次时间, 自定义时间课程不受影响
+    if (pendingRebind != null) {
+        val targetId = pendingRebind
+        AlertDialog(
+            onDismissRequest = { pendingRebind = null },
+            title = { Text(stringResource(R.string.period_table_bind_preview_title), color = colors.onSurface) },
+            text = {
+                Text(
+                    text = stringResource(R.string.period_table_bind_preview_body),
+                    color = colors.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRebind = null
+                    scope.launch {
+                        viewModel.bindPeriodTable(table.id, targetId)
+                        onSaved()
+                    }
+                }) { Text(stringResource(R.string.period_table_preview_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRebind = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 }
 
 @Composable
@@ -375,6 +503,37 @@ private fun CardSection(title: String, subtitle: String, content: @Composable ()
             if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         }
         content()
+    }
+}
+
+/** issue#40 §4.3: 换绑下拉的选项行 — 选中态=primaryContainer 色块+对勾(UI 纯色块禁描边规则) */
+@Composable
+private fun BindOptionRow(title: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = SleepyTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(SleepyTheme.shapes.medium)
+            .background(if (selected) colors.primaryContainer else colors.surface)
+            .noRippleClickable(onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (selected) colors.onPrimaryContainer else colors.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        if (selected) {
+            Icon(
+                Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.onPrimaryContainer,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 

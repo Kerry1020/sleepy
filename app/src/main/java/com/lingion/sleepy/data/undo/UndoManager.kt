@@ -3,10 +3,12 @@ package com.lingion.sleepy.data.undo
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.lingion.sleepy.data.entity.CourseEntity
+import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.TimeTableEntity
 
-/** 改动前的全库快照 — tables+courses+默认表 id。 */
+/** 改动前的全库快照 — periodTables+tables+courses+默认表 id (issue#40 起含独立时间节次表)。 */
 data class UndoSnapshot(
+    val periodTables: List<PeriodTableEntity> = emptyList(),
     val tables: List<TimeTableEntity>,
     val courses: List<CourseEntity>,
     val defaultTableId: Long?
@@ -49,13 +51,18 @@ object UndoManager {
 
     fun endBatch() { batchDepth = (batchDepth - 1).coerceAtLeast(0) }
 
-    fun capture(tables: List<TimeTableEntity>, courses: List<CourseEntity>, defaultTableId: Long?) {
+    fun capture(
+        tables: List<TimeTableEntity>,
+        courses: List<CourseEntity>,
+        defaultTableId: Long?,
+        periodTables: List<PeriodTableEntity> = emptyList()
+    ) {
         if (restoring) return
         if (batchDepth > 0) {
             if (batchCaptured) return   // 批内已有本动作快照 — 保动作链起点
             batchCaptured = true
         }
-        slot = UndoSnapshot(tables, courses, defaultTableId)
+        slot = UndoSnapshot(periodTables, tables, courses, defaultTableId)
     }
 
     fun poll(): UndoSnapshot? {
