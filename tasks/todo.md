@@ -4,17 +4,17 @@
 
 ## Phase 1 基建
 
-- [ ] T1 改名「作息表」(17键×6 locale + feature-baseline.md)
+- [x] T1 改名「作息表」(17键×6 locale + feature-baseline.md) — 984fd59c
   - Accept: 全库 grep 无「节次时间表/时间节次表」UI 文案;assembleDebug 绿
-  - Verify: grep + assembleDebug + parity test
-  - Files: 6×strings.xml, docs/sop/feature-baseline.md, StringsKeyParityTest(仅当加新键)
-- [ ] T2 全局唯一名基建
-  - Accept: repo.isNameTaken(两表全域查, exclude self); 单测覆盖(撞/不撞/排己)
-  - Verify: 新单测红→绿
-  - Files: ScheduleRepository.kt(+ScheduleViewModel 暴露), 新测试文件
-- [ ] T3 捏放→实验室开关
+  - Verify: grep 清零 + parity test 绿 + 主仓本地 feature-baseline.md 已同步
+  - Files: 6×strings.xml(en=Bell schedule/ja=時程表/es=Horario de períodos)
+- [x] T2 全局唯一名基建 — 8d6a2a45
+  - Accept: TimeTableUtils.isTableNameTaken(全域查,excludeId排己)+suggestUniqueName(顺延2/3/4,兼容"(2)"形态)
+  - Verify: UniqueTableNameTest 12红→绿
+  - Files: TimeTableUtils.kt, UniqueTableNameTest.kt(UI接线随各屏任务落)
+- [x] T3 捏放→实验室开关 — 6539ee38
   - Accept: KEY_GRID_PINCH_ZOOM 默认 false;关=捏不动(手势不挂),开=现行为;实验室多一行开关;存量行高不清
-  - Verify: 单测 AppPrefs 默认值 + 模拟器手动验证
+  - Verify: GridPinchZoomKeyTest 3项 + assembleDebug + 全量1915测试绿; 模拟器验证随 T12
   - Files: AppPrefs.kt, GeneralSettingsScreen.kt, CourseTableView.kt, ScheduleScreen.kt, 6×strings
 - [ ] T4 语言折叠
   - Accept: 默认收起只显当前语言;展开 5 项;选择后收起;跨页恢复
