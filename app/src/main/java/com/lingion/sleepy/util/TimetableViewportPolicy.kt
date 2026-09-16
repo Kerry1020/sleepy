@@ -14,11 +14,16 @@ import kotlin.math.abs
 object TimetableViewportPolicy {
 
     const val DEFAULT_ROW_DP = 56f
+    const val FIXED_ROW_DP = 52f // 原固定行高 (issue#8 时代 d(52f)) — 实验室自适应关闭时的基座
     const val MIN_ROW_DP = 36f
     const val MAX_ROW_DP = 96f
     const val VERTICAL_GESTURE_THRESHOLD_DP = 8f
     const val VERTICAL_DOMINANCE_RATIO = 1.25f
     val EVENING_START: LocalTime = LocalTime.of(18, 0)
+
+    /** 用户自定义晚间起始 "HH:mm"; 解析失败回退 18:00 (2026-09-16: 不再机械 18:00) */
+    fun parseEveningStart(raw: String?): LocalTime =
+        raw?.let { runCatching { LocalTime.parse(it) }.getOrNull() } ?: EVENING_START
 
     data class VisibleSlots(
         val slots: List<TimeSlot>,
@@ -80,15 +85,24 @@ object TimetableViewportPolicy {
             .coerceIn(minRow, defaultRow)
     }
 
-    fun manualRowHeightDp(
+    /** 行高基座 (2026-09-16 用户令): 实验室自适应开=拟合高度; 默认关=原固定 52dp×scale */
+    fun baseRowHeightDp(
+        adaptive: Boolean,
         fitRowHeightDp: Float,
-        verticalScale: Float,
         contentScale: Float
-    ): Float {
-        val safeScale = contentScale.coerceIn(0.7f, 1.3f)
-        return (fitRowHeightDp * verticalScale.coerceAtLeast(1f))
-            .coerceIn(MIN_ROW_DP * safeScale, MAX_ROW_DP * safeScale)
+    ): Float = if (adaptive) {
+        fitRowHeightDp
+    } else {
+        FIXED_ROW_DP * contentScale.coerceIn(0.7f, 1.3f)
     }
+
+    /** 手动行高 = 基座×手势缩放, 夹在可读上下限内 (缩放可 <1: 允许捏小) */
+    fun manualRowHeightDp(
+        baseRowHeightDp: Float,
+        verticalScale: Float,
+        minRowHeightDp: Float,
+        maxRowHeightDp: Float
+    ): Float = (baseRowHeightDp * verticalScale).coerceIn(minRowHeightDp, maxRowHeightDp)
 
     /** True only after a two-finger gesture has a clear vertical intent. */
     fun locksVerticalResize(

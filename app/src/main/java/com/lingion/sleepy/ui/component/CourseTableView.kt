@@ -129,8 +129,7 @@ fun CardsGridView(
     // 比例定位基于扩展后的槽位表。null = 不合成(旧调用方兼容)。
     timeJson: String? = null,
     rowHeightScale: Float = 1f,
-    onRowHeightScaleChange: (Float) -> Unit = {},
-    autoHideEmptyEvening: Boolean = true
+    onRowHeightScaleChange: (Float) -> Unit = {}
 ) {
     val colors = SleepyTheme.colors
     // 设置页改 scale / cornerRatio 后强制 recompose
@@ -139,19 +138,27 @@ fun CardsGridView(
         AppPrefs.changeBus.filter {
             it == AppPrefs.KEY_GRID_SCALE || it == AppPrefs.KEY_GRID_CORNER_RATIO ||
                 it == AppPrefs.KEY_GRID_USE_ALIAS ||
-                it == AppPrefs.KEY_GRID_AUTO_HIDE_EMPTY_EVENING
+                it == AppPrefs.KEY_GRID_ADAPTIVE_HEIGHT ||
+                it == AppPrefs.KEY_GRID_AUTO_HIDE_EMPTY_EVENING ||
+                it == AppPrefs.KEY_GRID_EVENING_START
         }.collect { prefVersion++ }
     }
     val context = LocalContext.current
-    val effectiveAutoHideEmptyEvening = autoHideEmptyEvening &&
-        AppPrefs.isGridAutoHideEmptyEvening(context)
+    // 实验室开关 (2026-09-16 用户令): 自适应行高/晚间收起默认全关 —
+    // 默认行为回归原固定行高 + 完整时间轴; 晚间起始时间用户自定义, 不再机械 18:00
+    val adaptiveHeight = AppPrefs.isGridAdaptiveHeight(context)
+    val autoHideEmptyEvening = AppPrefs.isGridAutoHideEmptyEvening(context)
+    val eveningStart = TimetableViewportPolicy.parseEveningStart(
+        AppPrefs.getGridEveningStart(context)
+    )
 
     val visibleSlotResult = remember(
         allCourses,
         timeSlots,
         visibleDays,
         timeJson,
-        effectiveAutoHideEmptyEvening,
+        autoHideEmptyEvening,
+        eveningStart,
         prefVersion
     ) {
         TimetableViewportPolicy.selectVisibleSlots(
@@ -159,7 +166,8 @@ fun CardsGridView(
             timeSlots = timeSlots,
             visibleDays = visibleDays,
             timeJson = timeJson,
-            autoHideEmptyEvening = effectiveAutoHideEmptyEvening
+            autoHideEmptyEvening = autoHideEmptyEvening,
+            eveningStart = eveningStart
         )
     }
     val baseSlots = visibleSlotResult.slots
@@ -206,16 +214,23 @@ fun CardsGridView(
             val availableGridHeight = (maxHeight - headH - gapH - navExtra)
                 .value
                 .coerceAtLeast(0f)
-            val fitRowHeight = TimetableViewportPolicy.fitRowHeightDp(
-                availableGridHeightDp = availableGridHeight,
-                slotWeights = renderPlan.slotWeights,
-                slotCount = renderSlots.size,
+            // 行高基座 (2026-09-16 用户令): 实验室开自适应=拟合高度; 默认关=原固定 52dp×scale。
+            // 双指手势相对基座缩放, 上限 96dp 下限 36dp (×scale), 会话内临时
+            val baseRowHeight = TimetableViewportPolicy.baseRowHeightDp(
+                adaptive = adaptiveHeight,
+                fitRowHeightDp = TimetableViewportPolicy.fitRowHeightDp(
+                    availableGridHeightDp = availableGridHeight,
+                    slotWeights = renderPlan.slotWeights,
+                    slotCount = renderSlots.size,
+                    contentScale = scale
+                ),
                 contentScale = scale
             )
             val rowHeightDp = TimetableViewportPolicy.manualRowHeightDp(
-                fitRowHeightDp = fitRowHeight,
+                baseRowHeightDp = baseRowHeight,
                 verticalScale = rowHeightScale,
-                contentScale = scale
+                minRowHeightDp = TimetableViewportPolicy.MIN_ROW_DP * scale.coerceIn(0.7f, 1.3f),
+                maxRowHeightDp = TimetableViewportPolicy.MAX_ROW_DP * scale.coerceIn(0.7f, 1.3f)
             )
             val rowH = rowHeightDp.dp
 
@@ -245,7 +260,7 @@ fun CardsGridView(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalResizeGesture(
-                        fitRowHeightDp = fitRowHeight,
+                        baseRowHeightDp = baseRowHeight,
                         currentRowHeightDp = rowHeightDp,
                         contentScale = scale,
                         onRowHeightScaleChange = onRowHeightScaleChange
@@ -433,13 +448,13 @@ fun CardsGridView(
 }
 
 private fun Modifier.verticalResizeGesture(
-    fitRowHeightDp: Float,
+    baseRowHeightDp: Float,
     currentRowHeightDp: Float,
     contentScale: Float,
     onRowHeightScaleChange: (Float) -> Unit
 ): Modifier {
     return composed {
-        val latestFitRowHeight by rememberUpdatedState(fitRowHeightDp)
+        val latestBaseRowHeight by rememberUpdatedState(baseRowHeightDp)
         val latestRowHeight by rememberUpdatedState(currentRowHeightDp)
         val latestScale by rememberUpdatedState(contentScale)
         val latestOnChange by rememberUpdatedState(onRowHeightScaleChange)
@@ -482,11 +497,11 @@ private fun Modifier.verticalResizeGesture(
                                 startRowHeightDp = startRowHeightDp,
                                 startVerticalSpan = startVerticalSpan!!,
                                 currentVerticalSpan = verticalSpan,
-                                minRowHeightDp = latestFitRowHeight.coerceAtLeast(minRow),
+                                minRowHeightDp = minRow,
                                 maxRowHeightDp = maxRow
                             )
                             latestOnChange(
-                                (nextRowHeight / latestFitRowHeight.coerceAtLeast(1f)).coerceAtLeast(1f)
+                                nextRowHeight / latestBaseRowHeight.coerceAtLeast(1f)
                             )
                             event.changes.forEach { it.consume() }
                         } else {

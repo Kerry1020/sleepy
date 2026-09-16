@@ -64,7 +64,9 @@ object AppPrefs {
     const val KEY_COURSE_COLORLESS = "course_colorless" // bool default false (App 课程胶囊专用)
     const val KEY_WIDGET_SEPARATOR = "widget_separator" // bool default true (WeekView 纯文字课程间分隔线)
     const val KEY_GRID_SCALE = "grid_scale" // float 0.7~1.3 default 1.0 — 网格视图整体缩放(字号/行高/间距/圆角联动, issue#8)
-    const val KEY_GRID_AUTO_HIDE_EMPTY_EVENING = "grid_auto_hide_empty_evening" // bool default true — 网格视图自动收起无课晚间节次
+    const val KEY_GRID_AUTO_HIDE_EMPTY_EVENING = "grid_auto_hide_empty_evening" // bool default false — 实验室: 网格视图自动收起无课晚间节次
+    const val KEY_GRID_ADAPTIVE_HEIGHT = "grid_adaptive_height" // bool default false — 实验室: 网格视图自适应行高(默认固定 52dp 基座)
+    const val KEY_GRID_EVENING_START = "grid_evening_start" // string "HH:mm" default 18:00 — 实验室: 晚间起始时间(用户自定义)
     const val KEY_WEEK_SCALE = "week_scale" // float 0.7~1.3 default 1.0 — 周视图整体缩放(与网格视图互相独立, issue#8)
     const val KEY_GRID_CORNER_RATIO = "grid_corner_ratio" // float 0.0~2.0 default 1.0 — 网格/周视图圆角比例系数(乘基准 12/16dp, issue#8)
     const val KEY_WEEK_TWO_COLUMN = "week_two_column" // bool default false — 周视图两栏开关, issue#8
@@ -474,11 +476,27 @@ object AppPrefs {
     }
 
     fun isGridAutoHideEmptyEvening(ctx: Context): Boolean =
-        sp(ctx).getBoolean(KEY_GRID_AUTO_HIDE_EMPTY_EVENING, true)
+        sp(ctx).getBoolean(KEY_GRID_AUTO_HIDE_EMPTY_EVENING, false)
 
     fun setGridAutoHideEmptyEvening(ctx: Context, v: Boolean) {
         sp(ctx).edit().putBoolean(KEY_GRID_AUTO_HIDE_EMPTY_EVENING, v).apply()
         _changeBus.tryEmit(KEY_GRID_AUTO_HIDE_EMPTY_EVENING)
+    }
+
+    fun isGridAdaptiveHeight(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_GRID_ADAPTIVE_HEIGHT, false)
+
+    fun setGridAdaptiveHeight(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_GRID_ADAPTIVE_HEIGHT, v).apply()
+        _changeBus.tryEmit(KEY_GRID_ADAPTIVE_HEIGHT)
+    }
+
+    fun getGridEveningStart(ctx: Context): String =
+        sp(ctx).getString(KEY_GRID_EVENING_START, "18:00") ?: "18:00"
+
+    fun setGridEveningStart(ctx: Context, v: String) {
+        sp(ctx).edit().putString(KEY_GRID_EVENING_START, v).apply()
+        _changeBus.tryEmit(KEY_GRID_EVENING_START)
     }
 
     fun getWeekScale(ctx: Context): Float =
