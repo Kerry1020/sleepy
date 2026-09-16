@@ -12,6 +12,9 @@
 - **Course group colors back in place** — group color editing lives again in the course basics card, with a clear "Use custom color" switch; per-course color rows in the edit list are preserved.
 - **New schools**: Southwest Jiaotong University timetable, Guangxi Vocational & Technical University of Agriculture; plus eight additional WakeUp-compatible alarm protocol families.
 - **QQ group entry** on the About page — tap to copy the group number and open QQ.
+- **Custom URL import slot** at the top of the school list — paste your school's academic-system address even if it is not in the directory yet.
+- **Dialog buttons redesigned app-wide** — tonal block buttons with clear boundaries; labels stay on one row when they fit and stack full-width when they do not, so text is never truncated.
+- **Placeholder rows for irregular-time courses** — narrow placeholder rows (e.g. a 5-minute overflow) render as subtle gray blocks; tap to expand exactly to fit the time text, tap again to collapse. Longer gaps keep showing their time range.
 
 ## Improved & Fixed
 
@@ -21,6 +24,8 @@
 - Draft recovery keeps its full import configuration; draft entry points are fully wired.
 - Several partner-protocol parsing fixes verified across repositories (day offsets, rowspan handling, unknown-course fallback).
 - Course group color and per-course colors survive edits without clobbering each other.
+- QQ group join now opens the QQ group profile card directly (previously the deep link could fail silently); falls back gracefully when QQ is not installed.
+- Period-table preview now lists every affected course with its exact time change when you edit a shared period, instead of reporting "0 courses changed".
 
 ## Credits
 
@@ -42,6 +47,9 @@ This release cross-verified against 43 open-source university-scraper repositori
 - **课程组配色回归原位** —— 组色编辑回到课程基础信息卡,开关文案改为「使用自定义颜色」;编辑页逐卡颜色行保留。
 - **新学校**:西南交通大学课表、广西农业职业技术大学;另新增 WakeUp 兼容闹钟协议族八个学校族。
 - **关于页 QQ 交流群入口** —— 一键复制群号并拉起 QQ。
+- **学校列表顶部新增自定义 URL 导入位** —— 学校暂未收录时,直接粘贴教务系统地址尝试导入。
+- **全 app 弹窗按钮重设计** —— 色块按钮边界清晰;放得下时排一排,放不下自动改全宽竖排,文字永不截断。
+- **非常规时间课的占位节次** —— 窄占位行(如只溢出 5 分钟)渲染为低调灰块;点按展开到正好显示完时间文字,再点折叠。长空隙照常显示时间。
 
 ## 优化与修复
 
@@ -51,6 +59,8 @@ This release cross-verified against 43 open-source university-scraper repositori
 - 草稿恢复保留完整导入配置;草稿箱入口全线接通。
 - 多个伙伴协议解析修正经跨仓核验(日期偏移、rowspan、未知课程兜底)。
 - 课程组色与逐卡颜色编辑互不覆盖。
+- QQ 群拉起改为直开 QQ 群资料卡(此前深链可能静默失败);未安装 QQ 时自动降级。
+- 编辑共用节次后,作息表预览逐门列出受影响课程的具体时间变化,不再误报"0 门课发生变化"。
 
 ## 致谢
 
