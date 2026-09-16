@@ -72,10 +72,10 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 导出课表页 — 把当前课表导出为：
- * 1. WakeUp 兼容 JSON（文件下载 + 分享）
- * 2. WakeUp 分享文本（系统分享面板）
- * 3. ICS 日历（文件下载 + 分享）
+ * 导出页 — 2026-09-16 用户重构:
+ * 顶部展开框上半列全部课表、横向分隔线、下半列全部作息表(优先课表全部展开完)。
+ * 选中课表 → 四个格式项(JSON/分享文本/ICS/原生); 选中作息表 → 自动只剩两项
+ * (Sleepy 原生 + JSON), 其余格式对纯作息无意义。
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -84,16 +84,19 @@ fun ExportScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val allPeriodTables by viewModel.allPeriodTables.collectAsState()
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val colors = SleepyTheme.colors
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 导出目标课表 — 本地选择, 不污染主页 selectedTableId/widget 默认表。
-    // 默认跟随当前课表; 用户切过一次后(pin)固定, 除非主页切到 pin 掉的表之外又变了。
+    // 导出目标 — 本地选择, 不污染主页 selectedTableId/widget 默认表。
+    // 二元选择: courseTableId(课表) / periodTableId(作息表); null,null = 未选(跟随当前课表)
     var exportTableId by remember { mutableStateOf<Long?>(null) }
-    val effectiveId = exportTableId ?: state.selectedTableId
+    var exportPeriodTableId by remember { mutableStateOf<Long?>(null) }
+    val effectiveId = if (exportPeriodTableId != null) null else (exportTableId ?: state.selectedTableId)
     val table = state.tables.find { it.id == effectiveId } ?: state.currentTable
+    val selectedPeriodTable = allPeriodTables.find { it.id == exportPeriodTableId }
     val tables = state.tables
 
     // 选中表的课程: 当前表直接用 state.courses(已观察), 其他表选中时本地加载一次
@@ -135,7 +138,7 @@ fun ExportScreen(
             )
         }
     ) { padding ->
-        if (table == null) {
+        if (table == null && selectedPeriodTable == null) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.export_no_table), color = colors.onSurfaceVariant)
             }
@@ -147,7 +150,7 @@ fun ExportScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 顶部信息卡 — 点击拉出课表选择下拉(默认当前课表)
+            // 顶部信息卡 — 点击拉出「课表/作息表」展开框(上半课表+分隔线+下半作息表)
             item {
                 Column(
                     modifier = Modifier
@@ -159,7 +162,7 @@ fun ExportScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = table.name,
+                            text = selectedPeriodTable?.name ?: table?.name ?: "",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = colors.onPrimaryContainer,
@@ -173,14 +176,66 @@ fun ExportScreen(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${ctx.getString(R.string.export_course_count, courses.size)} · ${ctx.getString(R.string.export_start_date, table.startDate)}",
+                        text = if (selectedPeriodTable != null) {
+                            ctx.getString(R.string.period_tables_title) + " · " +
+                                ctx.getString(R.string.period_table_nodes_count, selectedPeriodTable.nodesPerDay)
+                        } else {
+                            "${ctx.getString(R.string.export_course_count, courses.size)} · ${ctx.getString(R.string.export_start_date, table?.startDate ?: "")}"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onPrimaryContainer
                     )
                 }
             }
 
-            // 格式选项
+            // 格式选项 — 选中作息表 → 只剩 JSON + 原生两项(用户 2026-09-16);
+            // 选中课表 → 完整四项
+            if (selectedPeriodTable != null) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(SleepyTheme.shapes.large)
+                            .background(colors.surfaceContainer)
+                    ) {
+                        ExportItem(
+                            icon = Icons.Outlined.Star,
+                            title = stringResource(R.string.period_table_share_native_title),
+                            subtitle = stringResource(R.string.period_table_share_native_sub),
+                            onClick = {
+                                scope.launch {
+                                    exportAndShare(
+                                        ctx = ctx,
+                                        fileName = "sleepy_${selectedPeriodTable.name}_${stamp()}.sleepy",
+                                        mime = "text/plain",
+                                        content = SleepyNativeExporter.exportPeriodTableShareText(selectedPeriodTable),
+                                        displayName = selectedPeriodTable.name,
+                                        onResult = { msg -> snackbarHostState.showSnackbar(msg) }
+                                    )
+                                }
+                            }
+                        )
+                        Divider(colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                        ExportItem(
+                            icon = Icons.Outlined.Code,
+                            title = stringResource(R.string.period_table_share_json_title),
+                            subtitle = stringResource(R.string.period_table_share_json_sub),
+                            onClick = {
+                                scope.launch {
+                                    exportAndShare(
+                                        ctx = ctx,
+                                        fileName = "sleepy_${selectedPeriodTable.name}_${stamp()}.json",
+                                        mime = "application/json",
+                                        content = SleepyNativeExporter.exportPeriodTableJson(selectedPeriodTable),
+                                        displayName = selectedPeriodTable.name,
+                                        onResult = { msg -> snackbarHostState.showSnackbar(msg) }
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            } else if (table != null) {
             item {
                 Column(
                     modifier = Modifier
@@ -272,10 +327,12 @@ fun ExportScreen(
                     )
                 }
             }
+            }
         }
     }
 
-    // 导出课表选择弹窗 — 行样式对齐 ScheduleScreen TableSwitcherDialog(用户定版视觉)
+    // 2026-09-16 展开框重构: 上半 = 全部课表展开, 横向分隔线, 下半 = 全部作息表。
+    // 用户指定顺序 — 课表优先展开完, 再作息表; 行样式对齐 TableSwitcherDialog(用户定版视觉)。
     if (showTablePicker) {
         AlertDialog(
             onDismissRequest = { showTablePicker = false },
@@ -286,54 +343,90 @@ fun ExportScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 360.dp)
+                        .heightIn(max = 480.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    // ---- 上半: 全部课表 ----
                     tables.forEach { t ->
-                        val isSelected = t.id == effectiveId
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(SleepyTheme.shapes.small)
-                                .background(if (isSelected) colors.primaryContainer else colors.surfaceContainer)
-                                .noRippleClickable {
-                                    exportTableId = t.id
-                                    showTablePicker = false
-                                }
-                                .padding(vertical = 10.dp, horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = t.name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                    color = if (isSelected) colors.onPrimaryContainer else colors.onSurface,
-                                    maxLines = 2
-                                )
-                                if (t.id == state.selectedTableId) {
-                                    Text(
-                                        text = stringResource(R.string.export_current_table_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (isSelected) colors.onPrimaryContainer else colors.onSurfaceVariant
-                                    )
-                                }
+                        val isSelected = exportPeriodTableId == null && t.id == effectiveId
+                        PickerRow(
+                            title = t.name,
+                            subtitle = if (t.id == state.selectedTableId) stringResource(R.string.export_current_table_badge) else null,
+                            isSelected = isSelected,
+                            onClick = {
+                                exportPeriodTableId = null
+                                exportTableId = t.id
+                                showTablePicker = false
                             }
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Check,
-                                    contentDescription = null,
-                                    tint = colors.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                        )
+                    }
+                    // ---- 横向分隔线 ----
+                    if (allPeriodTables.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            thickness = 0.5.dp,
+                            color = colors.outlineVariant
+                        )
+                    }
+                    // ---- 下半: 全部作息表 ----
+                    allPeriodTables.forEach { pt ->
+                        val isSelected = exportPeriodTableId == pt.id
+                        PickerRow(
+                            title = pt.name,
+                            subtitle = stringResource(R.string.period_tables_title),
+                            isSelected = isSelected,
+                            onClick = {
+                                exportPeriodTableId = pt.id
+                                exportTableId = null
+                                showTablePicker = false
                             }
-                        }
+                        )
                     }
                 }
             },
             confirmButton = {},
             dismissButton = {}
         )
+    }
+}
+
+/** 展开框行 — 课表/作息表共用视觉(选中态 primaryContainer 色块+对勾, 禁描边规则) */
+@Composable
+private fun PickerRow(title: String, subtitle: String?, isSelected: Boolean, onClick: () -> Unit) {
+    val colors = SleepyTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(SleepyTheme.shapes.small)
+            .background(if (isSelected) colors.primaryContainer else colors.surfaceContainer)
+            .noRippleClickable(onClick)
+            .padding(vertical = 10.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = if (isSelected) colors.onPrimaryContainer else colors.onSurface,
+                maxLines = 2
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) colors.onPrimaryContainer else colors.onSurfaceVariant
+                )
+            }
+        }
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
 
