@@ -28,17 +28,17 @@
     <string name="schedule_current_week">Semana %1$d</string>
     <string name="schedule_no_course_today">No hay clases hoy</string>
 
-    <string name="import_title">Importar horario</string>
+    <string name="import_title">Importar horario/períodos</string>
     <string name="manage_current_table">Horario actual</string>
-    <string name="manage_import">Importar</string>
-    <string name="manage_import_sub">Importar desde archivo / texto / CSV</string>
+    <string name="manage_import">Importar horario/períodos</string>
+    <string name="manage_import_sub">Importar horario o períodos desde archivo / texto / web</string>
     <string name="manage_new_table">Nuevo horario de períodos</string>
     <string name="manage_new_table_sub">Crear un horario vacío, añadir cursos manualmente</string>
     <string name="manage_new_period_table">Nuevo horario de períodos</string>
     <string name="manage_new_period_table_sub">Crea un horario de períodos vacío para compartir entre horarios</string>
     <string name="manage_edit_current">Editar actual</string>
     <string name="manage_edit_current_sub">Editar nombre, fechas y horarios</string>
-    <string name="manage_export">Exportar horario actual</string>
+    <string name="manage_export">Exportar horario/períodos</string>
     <string name="manage_export_sub">Compartir como nativo / JSON WakeUp / ICS / texto</string>
     <string name="manage_manual_add">Añadir curso</string>
     <string name="manage_manual_add_sub">Añadir un curso al horario actual</string>
@@ -271,7 +271,7 @@
 
     <string name="mine_title">Ajustes</string>
     <string name="mine_subtitle">Gestiona horarios y configuración</string>
-    <string name="mine_export">Exportar</string>
+    <string name="mine_export">Exportar horario/períodos</string>
     <string name="mine_stat_tables">Horarios</string>
     <string name="mine_stat_courses">Cursos</string>
     <string name="mine_stat_week">Semana</string>
@@ -577,7 +577,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="export_share_subtitle">Formato de texto corto, pegable en cualquier app de chat</string>
     <string name="export_share_title">Compartir como texto</string>
     <string name="export_start_date">Inicio del semestre %1$s</string>
-    <string name="export_title">Exportar horario</string>
+    <string name="export_title">Exportar horario/períodos</string>
     <string name="import_new_table_hint">(se creará como un horario nuevo)</string>
     <string name="jw_config_confirm">Confirmar importación</string>
     <string name="jw_config_title">Confirmar antes de importar</string>
@@ -737,7 +737,6 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="edge_insert_end_label">Hora de fin</string>
     <string name="edge_insert_ok">Añadir</string>
     <string name="mine_period_tables">Horario de períodos</string>
-    <string name="mine_period_tables_sub">Horarios compartidos entre horarios</string>
     <string name="period_tables_title">Horario de períodos</string>
     <string name="period_table_bound_count">Vinculado a %1$d horario(s)</string>
     <string name="period_table_new">Nuevo horario de períodos</string>

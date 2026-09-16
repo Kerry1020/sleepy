@@ -37,7 +37,7 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.QrCode2
-import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -236,8 +236,9 @@ fun ImportSheet(
                         .clip(androidx.compose.foundation.shape.CircleShape)
                         .background(colors.primaryContainer)
                 ) {
+                    // 2026-09-16 用户: 书签不像草稿箱 — 换带盖收纳箱 Inventory2
                     Icon(
-                        imageVector = Icons.Outlined.BookmarkBorder,
+                        imageVector = Icons.Outlined.Inventory2,
                         contentDescription = stringResource(R.string.import_drafts),
                         tint = colors.onPrimaryContainer
                     )

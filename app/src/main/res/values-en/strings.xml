@@ -33,17 +33,17 @@
     <string name="schedule_current_week">Week %1$d</string>
     <string name="schedule_no_course_today">No classes today</string>
 
-    <string name="import_title">Import Schedule</string>
+    <string name="import_title">Import Timetable/Bell Schedule</string>
     <string name="manage_current_table">Current Schedule</string>
-    <string name="manage_import">Import</string>
-    <string name="manage_import_sub">Import from file / text / CSV</string>
+    <string name="manage_import">Import Timetable/Bell Schedule</string>
+    <string name="manage_import_sub">Import timetable or bell schedule from file / text / web</string>
     <string name="manage_new_table">New Schedule</string>
     <string name="manage_new_table_sub">Create a blank schedule, add courses manually</string>
     <string name="manage_new_period_table">New bell schedule</string>
     <string name="manage_new_period_table_sub">Create an empty bell schedule to share across timetables</string>
     <string name="manage_edit_current">Edit Current</string>
     <string name="manage_edit_current_sub">Edit name, dates, and time slots</string>
-    <string name="manage_export">Export current timetable</string>
+    <string name="manage_export">Export Timetable/Bell Schedule</string>
     <string name="manage_export_sub">Share as Native / WakeUp JSON / ICS / text</string>
     <string name="manage_manual_add">Add Course</string>
     <string name="manage_manual_add_sub">Add a course directly to current schedule</string>
@@ -288,7 +288,7 @@
 
     <string name="mine_title">Me</string>
     <string name="mine_subtitle">Manage schedules and settings</string>
-    <string name="mine_export">Export</string>
+    <string name="mine_export">Export Timetable/Bell Schedule</string>
     <string name="mine_stat_tables">Schedules</string>
     <string name="mine_stat_courses">Courses</string>
     <string name="mine_stat_week">Week</string>
@@ -591,7 +591,7 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="export_share_subtitle">Short text format, pasteable into any chat app</string>
     <string name="export_share_title">Share as Text</string>
     <string name="export_start_date">Term starts %1$s</string>
-    <string name="export_title">Export Schedule</string>
+    <string name="export_title">Export Timetable/Bell Schedule</string>
     <string name="import_new_table_hint">(will be created as a new schedule)</string>
     <string name="jw_config_confirm">Confirm Import</string>
     <string name="jw_config_title">Confirm Before Import</string>
@@ -755,7 +755,6 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="edge_insert_end_label">End time</string>
     <string name="edge_insert_ok">Add</string>
     <string name="mine_period_tables">Bell schedule</string>
-    <string name="mine_period_tables_sub">Shared schedules across timetables</string>
     <string name="period_tables_title">Bell schedule</string>
     <string name="period_table_bound_count">Bound to %1$d timetable(s)</string>
     <string name="period_table_new">New bell schedule</string>

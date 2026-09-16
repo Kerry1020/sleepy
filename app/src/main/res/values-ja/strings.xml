@@ -28,17 +28,17 @@
     <string name="schedule_current_week">第 %1$d 週</string>
     <string name="schedule_no_course_today">今日は授業がありません</string>
 
-    <string name="import_title">時間割をインポート</string>
+    <string name="import_title">時間割・時程表をインポート</string>
     <string name="manage_current_table">現在の時間割</string>
-    <string name="manage_import">インポート</string>
-    <string name="manage_import_sub">ファイル / テキスト / CSV からインポート</string>
+    <string name="manage_import">時間割・時程表をインポート</string>
+    <string name="manage_import_sub">ファイル / テキスト / 教務から時間割・時程表をインポート</string>
     <string name="manage_new_table">新規作成</string>
     <string name="manage_new_table_sub">空の時間割を作成し、手動で授業を追加</string>
     <string name="manage_new_period_table">新しい時程表</string>
     <string name="manage_new_period_table_sub">複数の時間割で共有する空の時程表を作成します</string>
     <string name="manage_edit_current">編集</string>
     <string name="manage_edit_current_sub">名前・日付・時限時間を編集</string>
-    <string name="manage_export">現在の時間割をエクスポート</string>
+    <string name="manage_export">時間割・時程表をエクスポート</string>
     <string name="manage_export_sub">ネイティブ / WakeUp JSON / ICS / テキストで共有</string>
     <string name="manage_manual_add">授業を追加</string>
     <string name="manage_manual_add_sub">現在の時間割に授業を追加</string>
@@ -271,7 +271,7 @@
 
     <string name="mine_title">マイ</string>
     <string name="mine_subtitle">時間割と設定を管理</string>
-    <string name="mine_export">エクスポート</string>
+    <string name="mine_export">時間割・時程表をエクスポート</string>
     <string name="mine_stat_tables">時間割数</string>
     <string name="mine_stat_courses">授業数</string>
     <string name="mine_stat_week">現在の週</string>
@@ -577,7 +577,7 @@
     <string name="export_share_subtitle">短いテキスト形式、チャットアプリに貼り付け可能</string>
     <string name="export_share_title">テキストを共有</string>
     <string name="export_start_date">学期開始 %1$s</string>
-    <string name="export_title">時間割をエクスポート</string>
+    <string name="export_title">時間割・時程表をエクスポート</string>
     <string name="import_new_table_hint">（新しい時間割として作成されます）</string>
     <string name="jw_config_confirm">インポートを確認</string>
     <string name="jw_config_title">インポート前の確認</string>
@@ -737,7 +737,6 @@
     <string name="edge_insert_end_label">終了時刻</string>
     <string name="edge_insert_ok">追加</string>
     <string name="mine_period_tables">時程表</string>
-    <string name="mine_period_tables_sub">複数の時間割で共有する時限</string>
     <string name="period_tables_title">時程表</string>
     <string name="period_table_bound_count">%1$d 件の時間割に使用中</string>
     <string name="period_table_new">新しい時程表</string>
