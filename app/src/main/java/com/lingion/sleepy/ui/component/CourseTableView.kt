@@ -215,7 +215,7 @@ fun CardsGridView(
                 .value
                 .coerceAtLeast(0f)
             // 行高基座 (2026-09-16 用户令): 实验室开自适应=拟合高度; 默认关=原固定 52dp×scale。
-            // 双指手势相对基座缩放, 上限 96dp 下限 36dp (×scale), 会话内临时
+            // 双指手势相对基座缩放, 上限 96dp 下限 36dp (×scale); 顶栏 tick 确认后长期生效, 撤回回退上次确认值。
             val baseRowHeight = TimetableViewportPolicy.baseRowHeightDp(
                 adaptive = adaptiveHeight,
                 fitRowHeightDp = TimetableViewportPolicy.fitRowHeightDp(
