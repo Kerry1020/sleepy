@@ -742,6 +742,11 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="period_table_bound_count">Vinculado a %1$d horario(s)</string>
     <string name="period_table_new">Nuevo horario de períodos</string>
     <string name="period_table_copy">Duplicar horario de períodos</string>
+    <string name="period_table_share_sheet_title">Compartir horario</string>
+    <string name="period_table_share_native_title">Formato nativo Sleepy</string>
+    <string name="period_table_share_native_sub">Solo horario, importable por Sleepy</string>
+    <string name="period_table_share_json_title">Formato JSON</string>
+    <string name="period_table_share_json_sub">Datos de períodos en formato universal</string>
     <string name="period_table_import_title">Importar horario de períodos</string>
     <string name="period_table_import_body">Solo se detectó contenido del horario; se creará únicamente un horario.</string>
     <string name="period_table_import_confirm">Importar horario de períodos</string>

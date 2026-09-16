@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -119,6 +120,8 @@ fun PeriodTableEditScreen(
     // v1.0.56 T8: 复制先命名, 确认后才建; 成功后回管理页
     var showCopyDialog by remember(periodTable.id) { mutableStateOf(false) }
     var copyName by remember(periodTable.id) { mutableStateOf("") }
+    // v1.0.56 T11: 分享底部弹窗(原生格式/JSON 二选一)
+    var showShareSheet by remember(periodTable.id) { mutableStateOf(false) }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -162,6 +165,10 @@ fun PeriodTableEditScreen(
                     }
                 },
                 actions = {
+                    // v1.0.56 T11: 分享作息表(原生格式 / JSON 二选一)
+                    IconButton(onClick = { showShareSheet = true }) {
+                        Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.period_table_share_sheet_title), tint = colors.onBackground)
+                    }
                     // v1.0.56 T8: 复制先弹命名框, 确认后才落库; 成功回管理页
                     IconButton(onClick = {
                         scope.launch {
@@ -456,6 +463,14 @@ fun PeriodTableEditScreen(
             confirmButton = {
                 TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
             }
+        )
+    }
+
+    // v1.0.56 T11: 分享格式选择底部弹窗
+    if (showShareSheet) {
+        com.lingion.sleepy.ui.component.PeriodTableShareSheet(
+            periodTable = periodTable,
+            onDismiss = { showShareSheet = false }
         )
     }
 

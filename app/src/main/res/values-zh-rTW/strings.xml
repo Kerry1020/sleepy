@@ -742,6 +742,11 @@
     <string name="period_table_bound_count">已綁定 %1$d 張課表</string>
     <string name="period_table_new">新增作息表</string>
     <string name="period_table_copy">複製時間表</string>
+    <string name="period_table_share_sheet_title">分享作息表</string>
+    <string name="period_table_share_native_title">Sleepy 原生格式</string>
+    <string name="period_table_share_native_sub">純作息分享·其他 Sleepy 可匯入</string>
+    <string name="period_table_share_json_title">JSON 格式</string>
+    <string name="period_table_share_json_sub">節次時間資料·通用格式</string>
     <string name="period_table_import_title">匯入作息表</string>
     <string name="period_table_import_body">偵測到輸入只包含作息表內容，將只建立一張作息表。</string>
     <string name="period_table_import_confirm">確認匯入作息表</string>

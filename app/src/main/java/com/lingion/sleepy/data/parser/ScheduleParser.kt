@@ -364,7 +364,14 @@ object ScheduleParser {
         val name = root["name"]?.jsonPrimitive?.content ?: "导入的课表"
         val startDate = root["startDate"]?.jsonPrimitive?.content
             ?: java.time.LocalDate.now().toString()
-        val arr = root["courses"]?.jsonArray ?: throw IllegalArgumentException("找不到 courses 数组")
+        // v1.0.56 T11: 纯作息 JSON(只有 tableInfo.timeList, 无 courses)是合法形态 —
+        // 空课程 + periodTable 非空 → 导入端 T9 纯作息路径只建作息表
+        val arr = root["courses"]?.jsonArray
+            ?: if (root["tableInfo"]?.jsonObject?.get("timeList")?.jsonArray?.isNotEmpty() == true) {
+                emptyList()
+            } else {
+                throw IllegalArgumentException("找不到 courses 数组")
+            }
 
         val courses = arr.map { el ->
             val obj = el.jsonObject
