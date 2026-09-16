@@ -4,6 +4,7 @@ import com.lingion.sleepy.data.entity.CourseEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalTime
 
 class TimetableViewportPolicyTest {
 
@@ -189,6 +190,97 @@ class TimetableViewportPolicyTest {
                 currentVerticalSpan = 10f,
                 minRowHeightDp = 36f,
                 maxRowHeightDp = 96f
+            ),
+            0.001f
+        )
+    }
+
+    @Test
+    fun parse_evening_start_falls_back_to_default_on_garbage() {
+        assertEquals(
+            TimetableViewportPolicy.EVENING_START,
+            TimetableViewportPolicy.parseEveningStart("not-a-time")
+        )
+        assertEquals(
+            TimetableViewportPolicy.EVENING_START,
+            TimetableViewportPolicy.parseEveningStart(null)
+        )
+        assertEquals(
+            LocalTime.of(19, 30),
+            TimetableViewportPolicy.parseEveningStart("19:30")
+        )
+    }
+
+    @Test
+    fun custom_evening_start_beyond_last_slot_keeps_full_table() {
+        val result = TimetableViewportPolicy.selectVisibleSlots(
+            allCourses = listOf(course(id = 1, startNode = 9)),
+            timeSlots = slots,
+            visibleDays = (1..5).toSet(),
+            timeJson = timeJson,
+            autoHideEmptyEvening = true,
+            eveningStart = LocalTime.of(23, 0)
+        )
+
+        assertEquals(12, result.slots.size)
+        assertEquals(0, result.hiddenEveningCount)
+    }
+
+    @Test
+    fun custom_time_course_reaching_default_evening_keeps_evening_slots() {
+        val result = TimetableViewportPolicy.selectVisibleSlots(
+            allCourses = listOf(
+                course(
+                    id = 1,
+                    startNode = 8,
+                    ownTime = true,
+                    startTime = "16:30",
+                    endTime = "18:10"
+                )
+            ),
+            timeSlots = slots,
+            visibleDays = (1..5).toSet(),
+            timeJson = timeJson,
+            autoHideEmptyEvening = true
+        )
+
+        assertEquals(12, result.slots.size)
+    }
+
+    @Test
+    fun base_row_height_is_fixed_when_adaptive_disabled() {
+        assertEquals(
+            52f,
+            TimetableViewportPolicy.baseRowHeightDp(adaptive = false, fitRowHeightDp = 40f, contentScale = 1f),
+            0.001f
+        )
+        assertEquals(
+            40f,
+            TimetableViewportPolicy.baseRowHeightDp(adaptive = true, fitRowHeightDp = 40f, contentScale = 1f),
+            0.001f
+        )
+    }
+
+    @Test
+    fun manual_row_height_scales_both_ways_within_bounds() {
+        assertEquals(
+            36f,
+            TimetableViewportPolicy.manualRowHeightDp(
+                baseRowHeightDp = 52f, verticalScale = 0.5f, minRowHeightDp = 36f, maxRowHeightDp = 96f
+            ),
+            0.001f
+        )
+        assertEquals(
+            96f,
+            TimetableViewportPolicy.manualRowHeightDp(
+                baseRowHeightDp = 52f, verticalScale = 3f, minRowHeightDp = 36f, maxRowHeightDp = 96f
+            ),
+            0.001f
+        )
+        assertEquals(
+            52f,
+            TimetableViewportPolicy.manualRowHeightDp(
+                baseRowHeightDp = 52f, verticalScale = 1f, minRowHeightDp = 36f, maxRowHeightDp = 96f
             ),
             0.001f
         )

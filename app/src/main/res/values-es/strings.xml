@@ -298,7 +298,12 @@
     <string name="settings_pill">Ajustes de pantalla de inicio</string>
     <string name="settings_pill_scale">Zoom de la vista de cuadrícula</string>
     <string name="settings_grid_auto_hide_evening">Ocultar periodos nocturnos vacíos</string>
-    <string name="settings_grid_auto_hide_evening_sub">Oculta los periodos desde las 18:00 si no hay clases nocturnas en todo el semestre</string>
+    <string name="settings_grid_auto_hide_evening_sub">Oculta los periodos nocturnos si no hay clases nocturnas en todo el semestre</string>
+    <string name="settings_grid_evening_start">La noche comienza a las</string>
+    <string name="settings_grid_adaptive_height">Altura de fila adaptable del horario</string>
+    <string name="settings_grid_adaptive_height_sub">Ajusta la altura de las filas para que el horario quepa en pantalla</string>
+    <string name="settings_lab">Laboratorio</string>
+    <string name="settings_lab_sub">Funciones experimentales, desactivadas por defecto; pueden cambiar entre versiones</string>
     <string name="settings_pill_week_scale">Zoom de la vista semanal</string>
     <string name="settings_pill_corner">Esquinas de tarjetas</string>
     <string name="settings_week_two_column">Vista semanal en dos columnas</string>

@@ -108,9 +108,8 @@ fun ScheduleScreen(
     val displayMode = remember { AppPrefs.getDisplayMode(context) }
     val showDate = remember { AppPrefs.isShowDate(context) }
     val visibleDays = remember { AppPrefs.getVisibleDays(context) }
-    // 纵向行高只属于当前课表页面会话；离开后重新进入自动适配。
+    // 纵向行高只属于当前课表页面会话；离开后重新进入恢复基座行高。
     var rowHeightScale by remember(state.selectedTableId) { mutableFloatStateOf(1f) }
-    val autoHideEmptyEvening = AppPrefs.isGridAutoHideEmptyEvening(context)
 
     val hasTable = state.tables.isNotEmpty()
     val hasCourses = state.courses.isNotEmpty()
@@ -303,8 +302,7 @@ fun ScheduleScreen(
                         // 比例定位与聚簇都基于扩展后的槽位表(真实分钟语义)
                         timeJson = state.currentTable?.timeJson,
                         rowHeightScale = rowHeightScale,
-                        onRowHeightScaleChange = { rowHeightScale = it },
-                        autoHideEmptyEvening = autoHideEmptyEvening
+                        onRowHeightScaleChange = { rowHeightScale = it }
                     )
                 }
             }
