@@ -690,4 +690,54 @@ object TimeTableUtils {
         node <= 10 -> "20:40"
         else -> "22:30"
     }
+
+    // ========== v1.0.56 全局唯一名(课表∪作息表全域, T2) ==========
+
+    /**
+     * 名称是否已被占用 — 课表与作息表全域互斥(用户 2026-09-16: 整个系统不能有任何相同名称)。
+     * exclude*Id + *NamesById 用于编辑场景排除自己(自己占自己的名字不算撞);
+     * 其余场景(新建/复制/导入确认)传名单即可。
+     * 纯函数 — DAO 全名列表由调用方查好传入, 本函数零库访问。
+     */
+    fun isTableNameTaken(
+        name: String,
+        courseTableNames: List<String>,
+        periodTableNames: List<String>,
+        excludeCourseTableId: Long? = null,
+        courseTableNamesById: Map<Long, String> = emptyMap(),
+        excludePeriodTableId: Long? = null,
+        periodTableNamesById: Map<Long, String> = emptyMap()
+    ): Boolean {
+        if (name.isBlank()) return false
+        val courseHit = if (excludeCourseTableId != null) {
+            // 名单本身无 id, 用 byId 映射剔除"自己那一份"后判撞: 总出现次数 > 自己出现次数
+            courseTableNames.count { it == name } >
+                (if (courseTableNamesById[excludeCourseTableId] == name) 1 else 0)
+        } else courseTableNames.contains(name)
+        val periodHit = if (excludePeriodTableId != null) {
+            periodTableNames.count { it == name } >
+                (if (periodTableNamesById[excludePeriodTableId] == name) 1 else 0)
+        } else periodTableNames.contains(name)
+        return courseHit || periodHit
+    }
+
+    /**
+     * 撞名自动顺延: 原名 → 原名2 → 原名3…(导入自动建表/复制预填用)。
+     * 兼容历史 "名字(2)" 形态, 顺延跳过 plain 与 paren 两种占用。
+     * 空名回退 defaultName 参与顺延(与 uniqueImportedTableName 语义一致)。
+     */
+    fun suggestUniqueName(
+        base: String,
+        courseTableNames: List<String>,
+        periodTableNames: List<String>,
+        defaultName: String = ""
+    ): String {
+        val effective = base.ifBlank { defaultName }
+        if (!isTableNameTaken(effective, courseTableNames, periodTableNames)) return effective
+        var index = 2
+        while (isTableNameTaken("$effective$index", courseTableNames, periodTableNames) ||
+            isTableNameTaken("$effective($index)", courseTableNames, periodTableNames)
+        ) index++
+        return "$effective$index"
+    }
 }
