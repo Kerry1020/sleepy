@@ -762,6 +762,7 @@
     <string name="period_table_nodes_count">%1$d 節/天</string>
     <string name="period_table_save_preview_title">儲存前預覽</string>
     <string name="period_table_preview_summary">將影響 %1$d 張課表：%2$d 門課時間變化，%3$d 門不變</string>
+    <string name="period_table_preview_more">…和其他 %1$d 門課</string>
     <string name="period_table_preview_confirm">確認儲存</string>
     <string name="period_table_bind_preview_title">換綁確認</string>
     <string name="period_table_bind_preview_body">切換後本課表按新作息表解釋節次；自訂時間的課程不受影響</string>
