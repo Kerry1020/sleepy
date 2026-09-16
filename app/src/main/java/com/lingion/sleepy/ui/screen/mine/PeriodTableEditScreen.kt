@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lingion.sleepy.R
 import com.lingion.sleepy.data.entity.PeriodTableEntity
 import com.lingion.sleepy.data.entity.SmartPeriodConfig
+import com.lingion.sleepy.ui.component.PeriodTableOption as TimeSlotEditorPeriodTableOption
 import com.lingion.sleepy.ui.component.TimeSlotEditor
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -107,6 +108,10 @@ fun PeriodTableEditScreen(
     var pendingSave by remember { mutableStateOf<PeriodTableEntity?>(null) }
     // issue#40: 新建未保存表的丢弃标记 — 用户确认保存后翻 false, 返回不再删行
     var unsavedNew by remember { mutableStateOf(isNewUnsaved) }
+    // v1.0.56 T6: 第三 Tab「作息表」— 作息表编辑页同样有(用户 2026-09-16: 有手动/自动就有第三个)。
+    // 语义 = 取入: 选中另一张作息表, 把它的节次内容拷进当前编辑区(成为本表内容的起点),
+    // 非活绑 — period_tables 自身无绑定字段, 绑定只存在于课表上。排除自己禁自引用。
+    var selectedImportTableId by remember(periodTable.id) { mutableStateOf<Long?>(null) }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -250,7 +255,33 @@ fun PeriodTableEditScreen(
                                     slotRows.addAll(newRows)
                                 },
                                 smartConfig = smartConfig.value,
-                                onSmartConfigChange = { smartConfig.value = it }
+                                onSmartConfigChange = { smartConfig.value = it },
+                                // v1.0.56 T6: 第三 Tab「作息表」— 列表排除自己;
+                                // 选中 = 把该表节次取入当前编辑区(取入非活绑)
+                                periodTableOptions = periodTables.map {
+                                    TimeSlotEditorPeriodTableOption(it.id, it.name, it.nodesPerDay)
+                                },
+                                selectedPeriodTableId = selectedImportTableId,
+                                excludePeriodTableId = periodTable.id,
+                                onSelectPeriodTable = { pickedId ->
+                                    selectedImportTableId = pickedId
+                                    val picked = periodTables.find { it.id == pickedId } ?: return@TimeSlotEditor
+                                    val imported = TimeTableUtils.parseTimeSlotRows(picked.timeJson)
+                                    slotRows.clear()
+                                    slotRows.addAll(imported)
+                                    smartConfig.value = if (picked.smartConfigJson.isNotBlank()) {
+                                        try {
+                                            Json.decodeFromString<SmartPeriodConfig>(picked.smartConfigJson)
+                                        } catch (_: Exception) {
+                                            smartConfig.value
+                                        }
+                                    } else {
+                                        SmartPeriodConfig(
+                                            totalPeriods = imported.size.coerceAtLeast(1),
+                                            startTime = imported.firstOrNull()?.start?.takeIf { it.isNotBlank() } ?: "08:00"
+                                        )
+                                    }
+                                }
                             )
                         }
                     }

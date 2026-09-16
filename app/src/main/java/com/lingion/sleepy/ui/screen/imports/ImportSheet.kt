@@ -124,6 +124,9 @@ fun ImportSheet(
     var confirmedTableName by remember { mutableStateOf("") }
     var confirmedStartDate by remember { mutableStateOf("") }
     var confirmedTimeJson by remember { mutableStateOf("") }
+    // v1.0.56 T6: 第三 Tab「作息表」— 绑定选择; 确认导入时传给 applyImportPreview 落绑定
+    var confirmedBindPeriodTableId by remember { mutableStateOf<Long?>(null) }
+    val allPeriodTables by viewModel.allPeriodTables.collectAsState(initial = emptyList())
     var importJustApplied by remember { mutableStateOf(false) }
     var showDrafts by remember { mutableStateOf(false) }
     val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
@@ -455,8 +458,9 @@ fun ImportSheet(
                                 requiredNodeCount = preview!!.parseResult.nodesPerDay
                             ),
                             context = context,
-                            onImported = onImported
-                        ) { msg -> errorMsg = msg }
+                            onImported = onImported,
+                            onError = { msg -> errorMsg = msg }
+                        )
                         preview = null
                         pendingMode = null
                         importJustApplied = true
@@ -476,6 +480,12 @@ fun ImportSheet(
                 onStartDateChange = { confirmedStartDate = it },
                 onTimeJsonChange = { confirmedTimeJson = it },
                 onDismiss = { pendingMode = null },
+                // v1.0.56 T6: 第三 Tab「作息表」
+                periodTableOptions = allPeriodTables.map {
+                    com.lingion.sleepy.ui.component.PeriodTableOption(it.id, it.name, it.nodesPerDay)
+                },
+                selectedPeriodTableId = confirmedBindPeriodTableId,
+                onSelectPeriodTable = { confirmedBindPeriodTableId = it },
                 onConfirm = {
                     val mode = pendingMode ?: return@ImportConfirmDialog
                     val currentPreview = preview ?: return@ImportConfirmDialog
@@ -492,8 +502,10 @@ fun ImportSheet(
                                 confirmedTableName = confirmedTableName,
                                 confirmedTimeJson = confirmedTimeJson,
                                 context = context,
-                                onImported = onImported
-                            ) { msg -> errorMsg = msg }
+                                onImported = onImported,
+                                onError = { msg -> errorMsg = msg },
+                                bindPeriodTableId = confirmedBindPeriodTableId
+                            )
                             preview = null
                             pendingMode = null
                             importJustApplied = true
@@ -1145,7 +1157,11 @@ private fun ImportConfirmDialog(
     onStartDateChange: (String) -> Unit,
     onTimeJsonChange: (String) -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    // v1.0.56 T6: 第三 Tab「作息表」— 绑定现有作息表直接用; null=未绑定(用解析出的节次)
+    periodTableOptions: List<com.lingion.sleepy.ui.component.PeriodTableOption> = emptyList(),
+    selectedPeriodTableId: Long? = null,
+    onSelectPeriodTable: (Long?) -> Unit = {}
 ) {
     val colors = SleepyTheme.colors
     val context = LocalContext.current
@@ -1215,7 +1231,11 @@ private fun ImportConfirmDialog(
                             onTimeJsonChange(TimeTableUtils.buildTimeJsonFromRows(newRows))
                         },
                         smartConfig = smartConfig,
-                        onSmartConfigChange = { smartConfig = it }
+                        onSmartConfigChange = { smartConfig = it },
+                        // v1.0.56 T6: 第三 Tab「作息表」
+                        periodTableOptions = periodTableOptions,
+                        selectedPeriodTableId = selectedPeriodTableId,
+                        onSelectPeriodTable = onSelectPeriodTable
                     )
                 }
             }
@@ -1320,7 +1340,9 @@ private suspend fun applyImportPreview(
     confirmedTimeJson: String,
     context: android.content.Context,
     onImported: () -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
+    // v1.0.56 T6: 第三 Tab「作息表」绑定 — 非 null 且 ImportAsNew 时, 新建课表直接绑该表
+    bindPeriodTableId: Long? = null
 ) {
     val repo = SleepyApp.get().repository
     // v7.10.16 撤回: 整个导入是一个动作 — 批内只保首快照, 撤回一次回退到导入前。
@@ -1360,7 +1382,8 @@ private suspend fun applyImportPreview(
             val base = repo.getTable(preview.targetTableId)
             // issue#40 §6: 新格式带 P 区块 → 建 period_tables 并绑定(恢复共享关系);
             // 旧格式 periodTable=null → 不建(课表用自己兼容列, 不误共享)。
-            val importedPeriodTableId = preview.parseResult.periodTable?.let { pt ->
+            // v1.0.56 T6: 用户在第三 Tab 显式选了作息表 → 绑定用户所选(优先于自动建表绑定);
+            val importedPeriodTableId = bindPeriodTableId ?: preview.parseResult.periodTable?.let { pt ->
                 repo.insertPeriodTable(
                     com.lingion.sleepy.data.entity.PeriodTableEntity(
                         name = pt.name,
