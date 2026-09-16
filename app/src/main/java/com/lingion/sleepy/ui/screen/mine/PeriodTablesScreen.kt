@@ -17,17 +17,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -72,8 +68,7 @@ fun PeriodTablesScreen(
     val periodTables by viewModel.allPeriodTables.collectAsState()
     val tables by viewModel.state.collectAsState()
 
-    var deleteTarget by remember { mutableStateOf<PeriodTableEntity?>(null) }
-    var deleteBlockedMsg by remember { mutableStateOf<String?>(null) }
+    // v1.0.56 T7: 删除入口迁至编辑页底部 — 本页不再持有删除弹窗/绑定拦截状态
 
     Scaffold(
         topBar = {
@@ -133,9 +128,8 @@ fun PeriodTablesScreen(
                         }) {
                             Icon(Icons.Outlined.ContentCopy, contentDescription = stringResource(R.string.period_table_copy), tint = colors.onSurfaceVariant)
                         }
-                        IconButton(onClick = { deleteTarget = pt }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete), tint = colors.onSurfaceVariant)
-                        }
+                        // v1.0.56 T7: 删除键从列表行挪到编辑页底部(用户 2026-09-16);
+                        // 行内只留 编辑+复制, 删除弹窗与绑定拦截逻辑整体迁至 PeriodTableEditScreen
                     }
                 }
                 item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -159,40 +153,6 @@ fun PeriodTablesScreen(
                 Text(stringResource(R.string.period_table_new))
             }
         }
-    }
-
-    deleteTarget?.let { target ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
-            text = { Text(stringResource(R.string.period_table_delete_msg_body, target.name), color = colors.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleteTarget = null
-                    scope.launch {
-                        val ok = viewModel.deletePeriodTable(target.id)
-                        if (!ok) {
-                            val bound = tables.tables.count { it.periodTableId == target.id }
-                            deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
-                        }
-                    }
-                }) { Text(stringResource(R.string.delete), color = colors.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) }
-            }
-        )
-    }
-
-    deleteBlockedMsg?.let { msg ->
-        AlertDialog(
-            onDismissRequest = { deleteBlockedMsg = null },
-            title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
-            text = { Text(msg, color = colors.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
-            }
-        )
     }
 }
 

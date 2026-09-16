@@ -39,6 +39,8 @@
     <string name="manage_import_sub">Import from file / text / CSV</string>
     <string name="manage_new_table">New Schedule</string>
     <string name="manage_new_table_sub">Create a blank schedule, add courses manually</string>
+    <string name="manage_new_period_table">New bell schedule</string>
+    <string name="manage_new_period_table_sub">Create an empty bell schedule to share across timetables</string>
     <string name="manage_edit_current">Edit Current</string>
     <string name="manage_edit_current_sub">Edit name, dates, and time slots</string>
     <string name="manage_export">Export current timetable</string>

@@ -34,6 +34,8 @@
     <string name="manage_import_sub">ファイル / テキスト / CSV からインポート</string>
     <string name="manage_new_table">新規作成</string>
     <string name="manage_new_table_sub">空の時間割を作成し、手動で授業を追加</string>
+    <string name="manage_new_period_table">新しい時程表</string>
+    <string name="manage_new_period_table_sub">複数の時間割で共有する空の時程表を作成します</string>
     <string name="manage_edit_current">編集</string>
     <string name="manage_edit_current_sub">名前・日付・時限時間を編集</string>
     <string name="manage_export">現在の時間割をエクスポート</string>
