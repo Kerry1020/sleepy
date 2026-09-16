@@ -54,7 +54,7 @@
   - Accept: sleepy-v1 P块无C行 → 独立确认弹窗(名称预填顺延+可改+查重)→确认=insertPeriodTable+提示,不建课表
   - Verify: 单测(解析0课程+periodTable非空判定)+模拟器全链
   - Files: ImportSheet.kt, 6×strings
-- [ ] T10 混合导入自动建作息表
+- [x] T10 混合导入自动建作息表
   - Accept: sleepy-v1 P+C 与 WakeUp JSON tableInfo.time → 自动建作息表(同名,撞名顺延,预览框可见后缀)+建课表+绑定;导入确认框第三Tab默认选中解析出的表
   - Verify: 单测+模拟器
   - Files: ImportSheet.kt, JwImportViewModel.kt/JwImportActivity.kt, 6×strings

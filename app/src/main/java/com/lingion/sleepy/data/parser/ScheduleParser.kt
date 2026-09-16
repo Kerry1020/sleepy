@@ -262,9 +262,10 @@ object ScheduleParser {
         }
 
         // 节次时间表: Sleepy 自家导出把 timeJson 放在 tableInfo.time — 之前丢弃, 现在往返保真
-        val (timeJson, nodesPerDay) = harvestTimeJsonFromTableInfo(root)
+        // v1.0.56 T10: 同时收割独立作息表(混合导入自动建表+绑定)
+        val harvested = harvestTimeFromTableInfo(root, name)
 
-        return lossless(name, startDate, courses, timeJson, nodesPerDay)
+        return lossless(name, startDate, courses, harvested.timeJson, harvested.nodesPerDay, harvested.periodTable)
     }
 
     /**
@@ -278,7 +279,10 @@ object ScheduleParser {
         startDate: String,
         courses: List<CourseEntity>,
         timeJson: String,
-        declaredNodes: Int
+        declaredNodes: Int,
+        // v1.0.56 T10: 混合导入自动建作息表 — 非 null 时 ParseResult 携带独立作息表,
+        // 落库端(ImportAsNew)自动建同名作息表并绑定
+        periodTable: ParsedPeriodTable? = null
     ): ParseResult {
         val courseReach = courses.maxOfOrNull { it.startNode + it.step - 1 } ?: 0
         return ParseResult(
@@ -287,7 +291,8 @@ object ScheduleParser {
             courses = courses,
             timeJson = timeJson,
             nodesPerDay = maxOf(declaredNodes, courseReach),
-            droppedLines = emptyList()
+            droppedLines = emptyList(),
+            periodTable = periodTable
         )
     }
 
@@ -295,19 +300,34 @@ object ScheduleParser {
      * 从 WakeUp JSON / Sleepy 导出的 tableInfo 里收割节次时间表。
      * Sleepy 导出: tableInfo.time = 我们的 timeJson 原文, 直接用。
      * WakeUp 原生: tableInfo.timeList = [{node, startTime, endTime}...] 逐条转。
+     *
+     * v1.0.56 T10: 收割结果同时产出 [ParsedPeriodTable] — 混合导入(课程+节次)时
+     * 自动建一张同名作息表并绑定, 不再只填课表兼容列。sourceId=0(无既有表可指)。
      */
-    private fun harvestTimeJsonFromTableInfo(root: kotlinx.serialization.json.JsonObject): Pair<String, Int> {
-        val tableInfo = root["tableInfo"]?.jsonObject ?: return "" to 0
+    private data class HarvestedTime(
+        val timeJson: String,
+        val nodesPerDay: Int,
+        val periodTable: ParsedPeriodTable?
+    )
+
+    private fun harvestTimeFromTableInfo(root: kotlinx.serialization.json.JsonObject, tableName: String): HarvestedTime {
+        val tableInfo = root["tableInfo"]?.jsonObject ?: return HarvestedTime("", 0, null)
         // 声明节次数(tableInfo.nodesPerDay): Sleepy 导出必带 — 作息行数可能少于声明
         // (稀疏 timeJson 只存改动行), 导入不得把声明压掉(v7.10.16k 无损闭环)
         val declared = tableInfo["nodesPerDay"]?.jsonPrimitive?.intOrNull ?: 0
         // Sleepy 自家格式: time 字段就是 timeJson
         tableInfo["time"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }?.let {
             val nodes = TimeTableUtils.parseNodes(it)
-            if (nodes.isNotEmpty()) return it to maxOf(nodes.last().node, declared)
+            if (nodes.isNotEmpty()) {
+                val nodesPerDay = maxOf(nodes.last().node, declared)
+                return HarvestedTime(
+                    it, nodesPerDay,
+                    ParsedPeriodTable(sourceId = 0, name = tableName, nodesPerDay = nodesPerDay, timeJson = it)
+                )
+            }
         }
         // WakeUp 原生: timeList 数组
-        val timeList = tableInfo["timeList"]?.jsonArray ?: return "" to declared
+        val timeList = tableInfo["timeList"]?.jsonArray ?: return HarvestedTime("", declared, null)
         val nodeTimes = TreeMap<Int, Pair<LocalTime, LocalTime>>()
         for (el in timeList) {
             val o = el.jsonObject
@@ -316,8 +336,19 @@ object ScheduleParser {
             val et = o["endTime"]?.jsonPrimitive?.content?.let { parseHmLenient(it) } ?: continue
             if (node >= 1 && st.isBefore(et)) nodeTimes[node] = st to et
         }
-        if (nodeTimes.isEmpty()) return "" to declared
-        return buildTimeJson(nodeTimes) to maxOf(nodeTimes.lastKey(), declared)
+        if (nodeTimes.isEmpty()) return HarvestedTime("", declared, null)
+        val builtJson = buildTimeJson(nodeTimes)
+        val nodesPerDay = maxOf(nodeTimes.lastKey(), declared)
+        return HarvestedTime(
+            builtJson, nodesPerDay,
+            ParsedPeriodTable(sourceId = 0, name = tableName, nodesPerDay = nodesPerDay, timeJson = builtJson)
+        )
+    }
+
+    /** 旧签名兼容壳: 只取 timeJson/nodesPerDay(既有单测等调用方零改动) */
+    private fun harvestTimeJsonFromTableInfo(root: kotlinx.serialization.json.JsonObject): Pair<String, Int> {
+        val h = harvestTimeFromTableInfo(root, "")
+        return h.timeJson to h.nodesPerDay
     }
 
     /** "08:00" / "8:00" / "0800" → LocalTime; 非法 null */
@@ -360,8 +391,9 @@ object ScheduleParser {
         }
 
         // 节次时间表: tableInfo.time(Sleepy 导出) / timeList(WakeUp 原生)
-        val (timeJson, nodesPerDay) = harvestTimeJsonFromTableInfo(root)
-        return lossless(name, startDate, courses, timeJson, nodesPerDay)
+        // v1.0.56 T10: 同时收割独立作息表(混合导入自动建表+绑定)
+        val harvested = harvestTimeFromTableInfo(root, name)
+        return lossless(name, startDate, courses, harvested.timeJson, harvested.nodesPerDay, harvested.periodTable)
     }
 
     private fun parseCourseJsonArray(jsonStr: String, tableId: Long): List<CourseEntity> {
