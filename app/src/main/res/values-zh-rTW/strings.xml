@@ -417,6 +417,8 @@
     <string name="select_school">選擇學校</string>
     <string name="search_school">搜尋學校…</string>
     <string name="search_school_url">搜尋學校或輸入教務系統 URL…</string>
+    <string name="custom_url_entry">自訂教務連結</string>
+    <string name="custom_url_entry_hint">學校不在清單？貼上教務系統網址直接匯入</string>
     <string name="loading">載入中…</string>
     <string name="no_school_found">未找到匹配的學校</string>
     <string name="url_direct_login">直接用此 URL 登入</string>

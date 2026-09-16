@@ -47,6 +47,10 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -133,6 +137,10 @@ fun SchoolSelectScreen(
     val colors = SleepyTheme.colors
     val scope = rememberCoroutineScope()
 
+    // 「自定义教务链接」入口 → 聚焦搜索框 + 弹键盘 (用户点入口直接开始输入 URL)
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+
     val fieldColors = SleepyTheme.fieldColors()
 
     val filtered = remember(schools, query) {
@@ -156,9 +164,10 @@ fun SchoolSelectScreen(
     val listState = rememberLazyListState()
 
     // section letter → list index 映射（LazyColumn item index: section header 占偶数位, school 占奇数位）
+    // item index 0 恒为「自定义教务链接」入口 — 字母目标索引从 1 起算
     val letterToIndex = remember(sections) {
         val map = mutableMapOf<String, Int>()
-        var idx = 0
+        var idx = 1 // custom_url_entry
         for (sec in sections) {
             map[sec.letter] = idx
             idx++ // header
@@ -167,12 +176,12 @@ fun SchoolSelectScreen(
         map
     }
 
-    // 当前激活字母（用于高亮）
+    // 当前激活字母（用于高亮）— runningIdx 从 1 起 (item 0 = 自定义教务链接入口)
     val activeLetter by remember {
         derivedStateOf {
             val firstVisible = listState.firstVisibleItemIndex
             // 找当前第一个 section header
-            var runningIdx = 0
+            var runningIdx = 1 // custom_url_entry
             for (sec in sections) {
                 val headerIdx = runningIdx
                 val lastSchoolIdx = runningIdx + sec.schools.size
@@ -211,6 +220,7 @@ fun SchoolSelectScreen(
                 onValueChange = { query = it },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .focusRequester(searchFocusRequester)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text(stringResource(R.string.search_school_url), color = colors.onSurfaceVariant) },
                 supportingText = {
@@ -284,6 +294,17 @@ fun SchoolSelectScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
+                        // 自定义教务链接入口 — 恒在列表最顶 (A 分组之前), 不随搜索过滤消失:
+                        // 学校不在目录里的用户从这里走, 点了直接聚焦搜索框弹键盘输 URL
+                        item(key = "custom_url_entry") {
+                            CustomUrlEntryRow(
+                                onClick = {
+                                    searchFocusRequester.requestFocus()
+                                    keyboard?.show()
+                                }
+                            )
+                            HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                        }
                         sections.forEach { section ->
                             // Section header
                             item(key = "header_${section.letter}") {
@@ -323,6 +344,53 @@ fun SchoolSelectScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 「自定义教务链接」入口 — 恒居列表最顶 (A 分组之前)。
+ * 与 UrlDirectRow 同构 (Link 图标 + primary 色) 但语义是引导: 点击不导入,
+ * 而是聚焦搜索框弹键盘, 让用户把教务 URL 输进去 — 输入合法 URL 后
+ * 搜索框下方出现 UrlDirectRow 完成实际导入。
+ */
+@Composable
+private fun CustomUrlEntryRow(onClick: () -> Unit) {
+    val colors = SleepyTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .noRippleClickable(onClick)
+            .padding(vertical = 14.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(SleepyTheme.shapes.small)
+                .background(colors.primary),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Link,
+                contentDescription = null,
+                tint = colors.onPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.size(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.custom_url_entry),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = colors.primary
+            )
+            Text(
+                text = stringResource(R.string.custom_url_entry_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                maxLines = 1
+            )
         }
     }
 }

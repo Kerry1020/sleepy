@@ -434,6 +434,8 @@
     <string name="select_school">Select School</string>
     <string name="search_school">Search schools…</string>
     <string name="search_school_url">Search schools or enter URL…</string>
+    <string name="custom_url_entry">Custom academic URL</string>
+    <string name="custom_url_entry_hint">School not listed? Paste your academic system URL to import</string>
     <string name="loading">Loading…</string>
     <string name="no_school_found">No matching schools</string>
     <string name="url_direct_login">Login with this URL</string>
