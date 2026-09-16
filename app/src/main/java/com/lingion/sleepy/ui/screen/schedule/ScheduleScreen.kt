@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -107,6 +108,11 @@ fun ScheduleScreen(
     val displayMode = remember { AppPrefs.getDisplayMode(context) }
     val showDate = remember { AppPrefs.isShowDate(context) }
     val visibleDays = remember { AppPrefs.getVisibleDays(context) }
+    // 双指行高缩放 (2026-09-16 用户令): 长期手势 — 初始=上次 tick 确认的持久值;
+    // 捏合只改会话值, 顶栏 tick=落盘长期生效, 撤回=回到上次确认值。
+    var rowHeightScale by remember(state.selectedTableId) { mutableFloatStateOf(AppPrefs.getGridRowScale(context)) }
+    var savedRowScale by remember(state.selectedTableId) { mutableFloatStateOf(AppPrefs.getGridRowScale(context)) }
+    val scaleUncommitted = kotlin.math.abs(rowHeightScale - savedRowScale) > 0.001f
 
     val hasTable = state.tables.isNotEmpty()
     val hasCourses = state.courses.isNotEmpty()
@@ -160,6 +166,12 @@ fun ScheduleScreen(
                         }
                     }
                 },
+                scaleUncommitted = scaleUncommitted,
+                onScaleCommit = {
+                    AppPrefs.setGridRowScale(context, rowHeightScale)
+                    savedRowScale = rowHeightScale
+                },
+                onScaleReset = { rowHeightScale = savedRowScale },
                 onPrevWeek = { viewModel.changeWeek(state.selectedWeek - 1) },
                 onNextWeek = { viewModel.changeWeek(state.selectedWeek + 1) },
                 onJumpToActual = {
@@ -280,6 +292,7 @@ fun ScheduleScreen(
                     )
                     ViewMode.Cards -> CardsGridView(
                         courses = weekCourses,
+                        allCourses = state.courses,
                         timeSlots = TimeTableUtils.timeSlotsFor(state.currentTable),
                         visibleDays = visibleDays,
                         showDate = showDate,
@@ -296,7 +309,9 @@ fun ScheduleScreen(
                         },
                         // 用户反馈 2026-09-09: 非常规课跨节次空隙 → 渲染期合成占位节次,
                         // 比例定位与聚簇都基于扩展后的槽位表(真实分钟语义)
-                        timeJson = state.effectiveCurrentTable?.timeJson
+                        timeJson = state.effectiveCurrentTable?.timeJson,
+                        rowHeightScale = rowHeightScale,
+                        onRowHeightScaleChange = { rowHeightScale = it }
                     )
                 }
             }
@@ -398,6 +413,9 @@ private fun TopBar(
     startDate: String,
     onSwitchTable: () -> Unit,
     onUndo: () -> Unit,
+    scaleUncommitted: Boolean,
+    onScaleCommit: () -> Unit,
+    onScaleReset: () -> Unit,
     onPrevWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onJumpToActual: () -> Unit,
@@ -436,12 +454,22 @@ private fun TopBar(
                     contentDescriptionRes = R.string.schedule_switch_table,
                     onClick = onSwitchTable
                 )
-                if (com.lingion.sleepy.data.undo.UndoManager.hasSnapshot) {
+                val showScaleUndo = com.lingion.sleepy.data.undo.UndoManager.hasSnapshot || scaleUncommitted
+                if (showScaleUndo) {
                     Spacer(modifier = Modifier.width(6.dp))
                     WeekNavButton(
                         icon = Icons.AutoMirrored.Outlined.Undo,
                         contentDescriptionRes = R.string.schedule_undo,
-                        onClick = onUndo
+                        onClick = { if (scaleUncommitted) onScaleReset() else onUndo() }
+                    )
+                }
+                // 2026-09-16 用户令: 捏合未确认时 tick 与撤回并排同尺寸; tick=落盘长期生效(两标同灭), 撤回=回到上次确认值
+                if (scaleUncommitted) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    WeekNavButton(
+                        icon = Icons.Outlined.Check,
+                        contentDescriptionRes = R.string.schedule_scale_keep,
+                        onClick = onScaleCommit
                     )
                 }
             }

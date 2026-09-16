@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -49,6 +50,7 @@ import com.lingion.sleepy.ui.component.SectionHeader
 import com.lingion.sleepy.ui.component.SettingsFlatCard
 import com.lingion.sleepy.ui.component.SettingsCard
 import com.lingion.sleepy.ui.component.SettingToggleRow
+import com.lingion.sleepy.ui.component.TimePickerField
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.ui.theme.noRippleClickable
 import com.lingion.sleepy.util.AppPrefs
@@ -101,6 +103,9 @@ fun GeneralSettingsScreen(
     var gridSubInfo by remember { mutableStateOf(AppPrefs.getGridSubInfo(context)) }
     var gridScale by remember { mutableStateOf(AppPrefs.getGridScale(context)) }
     var weekScale by remember { mutableStateOf(AppPrefs.getWeekScale(context)) }
+    var autoHideEmptyEvening by remember { mutableStateOf(AppPrefs.isGridAutoHideEmptyEvening(context)) }
+    var gridAdaptiveHeight by remember { mutableStateOf(AppPrefs.isGridAdaptiveHeight(context)) }
+    var eveningStart by remember { mutableStateOf(AppPrefs.getGridEveningStart(context)) }
     var gridCorner by remember { mutableStateOf(AppPrefs.getGridCornerRatio(context)) }
     var weekTwoColumn by remember { mutableStateOf(AppPrefs.isWeekTwoColumn(context)) }
     var weekTwoColumnMode by remember { mutableStateOf(AppPrefs.getWeekTwoColumnMode(context)) }
@@ -683,6 +688,71 @@ fun GeneralSettingsScreen(
                             if (selected) Icon(Icons.Outlined.Check, null, tint = colors.primary, modifier = Modifier.size(20.dp))
                         }
                         if (code != languages.last().first) HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                    }
+                }
+            }
+
+            // ── 分隔线 ──
+            item { HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline)) }
+
+            // ── 分组⑤ 实验室 (2026-09-16 用户令): 实验性功能默认全关, 可能随版本调整 ──
+            item {
+                SectionHeader(title = stringResource(R.string.settings_lab))
+            }
+            item {
+                Text(
+                    text = stringResource(R.string.settings_lab_sub),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().clip(SleepyTheme.shapes.large).background(colors.surfaceContainer).padding(horizontal = 16.dp)
+                ) {
+                    SettingToggleRow(
+                        label = stringResource(R.string.settings_grid_adaptive_height),
+                        subtitle = stringResource(R.string.settings_grid_adaptive_height_sub),
+                        checked = gridAdaptiveHeight,
+                        onCheckedChange = {
+                            gridAdaptiveHeight = it
+                            AppPrefs.setGridAdaptiveHeight(context, it)
+                        }
+                    )
+                    HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                    SettingToggleRow(
+                        label = stringResource(R.string.settings_grid_auto_hide_evening),
+                        subtitle = stringResource(R.string.settings_grid_auto_hide_evening_sub),
+                        checked = autoHideEmptyEvening,
+                        onCheckedChange = {
+                            autoHideEmptyEvening = it
+                            AppPrefs.setGridAutoHideEmptyEvening(context, it)
+                        }
+                    )
+                    if (autoHideEmptyEvening) {
+                        HorizontalDivider(color = colors.outlineVariant.copy(alpha = SleepyTheme.Alpha.hairline))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_grid_evening_start),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = colors.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TimePickerField(
+                                value = eveningStart,
+                                onValueChange = {
+                                    eveningStart = it
+                                    AppPrefs.setGridEveningStart(context, it)
+                                },
+                                label = "",
+                                modifier = Modifier.width(150.dp)
+                            )
+                        }
                     }
                 }
             }
