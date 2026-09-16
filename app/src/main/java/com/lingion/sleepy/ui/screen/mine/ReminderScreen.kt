@@ -479,26 +479,28 @@ fun ReminderScreen(onBack: () -> Unit) {
             onDismissRequest = { showTimePicker = false },
             title = { Text(stringResource(R.string.reminder_pick_time)) },
             text = {
-                // 默认 TimePicker 配色 — 与 TimePickerField 弹窗一致, 不再单独覆写表盘色
-                TimePicker(state = timeState)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val h = String.format("%02d", timeState.hour)
-                    val m = String.format("%02d", timeState.minute)
-                    dailyTime = "$h:$m"
-                    AppPrefs.setDailyReminderTime(context, dailyTime)
-                    SleepyApp.get().notificationScheduler.scheduleAll()
-                    showTimePicker = false
-                }) {
-                    Text(stringResource(R.string.action_confirm))
+                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    // 默认 TimePicker 配色 — 与 TimePickerField 弹窗一致, 不再单独覆写表盘色
+                    TimePicker(state = timeState)
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.action_confirm),
+                        onConfirm = {
+                            val h = String.format("%02d", timeState.hour)
+                            val m = String.format("%02d", timeState.minute)
+                            dailyTime = "$h:$m"
+                            AppPrefs.setDailyReminderTime(context, dailyTime)
+                            SleepyApp.get().notificationScheduler.scheduleAll()
+                            showTimePicker = false
+                        },
+                        dismissText = stringResource(R.string.action_cancel),
+                        onDismiss = { showTimePicker = false }
+                    )
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
+            confirmButton = {},
+            dismissButton = {},
             titleContentColor = colors.onSurface,
             textContentColor = colors.onSurfaceVariant
         )

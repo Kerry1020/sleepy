@@ -17,11 +17,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -232,8 +233,14 @@ private fun ManualTimeSlotEditor(
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant
             )
-            TextButton(
-                onClick = { onRowsChange(TimeTableUtils.appendEmptyRow(rows)) }
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 小号色块按钮
+            Button(
+                onClick = { onRowsChange(TimeTableUtils.appendEmptyRow(rows)) },
+                shape = SleepyTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.secondaryContainer,
+                    contentColor = colors.onSecondaryContainer
+                )
             ) {
                 Icon(
                     Icons.Outlined.Add,
@@ -241,7 +248,7 @@ private fun ManualTimeSlotEditor(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(R.string.add_period))
+                Text(stringResource(R.string.add_period), style = MaterialTheme.typography.labelMedium)
             }
         }
 
