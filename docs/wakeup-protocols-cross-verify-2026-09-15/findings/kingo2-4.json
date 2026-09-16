@@ -1,0 +1,15 @@
+{
+  "repo_name": "cqwu-ehall/AIShedule_cqwu",
+  "stars": 1,
+  "default_branch": "main",
+  "license": "AGPL-3.0",
+  "relevant_files": [
+    {"path": "scheduleHtmlProvider.js", "purpose": "课表 HTML 采集: 深入 KINGOSOFT 三层 iframe 取 #mytable", "lines_with_protocol": [1, 6, 7, 8, 11]},
+    {"path": "scheduleHtmlParser.js", "purpose": "课表 HTML 表格解析: td.class 列定位 + <br> 分字段 + 周次/节次展开", "lines_with_protocol": [1, 5, 22, 30, 56, 62, 74]},
+    {"path": "scheduleTimer.js", "purpose": "作息: 4+4+3 节, 第9节 19:20 起, 傍晚课归第9节", "lines_with_protocol": [5, 10, 11, 12]}
+  ],
+  "protocol_approach": "小爱课程表适配脚本 (青果/KINGOSOFT, 重庆文理学院)。采集端: provider 沿 frmDesk -> frame_1 -> frmReport 三层 iframe 取 getElementById('mytable').innerHTML — 即服务端渲染的 HTML 网格课表, 非 JSON API。解析端: jQuery 遍历 tbody tr, 取 class=='td' 的单元格, index 即星期 (day=index+1, 周日无列); 每格 div 按 <br> 拆 4 段 = [课名, 教师, '周次[节次]', 教室]。周次语法: '5,7,9,13-16,1-18 单,1-18 双' — 逗号分隔 + 区间 + 单/双后缀; 节次 = 方括号 'A-B' 展开, '傍晚' 特判归第9节。同课去重用整对象 JSON.stringify 比较。无 kbcx/xskbcx 接口, 无 TaskActivity 网格 JS (无 index = X*unitCount+Y, 无 weeks 二进制串)。",
+  "exact_regex_or_code_snippet": "let frmDesk = document.getElementById('frmDesk').contentWindow.document; let frame_1 = frmDesk.getElementById(\"frame_1\").contentWindow.document; let frmReport = frame_1.getElementById(\"frmReport\").contentWindow.document; let tableElement = frmReport.getElementById(\"mytable\"); ; $(this).children(\"td\").filter(function () { return $(this).attr(\"class\") == \"td\"; }).map(function (index) { return { day: index + 1, ... } }) ; classProperty[2].split(\"[\")[0].split(\",\") // 5,7,9,13-16,1-18 单,1-18 双 ; let sectionRange = classProperty[2].split(\"[\")[1].replace(\"]\", \"\"); if (sectionRange.startsWith(\"傍晚\")) { classItem.sections.push({ section: 9 }); }",
+  "verdict": "POSITIVE",
+  "verdict_reason": "青果 HTML 网格课表解析直接证据: mytable 表格形态 (class='td' 单元格列=星期, div 内 <br> 四段式 '课名/教师/周次[节次]/教室', 周次逗号+区间+单双语法) 完整落地; 但走的是 frmDesk 三层 iframe 服务端渲染路径, 不是 kbcx/xskbcx JSON 端点也不是 TaskActivity 网格 JS — 属预期中的第三种形态 (HTML 表格流), 已 archived + 2023 停更但不否决。"
+}

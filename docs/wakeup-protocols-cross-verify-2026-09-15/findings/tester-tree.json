@@ -1,0 +1,117 @@
+{
+  "sha": "14f56c6d4e492c4cac768203a9b0ad5257cbab36",
+  "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/trees/14f56c6d4e492c4cac768203a9b0ad5257cbab36",
+  "tree": [
+    {
+      "path": "CourseImporterTestTool",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b444e1f7bbeb47e7c0a4daaaf404ac4c5a174b46",
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/trees/b444e1f7bbeb47e7c0a4daaaf404ac4c5a174b46"
+    },
+    {
+      "path": "CourseImporterTestTool/background.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e3a89044d5716b808063c617ccbf875a7aae479a",
+      "size": 10917,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/e3a89044d5716b808063c617ccbf875a7aae479a"
+    },
+    {
+      "path": "CourseImporterTestTool/content-script.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fc6d8c0371cdae57c93478067bfa3a5b7619a67f",
+      "size": 16268,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/fc6d8c0371cdae57c93478067bfa3a5b7619a67f"
+    },
+    {
+      "path": "CourseImporterTestTool/icons",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8c31bb4c3ffc5e1189f7227a9926b46d83710a82",
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/trees/8c31bb4c3ffc5e1189f7227a9926b46d83710a82"
+    },
+    {
+      "path": "CourseImporterTestTool/icons/icon128.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7e2ba2cf8159d3c4576339e77e21ab48ad6645cb",
+      "size": 2461,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/7e2ba2cf8159d3c4576339e77e21ab48ad6645cb"
+    },
+    {
+      "path": "CourseImporterTestTool/icons/icon16.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0c3bf963850d0645f2a182cab90ec94bf30920a0",
+      "size": 414,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/0c3bf963850d0645f2a182cab90ec94bf30920a0"
+    },
+    {
+      "path": "CourseImporterTestTool/icons/icon48.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "698bc3d136590073fc3cd45fe8c22ac5bdda0142",
+      "size": 1351,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/698bc3d136590073fc3cd45fe8c22ac5bdda0142"
+    },
+    {
+      "path": "CourseImporterTestTool/injected_bridge.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8e2da8125367f93a31cd6e8bf607f33dca91b830",
+      "size": 14862,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/8e2da8125367f93a31cd6e8bf607f33dca91b830"
+    },
+    {
+      "path": "CourseImporterTestTool/manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c54f00278bbc3f777cb3b0946ecf45da0757bca0",
+      "size": 960,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/c54f00278bbc3f777cb3b0946ecf45da0757bca0"
+    },
+    {
+      "path": "CourseImporterTestTool/popup.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f840ad89dbaba4ae67254743b667d9c426e6700",
+      "size": 1073,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/4f840ad89dbaba4ae67254743b667d9c426e6700"
+    },
+    {
+      "path": "CourseImporterTestTool/popup.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a5141bbed7eca93d2cc15b3ff28e16a26a26945",
+      "size": 1927,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/0a5141bbed7eca93d2cc15b3ff28e16a26a26945"
+    },
+    {
+      "path": "CourseImporterTestTool/school.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d6a5cafcbd575fce843f288785099796cd561b21",
+      "size": 14649,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/d6a5cafcbd575fce843f288785099796cd561b21"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d60bab7b2824e6547415c0ec82b86b384334ee6",
+      "size": 1070,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/5d60bab7b2824e6547415c0ec82b86b384334ee6"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9844aabf49efcd60a3e0a57b825c23fae14036df",
+      "size": 2073,
+      "url": "https://api.github.com/repos/XingHeYuZhuan/shiguang_Tester/git/blobs/9844aabf49efcd60a3e0a57b825c23fae14036df"
+    }
+  ],
+  "truncated": false
+}

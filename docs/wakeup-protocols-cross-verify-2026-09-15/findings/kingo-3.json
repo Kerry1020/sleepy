@@ -1,0 +1,11 @@
+{
+  "repo_name": "web1n/XiaoAISchedule_hebust",
+  "stars": 5,
+  "default_branch": "master",
+  "license": null,
+  "relevant_files": ["scheduleHtmlProvider.js", "scheduleHtmlParser.js"],
+  "protocol_approach": "青果新(新版 UI)三层 iframe DOM 直取: frmDesk→frame_1→frmReport→#mytable innerHTML, parser 按 td.class=='td' 逐天解析 div 单元格, 纯前端无请求",
+  "exact_regex_or_code_snippet": "frmDesk.getElementById('frame_1').contentWindow.document ... getElementById('mytable'); 每格 classProperty=html.split('<br>') 4 字段[课名,教师,'5,7,9,13-16[5-6节]',地点]; 周次 split(',')[i].split('-') 区间展开; sections=split('[')[1].replace(']','').split('-'); 无单双周处理",
+  "verdict": "POSITIVE",
+  "verdict_reason": "青果新嵌套 iframe+mytable+td 标记结构与周次/节次括号格式证据确凿, 但未处理单双周"
+}

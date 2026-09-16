@@ -1,0 +1,31 @@
+{
+  "sha": "cf80a6d32c599b5651fb11548b0d4a65bec03e16",
+  "url": "https://api.github.com/repos/MyLikeGirl/AISchedule-QiangZhi/git/trees/cf80a6d32c599b5651fb11548b0d4a65bec03e16",
+  "tree": [
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "16567ae18ca584db9f546fed805bf5d5f85a14b6",
+      "size": 154,
+      "url": "https://api.github.com/repos/MyLikeGirl/AISchedule-QiangZhi/git/blobs/16567ae18ca584db9f546fed805bf5d5f85a14b6"
+    },
+    {
+      "path": "scheduleHtmlParser",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90c3fc3b03fb57c3df0f234c608d2765911337a0",
+      "size": 10175,
+      "url": "https://api.github.com/repos/MyLikeGirl/AISchedule-QiangZhi/git/blobs/90c3fc3b03fb57c3df0f234c608d2765911337a0"
+    },
+    {
+      "path": "scheduleHtmlProvider",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "55d509592bb1a106bc364f043e2905da33797ee8",
+      "size": 954,
+      "url": "https://api.github.com/repos/MyLikeGirl/AISchedule-QiangZhi/git/blobs/55d509592bb1a106bc364f043e2905da33797ee8"
+    }
+  ],
+  "truncated": false
+}
