@@ -1,6 +1,6 @@
 # 已适配学校名单
 
-> Sleepy 支持的教务直连学校目录,由 `app/src/main/assets/schools.json` 单源生成。共 337 所,29 类协议。最后更新:2026-09-14。
+> Sleepy 支持的教务直连学校目录,由 `app/src/main/assets/schools.json` 单源生成。共 340 所,31 类协议。最后更新:2026-09-17。
 >
 > **怎么用这张表**:Ctrl+F 搜你学校的名字——全名、简称(括号里)或拼音缩写都行。**搜不到 ≠ 用不了**:在 App 导入页搜索框直接粘贴教务系统网址,Sleepy 会按网址识别协议尝试导入;还不行就 [开适配申请](https://github.com/lingion/sleepy/issues/new?template=school_adaptation.yml)。
 >
@@ -112,6 +112,7 @@
 | 广西大学 | http://jwxt2018.gxu.edu.cn/jwglxt/xtgl/ | `zf_new` |
 | 广西科技师范学院 | http://jw.gxstnu.edu.cn/jsxsd/ | `qz` |
 | 广西民族大学相思湖学院 | http://49.234.155.183/gxmzdxxshxy_jsxsd/ | `qz` |
+| 广西农业职业技术大学(别名:gxnzd) | https://jwxt.gxnzd.com.cn/jwglxt/xtgl/login_slogin.html | `zf_new` |
 | 广西民族师范学院 | https://www.gxnun.edu.cn/jiaowu-index.html | `qz` |
 | 广西物流职业技术学院 | http://jw.gxlvtc.edu.cn | `wisedu` |
 | 广州南方学院 | https://jwxt.nfu.edu.cn/jwglxt/xtgl/login_slogin.html | `zf_new` |
@@ -381,8 +382,10 @@
 | 西华师范大学 | https://www.cwnu.edu.cn | `chaoxing` |
 | 西京学院 | https://jwxt.xijing.edu.cn/jwapp/sys/homeapp/home/index.html | `wisedu` |
 | 西南交通大学希望学院 | http://119.6.110.75:9007 | `urp` |
+| 西南交通大学(别名:swjtu) | https://yhxt.swjtu.edu.cn/ | `yethan` |
 | 西南民族大学 | https://jwxt.swun.edu.cn/jwglxt/xtgl/login_slogin.html | `zf_new` |
 | 西南政法大学 | http://njwxt.swupl.edu.cn/jwglxt/xtgl | `zf_new` |
+| 新疆大学(别名:xju)(研究生入口) | https://yjspy.xju.edu.cn/Gstudent/Default.aspx | `xju_post` |
 | 新疆师范大学 | https://jwxt.xjnu.edu.cn/jsxsd/ | `qz` |
 | 信阳师范大学(别名:信阳师院) | http://210.43.24.137/jwglxt/xtgl/login_slogin.html | `zf_new` |
 | 徐州医科大学 | https://jwpt.xzhmu.edu.cn/jwglxt/xtgl/login_slogin.html | `zf_new` |
