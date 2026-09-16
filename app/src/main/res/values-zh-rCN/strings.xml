@@ -753,6 +753,9 @@
     <string name="period_table_bound_count">已绑定 %1$d 张课表</string>
     <string name="period_table_new">新建作息表</string>
     <string name="period_table_copy">复制作息表</string>
+    <string name="period_table_import_title">导入作息表</string>
+    <string name="period_table_import_body">检测到输入仅包含作息表内容，将只创建一张作息表。</string>
+    <string name="period_table_import_confirm">确认导入作息表</string>
     <string name="period_table_name_taken">该名称已被其他课表或作息表使用</string>
     <string name="period_table_copy_dialog_title">复制作息表</string>
     <string name="period_table_name_label">作息表名称</string>

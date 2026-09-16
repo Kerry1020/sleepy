@@ -742,6 +742,9 @@
     <string name="period_table_bound_count">%1$d 件の時間割に使用中</string>
     <string name="period_table_new">新しい時程表</string>
     <string name="period_table_copy">時程表を複製</string>
+    <string name="period_table_import_title">時程表をインポート</string>
+    <string name="period_table_import_body">時程表の内容だけが検出されたため、時程表だけを作成します。</string>
+    <string name="period_table_import_confirm">時程表をインポート</string>
     <string name="period_table_name_taken">この名前は他のテーブルで既に使われています</string>
     <string name="period_table_copy_dialog_title">時程表をコピー</string>
     <string name="period_table_name_label">時程表名</string>
