@@ -192,6 +192,22 @@ object TimeTableUtils {
     const val PLACEHOLDER_MIN_WEIGHT = 0.36f
 
     /**
+     * 用户反馈 2026-09-16: 占位节次**文字适配检测**(纯几何函数, 与 rowHeight/scale 联动)。
+     * 行内容区高 = rowHeightDp * rowWeight − gapDp; 放不下 requiredTextHeightDp
+     * (= 时间文字行高 11dp + 上下 padding 8dp) → 该占位行渲染为灰块(不显示文字),
+     * 点击可展开到正好显示完文字。
+     */
+    fun placeholderTextFits(rowWeight: Float, rowHeightDp: Float, gapDp: Float, requiredTextHeightDp: Float): Boolean =
+        rowHeightDp * rowWeight - gapDp >= requiredTextHeightDp
+
+    /**
+     * 占位行展开权重 = 正好显示完时间文字((text+gap)/rowHeight)。
+     * 展开只增不减(与原权重无关, 调用方保证 max), 且恒 < 1 不占满整行。
+     */
+    fun placeholderExpandedWeight(rowHeightDp: Float, gapDp: Float, requiredTextHeightDp: Float): Float =
+        ((requiredTextHeightDp + gapDp) / rowHeightDp).coerceAtMost(0.99f)
+
+    /**
      * 渲染期槽位方案 — 标准槽位 + 按当前课程集合合成的**占位节次**(渲染期产物,
      * 绝不写回 timeJson; 与用户手建边缘节点 insertEdgeNode 机制严格无关)。
      *
