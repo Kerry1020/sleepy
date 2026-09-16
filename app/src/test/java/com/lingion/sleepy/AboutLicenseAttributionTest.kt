@@ -258,6 +258,7 @@ class AboutLicenseAttributionTest {
         Attribution("pub-docs", "zfman"),
         Attribution("eduData-GoBack", "huhu415"),
         Attribution("NUISTTable", "zyc-816"),
+        Attribution("SCAU-Grad-Automatically-Fill-Evaluation-Form-JS", "jiefing"),
     )
 
     // ----- 贡献者 (Contributors) token 集: 直接提交代码并合入的开发者, 与上游参考仓库致谢区分 -----
