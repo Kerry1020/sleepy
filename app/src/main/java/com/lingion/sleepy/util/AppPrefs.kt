@@ -67,6 +67,7 @@ object AppPrefs {
     const val KEY_GRID_AUTO_HIDE_EMPTY_EVENING = "grid_auto_hide_empty_evening" // bool default false — 实验室: 网格视图自动收起无课晚间节次
     const val KEY_GRID_ADAPTIVE_HEIGHT = "grid_adaptive_height" // bool default false — 实验室: 网格视图自适应行高(默认固定 52dp 基座)
     const val KEY_GRID_EVENING_START = "grid_evening_start" // string "HH:mm" default 18:00 — 实验室: 晚间起始时间(用户自定义)
+    const val KEY_GRID_ROW_SCALE = "grid_row_scale" // float default 1.0 — 双指行高缩放确认值(相对基座; 顶栏 tick 落盘, 撤回回退)
     const val KEY_WEEK_SCALE = "week_scale" // float 0.7~1.3 default 1.0 — 周视图整体缩放(与网格视图互相独立, issue#8)
     const val KEY_GRID_CORNER_RATIO = "grid_corner_ratio" // float 0.0~2.0 default 1.0 — 网格/周视图圆角比例系数(乘基准 12/16dp, issue#8)
     const val KEY_WEEK_TWO_COLUMN = "week_two_column" // bool default false — 周视图两栏开关, issue#8
@@ -497,6 +498,14 @@ object AppPrefs {
     fun setGridEveningStart(ctx: Context, v: String) {
         sp(ctx).edit().putString(KEY_GRID_EVENING_START, v).apply()
         _changeBus.tryEmit(KEY_GRID_EVENING_START)
+    }
+
+    fun getGridRowScale(ctx: Context): Float =
+        sp(ctx).getFloat(KEY_GRID_ROW_SCALE, 1.0f)
+
+    fun setGridRowScale(ctx: Context, v: Float) {
+        sp(ctx).edit().putFloat(KEY_GRID_ROW_SCALE, v).apply()
+        _changeBus.tryEmit(KEY_GRID_ROW_SCALE)
     }
 
     fun getWeekScale(ctx: Context): Float =
