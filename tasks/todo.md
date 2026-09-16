@@ -26,16 +26,16 @@
 
 ## Phase 2 第三 Tab
 
-- [ ] T5 TimeSlotEditor 三 Tab 组件化
+- [x] T5 TimeSlotEditor 三 Tab 组件化 — 8ba89c47
   - Accept: 新可选参数(periodTables 列表/selectedId/ onSelect/排除id);不传=旧两Tab;新 Tab 列表 UI(未绑定+全部,复用 BindOptionRow 风格)
   - Verify: 编译+现有 TimeSlotEditor 相关测试零回归
   - Files: TimeSlotEditor.kt
-- [ ] T6 四调用点接线
+- [x] T6 四调用点接线 — a66b36e2
   - Accept: EditTable 拆绑定卡(未绑定/选中态原语义进 Tab);JW 确认框/导入预览框/作息表编辑页(排除自己,选中=取入内容)全有第三Tab
   - Verify: 编译+模拟器四屏逐个点
   - Files: EditTableScreen.kt, JwImportActivity.kt, ImportSheet.kt, PeriodTableEditScreen.kt, 6×strings
 
-## Checkpoint B(T5-T6): 编译+全测试绿+模拟器四屏
+## Checkpoint B(T5-T6): 编译+全测试绿 ✅(模拟器四屏人工验证随 T12 统一)
 
 ## Phase 3 管理流
 
