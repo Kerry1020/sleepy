@@ -116,6 +116,9 @@ fun PeriodTableEditScreen(
     // v1.0.56 T7: 删除入口迁入本页 — 确认弹窗 + 绑定拦截提示(从管理页列表行整体搬迁)
     var showDeleteConfirm by remember(periodTable.id) { mutableStateOf(false) }
     var deleteBlockedMsg by remember(periodTable.id) { mutableStateOf<String?>(null) }
+    // v1.0.56 T8: 复制先命名, 确认后才建; 成功后回管理页
+    var showCopyDialog by remember(periodTable.id) { mutableStateOf(false) }
+    var copyName by remember(periodTable.id) { mutableStateOf("") }
 
     val slotRows = remember(periodTable.id, periodTable.updatedAt, periodTable.timeJson) {
         mutableStateListOf<TimeTableUtils.TimeSlotRow>().apply {
@@ -159,12 +162,13 @@ fun PeriodTableEditScreen(
                     }
                 },
                 actions = {
-                    // 复制时间表(§4.2): 先生成新实体再进入其编辑页, 原表与绑定关系不变
+                    // v1.0.56 T8: 复制先弹命名框, 确认后才落库; 成功回管理页
                     IconButton(onClick = {
                         scope.launch {
-                            val newId = viewModel.copyPeriodTable(periodTable.id)
-                            if (newId > 0) {
-                                onBack()
+                            val suggested = viewModel.suggestPeriodTableCopyName(periodTable.id)
+                            if (suggested != null) {
+                                copyName = suggested
+                                showCopyDialog = true
                             }
                         }
                     }) {
@@ -451,6 +455,51 @@ fun PeriodTableEditScreen(
             text = { Text(msg, color = colors.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
+            }
+        )
+    }
+
+    if (showCopyDialog) {
+        val candidate = copyName.trim()
+        val nameTaken = candidate.isNotBlank() && TimeTableUtils.isTableNameTaken(
+            candidate,
+            scheduleState.tables.map { it.name },
+            periodTables.map { it.name }
+        )
+        AlertDialog(
+            onDismissRequest = { showCopyDialog = false },
+            title = { Text(stringResource(R.string.period_table_copy_dialog_title), color = colors.onSurface) },
+            text = {
+                androidx.compose.material3.TextField(
+                    value = copyName,
+                    onValueChange = { copyName = it },
+                    label = { Text(stringResource(R.string.period_table_name_label)) },
+                    singleLine = true,
+                    isError = nameTaken,
+                    supportingText = if (nameTaken) {
+                        { Text(stringResource(R.string.period_table_name_taken)) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = SleepyTheme.fieldShape,
+                    colors = fieldColors
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = candidate.isNotBlank() && !nameTaken,
+                    onClick = {
+                        scope.launch {
+                            val newId = viewModel.copyPeriodTableAs(periodTable.id, candidate)
+                            if (newId > 0) {
+                                showCopyDialog = false
+                                onBack()
+                            }
+                        }
+                    }
+                ) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCopyDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

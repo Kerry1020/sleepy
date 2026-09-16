@@ -247,6 +247,34 @@ class ScheduleViewModel : ViewModel() {
     /** issue#40: 复制时间节次表, 返回新副本 id (-1 = 源不存在) */
     suspend fun copyPeriodTable(sourceId: Long): Long = repo.copyPeriodTable(sourceId)
 
+    /**
+     * v1.0.56 T8: 复制作息表预填名 — 原名参与全局唯一名顺延(原名2/3/4…),
+     * 原名本身不占位(复制期间源表仍在, 建议名永远 ≠ 源名, 无需排除源自身)。
+     */
+    suspend fun suggestPeriodTableCopyName(sourceId: Long): String? {
+        val src = repo.getAllPeriodTables().firstOrNull { it.id == sourceId } ?: return null
+        val courseNames = repo.getAllTables().map { it.name }
+        val periodNames = repo.getAllPeriodTables().map { it.name }
+        return com.lingion.sleepy.util.TimeTableUtils.suggestUniqueName(
+            src.name, courseNames, periodNames
+        )
+    }
+
+    /**
+     * v1.0.56 T8: 按用户确认的名字建副本(编辑弹窗确认后才落库)。
+     * 返回新副本 id; 名字为空回退源名。撞名由调用方先查(guard 已在 repo 层无, UI 层实时标错)。
+     */
+    suspend fun copyPeriodTableAs(sourceId: Long, newName: String): Long {
+        val src = repo.getPeriodTable(sourceId) ?: return -1L
+        val courseNames = repo.getAllTables().map { it.name }
+        val periodNames = repo.getAllPeriodTables().map { it.name }
+        if (newName.isNotBlank() && com.lingion.sleepy.util.TimeTableUtils.isTableNameTaken(
+                newName, courseNames, periodNames
+            )
+        ) return -2L
+        return repo.copyPeriodTableAs(sourceId, newName.ifBlank { src.name })
+    }
+
     /** issue#40: 全库课程(保存预览用) — 预览须覆盖所有绑定表的课, state.courses 只装当前选中表 */
     suspend fun getAllCourses(): List<com.lingion.sleepy.data.entity.CourseEntity> = repo.getAllCourses()
 

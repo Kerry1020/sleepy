@@ -39,11 +39,11 @@
 
 ## Phase 3 管理流
 
-- [ ] T7 管理页:新建作息表卡+删除键挪编辑页
+- [x] T7 管理页:新建作息表卡+删除键挪编辑页
   - Accept: 卡序 导入/新建课表/新建作息表/手动/编辑/导出;列表行=编辑+复制;删除键在编辑页底部(已保存才显),拦截弹窗保留
   - Verify: 编译+模拟器
   - Files: ManagementPage.kt, PeriodTablesScreen.kt, PeriodTableEditScreen.kt, MainActivity.kt(接线), 6×strings
-- [ ] T8 复制作息表弹窗
+- [x] T8 复制作息表弹窗
   - Accept: 复制→命名弹窗(预填顺延 2/3/4 可编辑,实时查重标错)→确认才建,留管理页;编辑页 TopBar 复制键同步改弹窗
   - Verify: 编译+单测(顺延逻辑)+模拟器
   - Files: PeriodTablesScreen.kt, PeriodTableEditScreen.kt, ScheduleViewModel/Repository, 6×strings
