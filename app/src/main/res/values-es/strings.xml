@@ -746,6 +746,8 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="period_table_delete_blocked">Aún vinculado a %1$d horario(s), revincula primero</string>
     <string name="period_table_bind_label">Horario de períodos</string>
     <string name="period_table_unbound">Sin vincular (usa los períodos de este horario)</string>
+    <string name="period_tables_tab">Horario de períodos</string>
+    <string name="period_table_nodes_count">%1$d períodos/día</string>
     <string name="period_table_save_preview_title">Vista previa</string>
     <string name="period_table_preview_summary">Afecta a %1$d horario(s): %2$d cursos cambian de hora, %3$d sin cambios</string>
     <string name="period_table_preview_confirm">Guardar</string>

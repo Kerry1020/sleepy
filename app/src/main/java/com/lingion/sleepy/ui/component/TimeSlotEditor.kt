@@ -7,11 +7,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,15 +42,23 @@ import com.lingion.sleepy.util.TimeTableUtils
 import com.lingion.sleepy.util.TimeTableUtils.TimeSlotRow
 
 /**
- * 节次编辑器 v1.0.16+
+ * 节次编辑器 v1.0.16+ / v1.0.56 三 Tab
  *
- * 支持两种模式，顶部 Tab 切换：
+ * 顶部 Tab 切换：
  *  - [Mode.Manual] 手动模式：原 TimeSlotEditor，逐节编辑 start/end
  *  - [Mode.Auto]   自动模式：智慧节次，三个字段 + break 分组卡片
+ *  - [Mode.PeriodTable] 作息表模式(v1.0.56)：绑定一张现成作息表直接用。
+ *    仅当调用方传入 [periodTableOptions] 时出现(不传=旧两 Tab, 兼容既有调用)。
  *
  * 调用方持有 rows（手动模式），config（自动模式），切换模式时通过
  * [onRowsChange]/[onConfigChange] 通知。应用自动模式后通过 [onApplyAuto]
  * 把生成的 rows 回填给手动模式。
+ *
+ * v1.0.56 作息表 Tab 语义:
+ *  - [selectedPeriodTableId] null = 未绑定(用解析出的/本表的内置节次), 非 null = 绑定该表;
+ *    选中态完全由调用方持有(确认时才落库/落 preview 值), 组件内零写库。
+ *  - [onSelectPeriodTable] 点选项行回调(null = 选"未绑定")。
+ *  - [excludePeriodTableId] 作息表编辑页用: 列表中排除自己(禁自引用)。
  */
 @Composable
 fun TimeSlotEditor(
@@ -53,7 +66,11 @@ fun TimeSlotEditor(
     onRowsChange: (List<TimeSlotRow>) -> Unit,
     smartConfig: SmartPeriodConfig = SmartPeriodConfig(),
     onSmartConfigChange: (SmartPeriodConfig) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    periodTableOptions: List<PeriodTableOption> = emptyList(),
+    selectedPeriodTableId: Long? = null,
+    onSelectPeriodTable: (Long?) -> Unit = {},
+    excludePeriodTableId: Long? = null
 ) {
     var mode by remember { mutableStateOf(Mode.Manual) }
 
@@ -69,7 +86,8 @@ fun TimeSlotEditor(
         // ===== Tab 切换 =====
         ModeTabSwitch(
             current = mode,
-            onChange = { mode = it }
+            onChange = { mode = it },
+            hasPeriodTableTab = periodTableOptions.isNotEmpty() || selectedPeriodTableId != null
         )
         Spacer(Modifier.height(8.dp))
 
@@ -82,24 +100,116 @@ fun TimeSlotEditor(
                 config = smartConfig,
                 onConfigChange = onSmartConfigChange
             )
+            Mode.PeriodTable -> PeriodTableBindTab(
+                options = periodTableOptions.filterNot { it.id == excludePeriodTableId },
+                selectedId = selectedPeriodTableId,
+                onSelect = onSelectPeriodTable
+            )
         }
     }
 }
 
 // TimeSlotEditorManualOnly 死包装已删（全库零调用; 导入场景直接用 TimeSlotEditor(mode=Manual)）
 
-enum class Mode { Manual, Auto }
+enum class Mode { Manual, Auto, PeriodTable }
+
+/** v1.0.56 作息表 Tab 选项 — 调用方从 VM 流映射, 组件不触库 */
+data class PeriodTableOption(val id: Long, val name: String, val nodesPerDay: Int)
 
 @Composable
-private fun ModeTabSwitch(current: Mode, onChange: (Mode) -> Unit) {
+private fun ModeTabSwitch(current: Mode, onChange: (Mode) -> Unit, hasPeriodTableTab: Boolean) {
     // 2026-08-25 用户指令: 全 app 统一色块禁描线 — M3 SegmentedButton 是描边风格,
     // 换项目统一的 SegmentedSwitcher (主页周视图/网格同款)
+    val modes = if (hasPeriodTableTab) Mode.entries else listOf(Mode.Manual, Mode.Auto)
     SegmentedSwitcher(
-        options = Mode.entries.map { it to stringResource(if (it == Mode.Manual) R.string.mode_manual else R.string.mode_auto) },
+        options = modes.map {
+            it to stringResource(
+                when (it) {
+                    Mode.Manual -> R.string.mode_manual
+                    Mode.Auto -> R.string.mode_auto
+                    Mode.PeriodTable -> R.string.period_tables_tab
+                }
+            )
+        },
         selected = current,
         onSelect = onChange,
         modifier = Modifier.fillMaxWidth()
     )
+}
+
+/**
+ * v1.0.56 作息表 Tab 内容: 未绑定选项 + 全部作息表列表。
+ * 选中态=primaryContainer 色块+对勾(与 EditTableScreen 换绑卡同构, 禁描边规则)。
+ * maxHeight 限制防弹窗内挤爆; 列表可滚动。
+ */
+@Composable
+private fun PeriodTableBindTab(
+    options: List<PeriodTableOption>,
+    selectedId: Long?,
+    onSelect: (Long?) -> Unit
+) {
+    val colors = SleepyTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 240.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        // 未绑定 = 不绑, 用解析出的/本表内置节次
+        BindChoiceRow(
+            title = stringResource(R.string.period_table_unbound),
+            selected = selectedId == null,
+            onClick = { onSelect(null) }
+        )
+        options.forEach { opt ->
+            BindChoiceRow(
+                title = opt.name,
+                subtitle = stringResource(R.string.period_table_nodes_count, opt.nodesPerDay),
+                selected = selectedId == opt.id,
+                onClick = { onSelect(opt.id) }
+            )
+        }
+    }
+}
+
+/** 选中态=primaryContainer 色块+对勾(UI 纯色块禁描边规则, 与换绑卡 BindOptionRow 同构) */
+@Composable
+private fun BindChoiceRow(title: String, selected: Boolean, onClick: () -> Unit, subtitle: String? = null) {
+    val colors = SleepyTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(SleepyTheme.shapes.medium)
+            .background(if (selected) colors.primaryContainer else colors.surface)
+            .noRippleClickable(onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (selected) colors.onPrimaryContainer else colors.onSurface
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+            }
+        }
+        if (selected) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.onPrimaryContainer,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
 }
 
 @Composable

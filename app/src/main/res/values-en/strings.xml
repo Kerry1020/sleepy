@@ -764,6 +764,8 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="period_table_delete_blocked">Still bound by %1$d timetable(s), rebind first</string>
     <string name="period_table_bind_label">Bell schedule</string>
     <string name="period_table_unbound">Not bound (use this table\'s periods)</string>
+    <string name="period_tables_tab">Bell schedule</string>
+    <string name="period_table_nodes_count">%1$d periods/day</string>
     <string name="period_table_save_preview_title">Preview before saving</string>
     <string name="period_table_preview_summary">Affects %1$d timetable(s): %2$d courses change time, %3$d unchanged</string>
     <string name="period_table_preview_confirm">Save</string>
