@@ -47,6 +47,7 @@
     <string name="schedule_switch_table">Cambiar horario</string>
     <string name="schedule_undo">Deshacer</string>
     <string name="schedule_undo_none">Nada que deshacer</string>
+    <string name="schedule_scale_keep">Conservar escala</string>
     <string name="all_tables_new">Nuevo horario</string>
     <string name="all_tables_duplicate">Duplicar</string>
     <string name="table_created_at">Importado %1$s</string>
@@ -269,23 +270,6 @@
     <string name="mine_title">Ajustes</string>
     <string name="mine_subtitle">Gestiona horarios y configuración</string>
     <string name="mine_export">Exportar</string>
-    <string name="mine_period_tables">Horarios de clases</string>
-    <string name="mine_period_tables_sub">Horarios compartidos entre horarios</string>
-    <string name="period_tables_title">Horarios de clases</string>
-    <string name="period_table_bound_count">Vinculado a %1$d horario(s)</string>
-    <string name="period_table_new">Nuevo horario</string>
-    <string name="period_table_copy">Duplicar horario</string>
-    <string name="period_table_name_label">Nombre del horario</string>
-    <string name="period_table_delete_confirm">Eliminar horario</string>
-    <string name="period_table_delete_msg_body">¿Eliminar el horario «%1$s»? Se puede deshacer.</string>
-    <string name="period_table_delete_blocked">Aún vinculado a %1$d horario(s), revincula primero</string>
-    <string name="period_table_bind_label">Horario de clases</string>
-    <string name="period_table_unbound">Sin vincular (usa los períodos de este horario)</string>
-    <string name="period_table_save_preview_title">Vista previa</string>
-    <string name="period_table_preview_summary">Afecta a %1$d horario(s): %2$d cursos cambian de hora, %3$d sin cambios</string>
-    <string name="period_table_preview_confirm">Guardar</string>
-    <string name="period_table_bind_preview_title">Confirmar cambio</string>
-    <string name="period_table_bind_preview_body">Tras cambiar, este horario interpreta los períodos según el nuevo horario; los cursos con hora propia no se afectan</string>
     <string name="mine_stat_tables">Horarios</string>
     <string name="mine_stat_courses">Cursos</string>
     <string name="mine_stat_week">Semana</string>
@@ -314,6 +298,13 @@
     <string name="settings_grid_sub_none_sub">Las tarjetas solo muestran el nombre</string>
     <string name="settings_pill">Ajustes de pantalla de inicio</string>
     <string name="settings_pill_scale">Zoom de la vista de cuadrícula</string>
+    <string name="settings_grid_auto_hide_evening">Ocultar periodos nocturnos vacíos</string>
+    <string name="settings_grid_auto_hide_evening_sub">Oculta los periodos nocturnos si no hay clases nocturnas en todo el semestre</string>
+    <string name="settings_grid_evening_start">La noche comienza a las</string>
+    <string name="settings_grid_adaptive_height">Altura de fila adaptable del horario</string>
+    <string name="settings_grid_adaptive_height_sub">Ajusta la altura de las filas para que el horario quepa en pantalla</string>
+    <string name="settings_lab">Laboratorio</string>
+    <string name="settings_lab_sub">Funciones experimentales, desactivadas por defecto; pueden cambiar entre versiones</string>
     <string name="settings_pill_week_scale">Zoom de la vista semanal</string>
     <string name="settings_pill_corner">Esquinas de tarjetas</string>
     <string name="settings_week_two_column">Vista semanal en dos columnas</string>
@@ -366,12 +357,6 @@
     <string name="no_course">Libre</string>
     <string name="n_courses">%1$d</string>
     <string name="action_close">Cerrar</string>
-
-    <string name="import_drafts">Borradores de importación</string>
-    <string name="import_drafts_empty">No hay borradores de importación guardados</string>
-    <string name="import_draft_restore">Restaurar borrador</string>
-    <string name="import_draft_delete">Eliminar borrador</string>
-    <string name="import_draft_saved_at">Guardado %1$s</string>
 
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">Por favor cree un horario primero</string>
@@ -476,11 +461,6 @@
     <string name="theme_name_slate">Pizarra</string>
 <string name="default_table_with_num">Predeterminado %1$d</string>
     <string name="new_course">Nueva materia</string>
-    <string name="jw_import_exit_title">¿Salir de la importación?</string>
-    <string name="jw_import_exit_message">La importación no ha terminado. Puedes conservar un borrador para continuar más tarde.</string>
-    <string name="jw_import_exit_continue">Continuar importando</string>
-    <string name="jw_import_exit_keep_draft">Salir y conservar borrador</string>
-    <string name="jw_import_exit_delete_draft">Salir y eliminar borrador</string>
     <string name="jw_import_title">Importar - %1$s</string>
     <string name="month_day_format">%1$d/%2$d</string>
     <string name="section_short">%1$d</string>
@@ -576,6 +556,8 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="action_cancel">Cancelar</string>
     <string name="action_confirm">Aceptar</string>
     <string name="course_color">Color</string>
+    <string name="color_custom_switch">Color personalizado</string>
+    <string name="course_group_color">Color del grupo</string>
     <string name="export_copied_hint">Panel de compartir abierto</string>
     <string name="export_course_count">%1$d cursos</string>
     <string name="export_failed">Error al exportar, reintenta</string>
@@ -750,4 +732,31 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="edge_insert_start_label">Hora de inicio</string>
     <string name="edge_insert_end_label">Hora de fin</string>
     <string name="edge_insert_ok">Añadir</string>
+    <string name="mine_period_tables">Horarios de clases</string>
+    <string name="mine_period_tables_sub">Horarios compartidos entre horarios</string>
+    <string name="period_tables_title">Horarios de clases</string>
+    <string name="period_table_bound_count">Vinculado a %1$d horario(s)</string>
+    <string name="period_table_new">Nuevo horario</string>
+    <string name="period_table_copy">Duplicar horario</string>
+    <string name="period_table_name_label">Nombre del horario</string>
+    <string name="period_table_delete_confirm">Eliminar horario</string>
+    <string name="period_table_delete_msg_body">¿Eliminar el horario «%1$s»? Se puede deshacer.</string>
+    <string name="period_table_delete_blocked">Aún vinculado a %1$d horario(s), revincula primero</string>
+    <string name="period_table_bind_label">Horario de clases</string>
+    <string name="period_table_unbound">Sin vincular (usa los períodos de este horario)</string>
+    <string name="period_table_save_preview_title">Vista previa</string>
+    <string name="period_table_preview_summary">Afecta a %1$d horario(s): %2$d cursos cambian de hora, %3$d sin cambios</string>
+    <string name="period_table_preview_confirm">Guardar</string>
+    <string name="period_table_bind_preview_title">Confirmar cambio</string>
+    <string name="period_table_bind_preview_body">Tras cambiar, este horario interpreta los períodos según el nuevo horario; los cursos con hora propia no se afectan</string>
+    <string name="import_drafts">Borradores de importación</string>
+    <string name="import_drafts_empty">No hay borradores de importación guardados</string>
+    <string name="import_draft_restore">Restaurar borrador</string>
+    <string name="import_draft_delete">Eliminar borrador</string>
+    <string name="import_draft_saved_at">Guardado %1$s</string>
+    <string name="jw_import_exit_title">¿Salir de la importación?</string>
+    <string name="jw_import_exit_message">La importación no ha terminado. Puedes conservar un borrador para continuar más tarde.</string>
+    <string name="jw_import_exit_continue">Continuar importando</string>
+    <string name="jw_import_exit_keep_draft">Salir y conservar borrador</string>
+    <string name="jw_import_exit_delete_draft">Salir y eliminar borrador</string>
 </resources>

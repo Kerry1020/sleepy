@@ -47,6 +47,7 @@
     <string name="schedule_switch_table">切換課表</string>
     <string name="schedule_undo">撤回</string>
     <string name="schedule_undo_none">沒有可撤回的操作</string>
+    <string name="schedule_scale_keep">保留縮放</string>
     <string name="all_tables_new">建立課表</string>
     <string name="all_tables_duplicate">建立副本</string>
     <string name="table_created_at">匯入於 %1$s</string>
@@ -269,23 +270,6 @@
     <string name="mine_title">我的</string>
     <string name="mine_subtitle">管理你的課表與設定</string>
     <string name="mine_export">匯出課表</string>
-    <string name="mine_period_tables">時間節次表</string>
-    <string name="mine_period_tables_sub">管理各課表共用的作息</string>
-    <string name="period_tables_title">時間節次表</string>
-    <string name="period_table_bound_count">已綁定 %1$d 張課表</string>
-    <string name="period_table_new">新增時間表</string>
-    <string name="period_table_copy">複製時間表</string>
-    <string name="period_table_name_label">時間表名稱</string>
-    <string name="period_table_delete_confirm">刪除時間節次表</string>
-    <string name="period_table_delete_msg_body">確定要刪除時間節次表「%1$s」嗎？此操作可復原。</string>
-    <string name="period_table_delete_blocked">該時間表仍被 %1$d 張課表綁定，請先改綁</string>
-    <string name="period_table_bind_label">時間節次表</string>
-    <string name="period_table_unbound">未綁定（使用本表作息）</string>
-    <string name="period_table_save_preview_title">儲存前預覽</string>
-    <string name="period_table_preview_summary">將影響 %1$d 張課表：%2$d 門課時間變化，%3$d 門不變</string>
-    <string name="period_table_preview_confirm">確認儲存</string>
-    <string name="period_table_bind_preview_title">換綁確認</string>
-    <string name="period_table_bind_preview_body">切換後本課表按新時間節次表解釋節次；自訂時間的課程不受影響</string>
     <string name="mine_stat_tables">課表數</string>
     <string name="mine_stat_courses">課程數</string>
     <string name="mine_stat_week">目前週</string>
@@ -314,6 +298,13 @@
     <string name="settings_grid_sub_none_sub">網格卡片只顯示課程名</string>
     <string name="settings_pill">主頁顯示設定</string>
     <string name="settings_pill_scale">網格檢視縮放</string>
+    <string name="settings_grid_auto_hide_evening">自動收起空白晚間</string>
+    <string name="settings_grid_auto_hide_evening_sub">整個學期沒有晚課時自動收起晚間節次</string>
+    <string name="settings_grid_evening_start">晚間起始時間</string>
+    <string name="settings_grid_adaptive_height">課表自適應行高</string>
+    <string name="settings_grid_adaptive_height_sub">按可用高度自動縮放行高，優先完整顯示課表</string>
+    <string name="settings_lab">實驗室</string>
+    <string name="settings_lab_sub">實驗性功能，預設關閉，可能隨版本調整</string>
     <string name="settings_pill_week_scale">週檢視縮放</string>
     <string name="settings_pill_corner">卡片圓角</string>
     <string name="settings_week_two_column">週視圖兩欄顯示</string>
@@ -366,12 +357,6 @@
     <string name="no_course">無課</string>
     <string name="n_courses">%1$d 門</string>
     <string name="action_close">關閉</string>
-
-    <string name="import_drafts">匯入草稿</string>
-    <string name="import_drafts_empty">目前沒有已儲存的匯入草稿</string>
-    <string name="import_draft_restore">恢復草稿</string>
-    <string name="import_draft_delete">刪除草稿</string>
-    <string name="import_draft_saved_at">儲存於 %1$s</string>
 
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">請先建立課表</string>
@@ -476,11 +461,6 @@
     <string name="theme_name_slate">石板灰</string>
 <string name="default_table_with_num">預設%1$d</string>
     <string name="new_course">新課程</string>
-    <string name="jw_import_exit_title">退出匯入？</string>
-    <string name="jw_import_exit_message">目前匯入尚未完成，退出後可以保留草稿供稍後繼續。</string>
-    <string name="jw_import_exit_continue">繼續匯入</string>
-    <string name="jw_import_exit_keep_draft">退出並保留草稿</string>
-    <string name="jw_import_exit_delete_draft">退出並刪除草稿</string>
     <string name="jw_import_title">教務匯入 - %1$s</string>
     <string name="month_day_format">%1$d月%2$d日</string>
     <string name="section_short">%1$d</string>
@@ -576,6 +556,8 @@
     <string name="action_cancel">取消</string>
     <string name="action_confirm">確定</string>
     <string name="course_color">顏色</string>
+    <string name="color_custom_switch">自訂顏色</string>
+    <string name="course_group_color">組色</string>
     <string name="export_copied_hint">已叫起分享面板</string>
     <string name="export_course_count">%1$d 門課程</string>
     <string name="export_failed">匯出失敗，請重試</string>
@@ -750,4 +732,31 @@
     <string name="edge_insert_start_label">起始時間</string>
     <string name="edge_insert_end_label">結束時間</string>
     <string name="edge_insert_ok">新增</string>
+    <string name="mine_period_tables">時間節次表</string>
+    <string name="mine_period_tables_sub">管理各課表共用的作息</string>
+    <string name="period_tables_title">時間節次表</string>
+    <string name="period_table_bound_count">已綁定 %1$d 張課表</string>
+    <string name="period_table_new">新增時間表</string>
+    <string name="period_table_copy">複製時間表</string>
+    <string name="period_table_name_label">時間表名稱</string>
+    <string name="period_table_delete_confirm">刪除時間節次表</string>
+    <string name="period_table_delete_msg_body">確定要刪除時間節次表「%1$s」嗎？此操作可復原。</string>
+    <string name="period_table_delete_blocked">該時間表仍被 %1$d 張課表綁定，請先改綁</string>
+    <string name="period_table_bind_label">時間節次表</string>
+    <string name="period_table_unbound">未綁定（使用本表作息）</string>
+    <string name="period_table_save_preview_title">儲存前預覽</string>
+    <string name="period_table_preview_summary">將影響 %1$d 張課表：%2$d 門課時間變化，%3$d 門不變</string>
+    <string name="period_table_preview_confirm">確認儲存</string>
+    <string name="period_table_bind_preview_title">換綁確認</string>
+    <string name="period_table_bind_preview_body">切換後本課表按新時間節次表解釋節次；自訂時間的課程不受影響</string>
+    <string name="import_drafts">匯入草稿</string>
+    <string name="import_drafts_empty">目前沒有已儲存的匯入草稿</string>
+    <string name="import_draft_restore">恢復草稿</string>
+    <string name="import_draft_delete">刪除草稿</string>
+    <string name="import_draft_saved_at">儲存於 %1$s</string>
+    <string name="jw_import_exit_title">退出匯入？</string>
+    <string name="jw_import_exit_message">目前匯入尚未完成，退出後可以保留草稿供稍後繼續。</string>
+    <string name="jw_import_exit_continue">繼續匯入</string>
+    <string name="jw_import_exit_keep_draft">退出並保留草稿</string>
+    <string name="jw_import_exit_delete_draft">退出並刪除草稿</string>
 </resources>

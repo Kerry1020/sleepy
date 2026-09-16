@@ -47,6 +47,7 @@
     <string name="schedule_switch_table">時間割の切り替え</string>
     <string name="schedule_undo">元に戻す</string>
     <string name="schedule_undo_none">元に戻せる操作はありません</string>
+    <string name="schedule_scale_keep">倍率を保持</string>
     <string name="all_tables_new">新規作成</string>
     <string name="all_tables_duplicate">複製を作成</string>
     <string name="table_created_at">インポート日時 %1$s</string>
@@ -269,23 +270,6 @@
     <string name="mine_title">マイ</string>
     <string name="mine_subtitle">時間割と設定を管理</string>
     <string name="mine_export">エクスポート</string>
-    <string name="mine_period_tables">時限表</string>
-    <string name="mine_period_tables_sub">複数の時間割で共有する時限</string>
-    <string name="period_tables_title">時限表</string>
-    <string name="period_table_bound_count">%1$d 件の時間割に使用中</string>
-    <string name="period_table_new">新しい時限表</string>
-    <string name="period_table_copy">時限表を複製</string>
-    <string name="period_table_name_label">時限表名</string>
-    <string name="period_table_delete_confirm">時限表を削除</string>
-    <string name="period_table_delete_msg_body">時限表「%1$s」を削除しますか？この操作は取り消せます。</string>
-    <string name="period_table_delete_blocked">%1$d 件の時間割が使用中です。先に切り替えてください</string>
-    <string name="period_table_bind_label">時限表</string>
-    <string name="period_table_unbound">未バインド（この時間割の時限を使用）</string>
-    <string name="period_table_save_preview_title">保存前に確認</string>
-    <string name="period_table_preview_summary">%1$d 件の時間割に影響：%2$d 件の時刻が変化、%3$d 件は変更なし</string>
-    <string name="period_table_preview_confirm">保存</string>
-    <string name="period_table_bind_preview_title">切り替え確認</string>
-    <string name="period_table_bind_preview_body">切り替え後、この時間割は新しい時限表で時限を解釈します。カスタム時刻の授業は影響しません</string>
     <string name="mine_stat_tables">時間割数</string>
     <string name="mine_stat_courses">授業数</string>
     <string name="mine_stat_week">現在の週</string>
@@ -314,6 +298,13 @@
     <string name="settings_grid_sub_none_sub">グリッドカードは授業名のみ表示</string>
     <string name="settings_pill">ホーム表示設定</string>
     <string name="settings_pill_scale">グリッド表示の拡大率</string>
+    <string name="settings_grid_auto_hide_evening">空いている夜間コマを自動で隠す</string>
+    <string name="settings_grid_auto_hide_evening_sub">学期全体に夜間授業がない場合、夜間のコマを自動で隠します</string>
+    <string name="settings_grid_evening_start">夜間の開始時刻</string>
+    <string name="settings_grid_adaptive_height">時間割の行の高さ自動調整</string>
+    <string name="settings_grid_adaptive_height_sub">画面に収まるよう行の高さを自動調整します</string>
+    <string name="settings_lab">ラボ</string>
+    <string name="settings_lab_sub">実験的な機能。デフォルトはオフで、バージョンによって変更される可能性があります</string>
     <string name="settings_pill_week_scale">週表示の拡大率</string>
     <string name="settings_pill_corner">カードの角丸</string>
     <string name="settings_week_two_column">週ビュー2列表示</string>
@@ -366,12 +357,6 @@
     <string name="no_course">空き</string>
     <string name="n_courses">%1$d</string>
     <string name="action_close">閉じる</string>
-
-    <string name="import_drafts">インポート下書き</string>
-    <string name="import_drafts_empty">保存されたインポート下書きはありません</string>
-    <string name="import_draft_restore">下書きを復元</string>
-    <string name="import_draft_delete">下書きを削除</string>
-    <string name="import_draft_saved_at">保存日時: %1$s</string>
 
     <!-- Widget / Common UI -->
     <string name="widget_create_schedule">最初に時間割を作成してください</string>
@@ -476,11 +461,6 @@
     <string name="theme_name_slate">スレート</string>
 <string name="default_table_with_num">デフォルト%1$d</string>
     <string name="new_course">新規授業</string>
-    <string name="jw_import_exit_title">インポートを終了しますか？</string>
-    <string name="jw_import_exit_message">インポートはまだ完了していません。下書きを保存して後で続行できます。</string>
-    <string name="jw_import_exit_continue">インポートを続ける</string>
-    <string name="jw_import_exit_keep_draft">終了して下書きを保存</string>
-    <string name="jw_import_exit_delete_draft">終了して下書きを削除</string>
     <string name="jw_import_title">インポート - %1$s</string>
     <string name="month_day_format">%1$d/%2$d</string>
     <string name="section_short">%1$d</string>
@@ -576,6 +556,8 @@
     <string name="action_cancel">キャンセル</string>
     <string name="action_confirm">OK</string>
     <string name="course_color">色</string>
+    <string name="color_custom_switch">カスタムカラー</string>
+    <string name="course_group_color">グループの色</string>
     <string name="export_copied_hint">共有パネルを開きました</string>
     <string name="export_course_count">%1$d 授業</string>
     <string name="export_failed">エクスポート失敗、再試行してください</string>
@@ -750,4 +732,31 @@
     <string name="edge_insert_start_label">開始時刻</string>
     <string name="edge_insert_end_label">終了時刻</string>
     <string name="edge_insert_ok">追加</string>
+    <string name="mine_period_tables">時限表</string>
+    <string name="mine_period_tables_sub">複数の時間割で共有する時限</string>
+    <string name="period_tables_title">時限表</string>
+    <string name="period_table_bound_count">%1$d 件の時間割に使用中</string>
+    <string name="period_table_new">新しい時限表</string>
+    <string name="period_table_copy">時限表を複製</string>
+    <string name="period_table_name_label">時限表名</string>
+    <string name="period_table_delete_confirm">時限表を削除</string>
+    <string name="period_table_delete_msg_body">時限表「%1$s」を削除しますか？この操作は取り消せます。</string>
+    <string name="period_table_delete_blocked">%1$d 件の時間割が使用中です。先に切り替えてください</string>
+    <string name="period_table_bind_label">時限表</string>
+    <string name="period_table_unbound">未バインド（この時間割の時限を使用）</string>
+    <string name="period_table_save_preview_title">保存前に確認</string>
+    <string name="period_table_preview_summary">%1$d 件の時間割に影響：%2$d 件の時刻が変化、%3$d 件は変更なし</string>
+    <string name="period_table_preview_confirm">保存</string>
+    <string name="period_table_bind_preview_title">切り替え確認</string>
+    <string name="period_table_bind_preview_body">切り替え後、この時間割は新しい時限表で時限を解釈します。カスタム時刻の授業は影響しません</string>
+    <string name="import_drafts">インポート下書き</string>
+    <string name="import_drafts_empty">保存されたインポート下書きはありません</string>
+    <string name="import_draft_restore">下書きを復元</string>
+    <string name="import_draft_delete">下書きを削除</string>
+    <string name="import_draft_saved_at">保存日時: %1$s</string>
+    <string name="jw_import_exit_title">インポートを終了しますか？</string>
+    <string name="jw_import_exit_message">インポートはまだ完了していません。下書きを保存して後で続行できます。</string>
+    <string name="jw_import_exit_continue">インポートを続ける</string>
+    <string name="jw_import_exit_keep_draft">終了して下書きを保存</string>
+    <string name="jw_import_exit_delete_draft">終了して下書きを削除</string>
 </resources>
