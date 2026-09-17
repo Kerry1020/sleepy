@@ -32,6 +32,10 @@ class TomorrowReminderWiringContractTest {
 
         assertTrue("当天提醒必须保留无课摘要文案", source.contains("R.string.notif_daily_title_no_course"))
         assertTrue("前一晚提醒必须有对应的无课摘要文案", source.contains("R.string.notif_tomorrow_title_no_course"))
+        assertTrue(
+            "前一晚无课摘要必须用明日专用正文,不能复用「享受一天」",
+            source.contains("R.string.notif_tomorrow_text_no_course")
+        )
         assertFalse(
             "前一晚提醒不能因次日无课而静默返回",
             source.contains("if (isTomorrowPreview && courses.isEmpty()) return")

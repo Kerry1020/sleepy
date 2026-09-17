@@ -613,6 +613,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="notif_tomorrow_title">Mañana es %1$d, tienes %2$d clases</string>
     <string name="notif_daily_title_no_course">Hoy es %1$d, no tienes clases hoy</string>
     <string name="notif_tomorrow_title_no_course">Mañana es %1$d, no tienes clases mañana</string>
+    <string name="notif_tomorrow_text_no_course">Mañana no hay clases. ¡Descansa!</string>
     <string name="notif_room_unknown">Aula desconocida</string>
     <string name="reminder_banner_sub">Mostrar un banner antes de clase en la barra de notificaciones</string>
     <string name="reminder_banner_title">Recordatorio en banner</string>

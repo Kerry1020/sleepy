@@ -613,6 +613,7 @@
     <string name="notif_tomorrow_title">明日は %1$d 日、授業は %2$d コマです</string>
     <string name="notif_daily_title_no_course">今日は %1$d 日、授業はありません</string>
     <string name="notif_tomorrow_title_no_course">明日は %1$d 日、授業はありません</string>
+    <string name="notif_tomorrow_text_no_course">明日は授業がありません。ゆっくり休んでください!</string>
     <string name="notif_room_unknown">教室不明</string>
     <string name="reminder_banner_sub">通知バーに授業前のバナーを表示</string>
     <string name="reminder_banner_title">バナーリマインダー</string>

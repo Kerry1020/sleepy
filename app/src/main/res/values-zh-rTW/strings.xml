@@ -613,6 +613,7 @@
     <string name="notif_tomorrow_title">明日 %1$d 號，您有 %2$d 節課</string>
     <string name="notif_daily_title_no_course">今日 %1$d 號，今天沒有課程</string>
     <string name="notif_tomorrow_title_no_course">明日 %1$d 號，沒有課程</string>
+    <string name="notif_tomorrow_text_no_course">明日無課,好好休息!</string>
     <string name="notif_room_unknown">未知教室</string>
     <string name="reminder_banner_sub">在系統通知欄顯示課前橫幅</string>
     <string name="reminder_banner_title">橫幅提醒</string>

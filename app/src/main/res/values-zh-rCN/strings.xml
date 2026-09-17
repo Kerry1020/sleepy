@@ -613,6 +613,7 @@
     <string name="notif_daily_title">今日 %1$d 号，您有 %2$d 节课</string>
     <string name="notif_tomorrow_title">明日 %1$d 号，您有 %2$d 节课</string>
     <string name="notif_tomorrow_title_no_course">明日 %1$d 号，没有课程</string>
+    <string name="notif_tomorrow_text_no_course">明日无课,好好休息!</string>
     <string name="notif_daily_text_first">第一节课 %1$s 于 %2$s 在 %3$s 上课</string>
     <string name="notif_daily_title_no_course">今日 %1$d 号，今天没有课程</string>
     <string name="notif_daily_text_no_course">好好休息，享受一天！</string>
