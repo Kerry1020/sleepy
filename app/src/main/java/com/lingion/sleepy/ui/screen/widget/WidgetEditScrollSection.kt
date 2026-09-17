@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -93,18 +94,24 @@ object WidgetEditScrollSection : WidgetEditSection {
             AlertDialog(
                 onDismissRequest = { showConfirm = false },
                 title = { Text(stringResource(R.string.widget_scroll_dialog_title)) },
-                text = { Text(stringResource(R.string.widget_scroll_dialog_body)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showConfirm = false
-                        scope.onScrollEnabledChange(true)
-                    }) { Text(stringResource(R.string.widget_scroll_dialog_confirm)) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showConfirm = false }) {
-                        Text(stringResource(R.string.widget_scroll_dialog_cancel))
+                text = {
+                    androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.widget_scroll_dialog_body))
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
+                        // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                        com.lingion.sleepy.ui.component.DialogActionButtons(
+                            confirmText = stringResource(R.string.widget_scroll_dialog_confirm),
+                            onConfirm = {
+                                showConfirm = false
+                                scope.onScrollEnabledChange(true)
+                            },
+                            dismissText = stringResource(R.string.widget_scroll_dialog_cancel),
+                            onDismiss = { showConfirm = false }
+                        )
                     }
                 },
+                confirmButton = {},
+                dismissButton = {},
                 containerColor = SleepyTheme.colors.surfaceContainer,
                 titleContentColor = SleepyTheme.colors.onSurface,
                 textContentColor = SleepyTheme.colors.onSurfaceVariant

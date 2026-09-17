@@ -416,20 +416,23 @@ fun AddCourseScreen(
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.conflict_detail_save_anyway),
+                        onConfirm = {
+                            // 二次进入 save scope: pendingConflictDetails 已空 → 直接落库
+                            pendingConflictDetails = emptyList()
+                            performSave(forceAfterConflict = true)
+                        },
+                        dismissText = stringResource(R.string.conflict_detail_go_back),
+                        onDismiss = { pendingConflictDetails = emptyList() },
+                        destructive = true
+                    )
                 }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    // 二次进入 save scope: pendingConflictDetails 已空 → 直接落库
-                    pendingConflictDetails = emptyList()
-                    performSave(forceAfterConflict = true)
-                }) { Text(stringResource(R.string.conflict_detail_save_anyway)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingConflictDetails = emptyList() }) {
-                    Text(stringResource(R.string.conflict_detail_go_back))
-                }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 
@@ -449,6 +452,9 @@ fun AddCourseScreen(
         AlertDialog(
             onDismissRequest = { pendingGroupColorHex = null },
             title = { Text(stringResource(R.string.group_color_confirm_title)) },
+            confirmButton = {},
+            dismissButton = {},
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -457,25 +463,26 @@ fun AddCourseScreen(
                         Text(hex, style = MaterialTheme.typography.bodySmall)
                     }
                     Text(stringResource(R.string.group_color_confirm_msg), style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.action_confirm),
+                        onConfirm = {
+                            val gid = editingCourse?.groupId
+                            val tid = state.selectedTableId
+                            pendingGroupColorHex = null
+                            if (gid != null && tid != null) {
+                                scope.launch {
+                                    SleepyApp.get().repository.setGroupSourceColor(tid, gid, hex)
+                                    // 组色源变了 → 刷新编辑回填的组色源显示
+                                    val fresh = SleepyApp.get().repository.getGroupCourses(tid, gid)
+                                    if (fresh.isNotEmpty()) groupSourceColorHex = CourseColorUtil.groupSourceColorHex(fresh)
+                                }
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { pendingGroupColorHex = null }
+                    )
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val gid = editingCourse?.groupId
-                    val tid = state.selectedTableId
-                    pendingGroupColorHex = null
-                    if (gid != null && tid != null) {
-                        scope.launch {
-                            SleepyApp.get().repository.setGroupSourceColor(tid, gid, hex)
-                            // 组色源变了 → 刷新编辑回填的组色源显示
-                            val fresh = SleepyApp.get().repository.getGroupCourses(tid, gid)
-                            if (fresh.isNotEmpty()) groupSourceColorHex = CourseColorUtil.groupSourceColorHex(fresh)
-                        }
-                    }
-                }) { Text(stringResource(R.string.action_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingGroupColorHex = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -754,23 +761,32 @@ fun AddCourseScreen(
                         AlertDialog(
                             onDismissRequest = { showDeleteConfirm = false },
                             title = { Text(stringResource(R.string.confirm_delete), color = colors.onSurface) },
-                            text = { Text(stringResource(R.string.delete_course_confirm, editingCourse.courseName), color = colors.onSurfaceVariant) },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    showDeleteConfirm = false
-                                    scope.launch {
-                                        val repo = SleepyApp.get().repository
-                                        val tid = state.selectedTableId
-                                        if (tid != null) {
-                                            repo.deleteCourseGroup(tid, editingCourse.groupId)
-                                        }
-                                        onSaved()
-                                    }
-                                }) { Text(stringResource(R.string.delete), color = colors.error) }
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(stringResource(R.string.delete_course_confirm, editingCourse.courseName), color = colors.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                                        confirmText = stringResource(R.string.delete),
+                                        onConfirm = {
+                                            showDeleteConfirm = false
+                                            scope.launch {
+                                                val repo = SleepyApp.get().repository
+                                                val tid = state.selectedTableId
+                                                if (tid != null) {
+                                                    repo.deleteCourseGroup(tid, editingCourse.groupId)
+                                                }
+                                                onSaved()
+                                            }
+                                        },
+                                        dismissText = stringResource(R.string.cancel),
+                                        onDismiss = { showDeleteConfirm = false },
+                                        destructive = true
+                                    )
+                                }
                             },
-                            dismissButton = {
-                                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
-                            }
+                            confirmButton = {},
+                            dismissButton = {}
                         )
                     }
                 }
@@ -1577,7 +1593,15 @@ private fun EdgeCandidatePickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 色块按钮
+            Button(
+                onClick = onDismiss,
+                shape = SleepyTheme.Buttons.shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SleepyTheme.colors.secondaryContainer,
+                    contentColor = SleepyTheme.colors.onSecondaryContainer
+                )
+            ) { Text(stringResource(R.string.cancel), maxLines = 1) }
         }
     )
 }
@@ -1611,13 +1635,22 @@ private fun NewEdgeSlotDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 色块按钮
+            Button(
                 enabled = parseHm(start) != null && parseHm(end) != null,
-                onClick = { onConfirm(start, end) }
-            ) { Text(stringResource(R.string.edge_insert_ok)) }
+                onClick = { onConfirm(start, end) },
+                shape = SleepyTheme.Buttons.shape
+            ) { Text(stringResource(R.string.edge_insert_ok), maxLines = 1) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            Button(
+                onClick = onDismiss,
+                shape = SleepyTheme.Buttons.shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SleepyTheme.colors.secondaryContainer,
+                    contentColor = SleepyTheme.colors.onSecondaryContainer
+                )
+            ) { Text(stringResource(R.string.cancel), maxLines = 1) }
         }
     )
 }
@@ -1653,13 +1686,22 @@ private fun SlotEditDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 色块按钮
+            Button(
                 enabled = parseHm(start) != null && parseHm(end) != null,
-                onClick = { onConfirm(start, end) }
-            ) { Text(stringResource(R.string.edge_insert_ok)) }
+                onClick = { onConfirm(start, end) },
+                shape = SleepyTheme.Buttons.shape
+            ) { Text(stringResource(R.string.edge_insert_ok), maxLines = 1) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            Button(
+                onClick = onDismiss,
+                shape = SleepyTheme.Buttons.shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SleepyTheme.colors.secondaryContainer,
+                    contentColor = SleepyTheme.colors.onSecondaryContainer
+                )
+            ) { Text(stringResource(R.string.cancel), maxLines = 1) }
         }
     )
 }
@@ -1692,8 +1734,15 @@ private fun GroupColorSection(
                 color = colors.onSurfaceVariant
             )
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = onChangeGroupColor) {
-                Text(stringResource(R.string.change_group_color))
+            Button(
+                onClick = onChangeGroupColor,
+                shape = SleepyTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SleepyTheme.colors.secondaryContainer,
+                    contentColor = SleepyTheme.colors.onSecondaryContainer
+                )
+            ) {
+                Text(stringResource(R.string.change_group_color), style = MaterialTheme.typography.labelMedium)
             }
         }
     }

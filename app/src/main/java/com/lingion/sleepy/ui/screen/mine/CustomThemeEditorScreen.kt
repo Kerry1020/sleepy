@@ -295,17 +295,22 @@ fun CustomThemeEditorScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(stringResource(R.string.theme_editor_delete_confirm), color = colors.onSurface) },
-            text = { Text(stringResource(R.string.theme_editor_delete_confirm_body), color = colors.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = { editing?.let { onDeleted(it.id) } }) {
-                    Text(stringResource(R.string.delete), color = colors.error)
+            text = {
+                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.theme_editor_delete_confirm_body), color = colors.onSurfaceVariant)
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.delete),
+                        onConfirm = { editing?.let { onDeleted(it.id) } },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { showDeleteConfirm = false },
+                        destructive = true
+                    )
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(stringResource(R.string.cancel), color = colors.primary)
-                }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }

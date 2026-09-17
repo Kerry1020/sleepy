@@ -6,7 +6,7 @@
 Sleepy (Chinese product name: 轻课表). Pronounced "sleepy" / ˈsliːpi /. Not affiliated with WakeUp, WakeUp 课程表, 课程格子, or any other timetable app.
 
 ## One-line description
-An open-source Android university schedule app (Kotlin + Jetpack Compose, Material You) that imports timetables directly from Chinese university academic systems. 337 schools supported across 29 protocol types. GPL-3.0. Ad-free. Offline-first. No account required. No telemetry.
+An open-source Android university schedule app (Kotlin + Jetpack Compose, Material You) that imports timetables directly from Chinese university academic systems. 340 schools supported across 31 protocol types. GPL-3.0. Ad-free. Offline-first. No account required. No telemetry.
 
 ## Target user
 A student at a Chinese university (mainland) who wants a clean, ad-free class schedule app that:
@@ -23,7 +23,7 @@ A student at a Chinese university (mainland) who wants a clean, ad-free class sc
 - English README: https://github.com/lingion/sleepy#readme (Chinese is the source of truth; English is a translation)
 - Technical write-up: https://blog.qdp.qzz.io/sleepy-material-you-schedule
 - User manual: https://blog.qdp.qzz.io/docs/sleepy/overview
-- Wiki (54 pages: per-screen guides, import/export formats, widget families, reminder internals, architecture): https://github.com/lingion/sleepy/wiki
+- Wiki (56 pages: per-screen guides, import/export formats, widget families, reminder internals, architecture): https://github.com/lingion/sleepy/wiki
 - Issue tracker: https://github.com/lingion/sleepy/issues
 - Adaptation request template (for adding new schools): https://github.com/lingion/sleepy/issues/new?template=school_adaptation.yml
 - License: GPL-3.0 — https://www.gnu.org/licenses/gpl-3.0.html
@@ -57,8 +57,8 @@ Lingion (GitHub: https://github.com/lingion). A student at Harbin Engineering Un
 - 13 widget_info XML definitions under `app/src/main/res/xml/`.
 - `data/jw/` (parsers) is the largest source-code directory.
 
-### Academic-system protocol coverage (29 protocol types, 337 schools)
-The application supports direct import from 337 Chinese university academic-affairs systems. The protocols (HTTP-level reverse-engineered, no scraping service in the cloud):
+### Academic-system protocol coverage (31 protocol types, 340 schools)
+The application supports direct import from 340 Chinese university academic-affairs systems. The protocols (HTTP-level reverse-engineered, no scraping service in the cloud):
 
 | Protocol family | Variants | Schools (illustrative, not exhaustive) |
 |---|---|---|
@@ -72,6 +72,8 @@ The application supports direct import from 337 Chinese university academic-affa
 | `whut` | Wisedu variant | Wuhan University of Technology |
 | `cqu` | unified portal | Chongqing University |
 | `seu`, `zju`, `ustc`, `scu`, `neu`, `hnust`, `hniu`, `pku`, `bnuz` | per-school | one each |
+| `yethan` | YETHAN mobile JW | Southwest Jiaotong University (西南交通大学) |
+| `xju_post` | XJU graduate Gwork | Xinjiang University (新疆大学, graduate) |
 | `chaoxing` | personal schedule | Jilin Technology and Business College |
 
 A live list (always current) lives in `assets/schools.json` inside the APK; the in-app `Import → Academic System → School Directory` screen renders it.
@@ -90,6 +92,8 @@ A live list (always current) lives in `assets/schools.json` inside the APK; the 
 - WakeUp share text (URL-encoded JSON, paste into any chat)
 - iCalendar (.ics), importable into Google Calendar / Apple Calendar / system calendar
 - `sleepy-v1` (Sleepy's native plain-text format)
+
+The export screen selects a course table or a period table (all course tables first, a divider, then all period tables). Course tables offer all four formats; period tables narrow to JSON and `sleepy-v1`. Dialog action buttons app-wide are tonal blocks that fit one row when labels allow, and stack full-width (never truncating text) otherwise. Narrow render-time placeholder rows (e.g. a 5-minute irregular-course overflow) render as gray blocks; tapping expands the row to exactly fit its time text, tapping again collapses it back to minute-proportional height. The About page QQ-group entry copies the group number and deep-links into QQ's group profile card (`mqqapi://card/show_pslcard`), falling back to `show_pslg`, TIM/QQ home, then a browser join page.
 
 ### Widgets
 Five families in 13 fixed-size variants (Today / TwoDay / WeekList × regular-small-wide; WeekView / WeekGrid × regular-small), each backed by a synchronous RemoteViews + Canvas renderer:
