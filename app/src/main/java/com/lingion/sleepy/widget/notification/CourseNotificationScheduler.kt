@@ -439,7 +439,10 @@ private suspend fun sendScheduleSummary(
             if (isTomorrowPreview) R.string.notif_tomorrow_title_no_course else R.string.notif_daily_title_no_course,
             dayOfMonth
         )
-        text = context.getString(R.string.notif_daily_text_no_course)
+        text = context.getString(
+            if (isTomorrowPreview) R.string.notif_tomorrow_text_no_course
+            else R.string.notif_daily_text_no_course
+        )
     } else {
         title = context.getString(
             if (isTomorrowPreview) R.string.notif_tomorrow_title else R.string.notif_daily_title,
