@@ -36,6 +36,12 @@ object AppPrefs {
     const val KEY_REMINDER = "reminder_master"      // master toggle (default false)
     const val KEY_DAILY_ENABLED = "daily_reminder"   // daily sub-toggle (default true)
     const val KEY_DAILY_TIME = "daily_reminder_time" // "HH:mm" default "07:00"
+    const val KEY_TOMORROW_REMINDER_ENABLED = "tomorrow_reminder" // bool default false
+    const val KEY_TOMORROW_REMINDER_TIME = "tomorrow_reminder_time" // "HH:mm" default "22:00"
+    const val KEY_TODAY_REMINDER_ENABLED = "today_reminder" // bool default true
+    const val DEFAULT_TODAY_REMINDER_ENABLED = true
+    const val DEFAULT_TOMORROW_REMINDER_ENABLED = false
+    const val DEFAULT_TOMORROW_REMINDER_TIME = "22:00"
     const val KEY_BEFORE_CLASS_ENABLED = "before_class_enabled"       // bool default false
     const val KEY_BEFORE_CLASS_MINUTES = "before_class_minutes"       // int default 10
     const val KEY_BEFORE_CLASS_BANNER = "before_class_banner"         // bool default true
@@ -174,6 +180,31 @@ object AppPrefs {
 
     fun setDailyReminderTime(ctx: Context, time: String) {
         sp(ctx).edit().putString(KEY_DAILY_TIME, time).apply()
+    }
+
+    /** Same-day reminder sub-toggle — default on preserves existing daily reminder behavior. */
+    fun isTodayReminderEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_TODAY_REMINDER_ENABLED, DEFAULT_TODAY_REMINDER_ENABLED)
+
+    fun setTodayReminderEnabled(ctx: Context, enabled: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_TODAY_REMINDER_ENABLED, enabled).apply()
+    }
+
+    /** Previous-evening reminder — default off so existing users do not receive a new notification. */
+    fun isTomorrowReminderEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_TOMORROW_REMINDER_ENABLED, DEFAULT_TOMORROW_REMINDER_ENABLED)
+
+    fun setTomorrowReminderEnabled(ctx: Context, enabled: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_TOMORROW_REMINDER_ENABLED, enabled).apply()
+    }
+
+    /** Previous-evening reminder time "HH:mm" — default "22:00". */
+    fun getTomorrowReminderTime(ctx: Context): String =
+        sp(ctx).getString(KEY_TOMORROW_REMINDER_TIME, DEFAULT_TOMORROW_REMINDER_TIME)
+            ?: DEFAULT_TOMORROW_REMINDER_TIME
+
+    fun setTomorrowReminderTime(ctx: Context, time: String) {
+        sp(ctx).edit().putString(KEY_TOMORROW_REMINDER_TIME, time).apply()
     }
 
     /** Before-class reminder sub-toggle — default false */
