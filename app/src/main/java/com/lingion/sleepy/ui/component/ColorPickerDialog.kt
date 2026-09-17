@@ -120,18 +120,18 @@ fun ColorPickerDialog(
                         color = colors.onSurfaceVariant
                     )
                 }
+
+                // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                DialogActionButtons(
+                    confirmText = stringResource(R.string.ok),
+                    onConfirm = { onConfirm(currentHex) },
+                    dismissText = stringResource(R.string.cancel),
+                    onDismiss = onDismiss
+                )
             }
         },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(currentHex) }) {
-                Text(stringResource(R.string.ok), color = colors.primary)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
-        }
+        confirmButton = {},
+        dismissButton = {}
     )
 }
 

@@ -3,6 +3,7 @@ package com.lingion.sleepy.util
 import com.lingion.sleepy.data.entity.CourseEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -132,5 +133,56 @@ class IrregularPrecisionTest {
                 cl.courses.none { it.startTime == "16:40" }
             assertEquals("时间域课与脏 ownTime 课不得因混合域错位比较成簇: $names", false, bad)
         }
+    }
+
+    // ===============================================================
+    // 用户反馈 2026-09-16: 占位节次文字放不下 → 灰置 + 点击展开/折叠
+    // ===============================================================
+
+    /** 检测阈值: 时间文字(11dp, micro 一行) + 上下 padding(8dp) = 内容区至少 19dp。
+     *  行渲染高 = rowH * weight − gapH(4dp); 52dp 标准行下 0.36 权重 = 14.7dp < 19dp
+     *  → 放不下 = needsExpansion; 0.6 权重 = 27.2dp ≥ 19dp → 放得下。 */
+    @Test
+    fun placeholderTextFits_5minRow_belowThreshold_needsExpansion() {
+        // 5min 占位: 权重 = max(0.111, 0.36) = 0.36 → 52*0.36 - 4 = 14.7dp 内容区
+        val fits = TimeTableUtils.placeholderTextFits(
+            rowWeight = 0.36f, rowHeightDp = 52f, gapDp = 4f, requiredTextHeightDp = 19f
+        )
+        assertEquals("0.36 权重行放不下 19dp 文字 → 需灰置+可展开", false, fits)
+    }
+
+    @Test
+    fun placeholderTextFits_longGapRow_aboveThreshold_showsText() {
+        // 午休长空隙占位: 50min/45min > 1 但 clamp < 1; 用 0.8 权重 → 52*0.8 - 4 = 37.6dp
+        val fits = TimeTableUtils.placeholderTextFits(
+            rowWeight = 0.8f, rowHeightDp = 52f, gapDp = 4f, requiredTextHeightDp = 19f
+        )
+        assertEquals("0.8 权重行放得下时间文字 → 正常显示不灰置", true, fits)
+    }
+
+    /** 阈值必须随行高缩放联动: 用户捏合把行高压到 36dp 时, 同一 0.36 权重行
+     *  内容区 = 36*0.36 - 4 = 8.96dp 更放不下; 放大行高到 96dp 时 0.36 权重
+     *  = 30.6dp 反而放得下 — 检测是几何函数不是常量。 */
+    @Test
+    fun placeholderTextFits_scalesWithRowHeight() {
+        val small = TimeTableUtils.placeholderTextFits(
+            rowWeight = 0.36f, rowHeightDp = 36f, gapDp = 4f, requiredTextHeightDp = 19f
+        )
+        val large = TimeTableUtils.placeholderTextFits(
+            rowWeight = 0.36f, rowHeightDp = 96f, gapDp = 4f, requiredTextHeightDp = 19f
+        )
+        assertEquals("小行高放不下", false, small)
+        assertEquals("大行高放得下", true, large)
+    }
+
+    /** 展开高度 = 正好显示完文字: requiredTextHeightDp + gapDp, 换算回权重 = (19+4)/52 ≈ 0.442。
+     *  必须大于原权重(展开只增不减)且小于 1 整行(不占满)。 */
+    @Test
+    fun placeholderExpandedWeight_exactTextHeight_neverFullRow() {
+        val w = TimeTableUtils.placeholderExpandedWeight(
+            rowHeightDp = 52f, gapDp = 4f, requiredTextHeightDp = 19f
+        )
+        assertEquals((19f + 4f) / 52f, w, 0.001f)
+        assertTrue("展开权重必须 < 1 不占满整行", w < 1f)
     }
 }

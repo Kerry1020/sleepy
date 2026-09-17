@@ -64,6 +64,7 @@ import com.lingion.sleepy.R
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.ui.theme.noRippleClickable
 import com.lingion.sleepy.util.FeedbackComposer
+import com.lingion.sleepy.util.QqJoin
 import com.lingion.sleepy.util.UpdateInfo
 import com.lingion.sleepy.util.UpdateManager
 import com.lingion.sleepy.util.UpdateNotifier
@@ -121,16 +122,27 @@ fun AboutScreen(onBack: () -> Unit, onOpenLicense: () -> Unit = {}) {
         val group = context.getString(R.string.about_qq_group_number)
         context.getSystemService(android.content.ClipboardManager::class.java)
             ?.setPrimaryClip(android.content.ClipData.newPlainText("qq_group", group))
-        // 先试拉起 QQ 加群页; 失败退 QQ 首页; 都失败只提示已复制
-        val joinUrl = "http://qm.qq.com/cgi-bin/qm/qr?from=app&app=fingerprint&join_group=&$group"
-        val launched = runCatching {
-            context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse("mqqopensdkapi://bizAgent/qm/qr?url=${Uri.encode(joinUrl)}"))
-            )
-        }.isSuccess || runCatching {
-            val qq = context.packageManager.getLaunchIntentForPackage("com.tencent.mobileqq")
-                ?: error("qq not installed")
-            context.startActivity(qq)
+        // 拉起降级链(经查证): 群号直拉群资料卡(show_pslcard→show_pslg)
+        // → 官方加群组件(需 qun.qq.com 生成的 key, 本群未配置则跳过)
+        // → TIM → QQ 首页 → 浏览器加群页; 全失败只提示已复制。
+        // 旧实现的 mqqopensdkapi 通道因缺少官方 key 被 QQ JumpActivity 拒解析, 表现为"点了没反应"。
+        val pm = context.packageManager
+        val hasTim = runCatching { pm.getPackageInfo("com.tencent.tim", 0) }.isSuccess
+        val hasQq = runCatching { pm.getPackageInfo("com.tencent.mobileqq", 0) }.isSuccess
+        var launched = runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(QqJoin.groupCardUri(group))))
+        }.isSuccess
+        if (!launched) launched = runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(QqJoin.groupCardUriAlt(group))))
+        }.isSuccess
+        if (!launched && hasTim) launched = runCatching {
+            context.startActivity(context.packageManager.getLaunchIntentForPackage("com.tencent.tim"))
+        }.isSuccess
+        if (!launched && hasQq) launched = runCatching {
+            context.startActivity(context.packageManager.getLaunchIntentForPackage("com.tencent.mobileqq"))
+        }.isSuccess
+        if (!launched) launched = runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(QqJoin.webFallbackUri(group))))
         }.isSuccess
         scope.launch {
             snackbarHostState.showSnackbar(

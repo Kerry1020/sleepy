@@ -1,6 +1,10 @@
 package com.lingion.sleepy.ui.component
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,8 +21,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
@@ -88,18 +93,29 @@ fun DatePickerField(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val date = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.of("Asia/Shanghai"))
-                            .toLocalDate()
-                        onValueChange(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
-                    }
-                    showPicker = false
-                }) { Text(stringResource(R.string.ok)) }
+                // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 色块按钮
+                Button(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val date = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.of("Asia/Shanghai"))
+                                .toLocalDate()
+                            onValueChange(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                        }
+                        showPicker = false
+                    },
+                    shape = SleepyTheme.shapes.medium
+                ) { Text(stringResource(R.string.ok), maxLines = 1) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) }
+                Button(
+                    onClick = { showPicker = false },
+                    shape = SleepyTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SleepyTheme.colors.secondaryContainer,
+                        contentColor = SleepyTheme.colors.onSecondaryContainer
+                    )
+                ) { Text(stringResource(R.string.cancel), maxLines = 1) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -153,20 +169,26 @@ fun TimePickerField(
             onDismissRequest = { showPicker = false },
             title = { Text(stringResource(R.string.select_time), color = colors.onSurface) },
             text = {
-                // 默认 TimePicker 配色 — 与 ReminderScreen 时间弹窗一致, 不再单独覆写表盘色
-                TimePicker(state = timePickerState)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // 默认 TimePicker 配色 — 与 ReminderScreen 时间弹窗一致, 不再单独覆写表盘色
+                    TimePicker(state = timePickerState)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    DialogActionButtons(
+                        confirmText = stringResource(R.string.ok),
+                        onConfirm = {
+                            val h = timePickerState.hour.toString().padStart(2, '0')
+                            val m = timePickerState.minute.toString().padStart(2, '0')
+                            onValueChange("$h:$m")
+                            showPicker = false
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { showPicker = false }
+                    )
+                }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    val h = timePickerState.hour.toString().padStart(2, '0')
-                    val m = timePickerState.minute.toString().padStart(2, '0')
-                    onValueChange("$h:$m")
-                    showPicker = false
-                }) { Text(stringResource(R.string.ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) }
-            },
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }

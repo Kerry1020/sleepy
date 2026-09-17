@@ -420,26 +420,28 @@ fun PeriodTableEditScreen(
                             color = colors.onSurfaceVariant
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.period_table_preview_confirm),
+                        onConfirm = {
+                            val toSave = pendingSave!!
+                            pendingPreview = null
+                            pendingSave = null
+                            // issue#40: 已确认保存 — 新建行的丢弃标记解除, 返回不再清行
+                            unsavedNew = false
+                            scope.launch {
+                                viewModel.updatePeriodTableContent(toSave)
+                                onBack()
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { pendingPreview = null; pendingSave = null }
+                    )
                 }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    val toSave = pendingSave!!
-                    pendingPreview = null
-                    pendingSave = null
-                    // issue#40: 已确认保存 — 新建行的丢弃标记解除, 返回不再清行
-                    unsavedNew = false
-                    scope.launch {
-                        viewModel.updatePeriodTableContent(toSave)
-                        onBack()
-                    }
-                }) { Text(stringResource(R.string.period_table_preview_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingPreview = null; pendingSave = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 
@@ -448,24 +450,32 @@ fun PeriodTableEditScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
-            text = { Text(stringResource(R.string.period_table_delete_msg_body, periodTable.name), color = colors.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    scope.launch {
-                        val ok = viewModel.deletePeriodTable(periodTable.id)
-                        if (ok) {
-                            onBack()
-                        } else {
-                            val bound = scheduleState.tables.count { it.periodTableId == periodTable.id }
-                            deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
-                        }
-                    }
-                }) { Text(stringResource(R.string.delete), color = colors.error) }
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.period_table_delete_msg_body, periodTable.name), color = colors.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.delete),
+                        onConfirm = {
+                            showDeleteConfirm = false
+                            scope.launch {
+                                val ok = viewModel.deletePeriodTable(periodTable.id)
+                                if (ok) {
+                                    onBack()
+                                } else {
+                                    val bound = scheduleState.tables.count { it.periodTableId == periodTable.id }
+                                    deleteBlockedMsg = context.getString(R.string.period_table_delete_blocked, bound)
+                                }
+                            }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { showDeleteConfirm = false },
+                        destructive = true
+                    )
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 
@@ -474,10 +484,17 @@ fun PeriodTableEditScreen(
         AlertDialog(
             onDismissRequest = { deleteBlockedMsg = null },
             title = { Text(stringResource(R.string.period_table_delete_confirm), color = colors.onSurface) },
-            text = { Text(msg, color = colors.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = { deleteBlockedMsg = null }) { Text(stringResource(R.string.ok)) }
-            }
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(msg, color = colors.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.ok),
+                        onConfirm = { deleteBlockedMsg = null }
+                    )
+                }
+            },
+            confirmButton = {}
         )
     }
 
@@ -500,37 +517,40 @@ fun PeriodTableEditScreen(
             onDismissRequest = { showCopyDialog = false },
             title = { Text(stringResource(R.string.period_table_copy_dialog_title), color = colors.onSurface) },
             text = {
-                androidx.compose.material3.TextField(
-                    value = copyName,
-                    onValueChange = { copyName = it },
-                    label = { Text(stringResource(R.string.period_table_name_label)) },
-                    singleLine = true,
-                    isError = nameTaken,
-                    supportingText = if (nameTaken) {
-                        { Text(stringResource(R.string.period_table_name_taken)) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = SleepyTheme.fieldShape,
-                    colors = fieldColors
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = candidate.isNotBlank() && !nameTaken,
-                    onClick = {
-                        scope.launch {
-                            val newId = viewModel.copyPeriodTableAs(periodTable.id, candidate)
-                            if (newId > 0) {
-                                showCopyDialog = false
-                                onBack()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.TextField(
+                        value = copyName,
+                        onValueChange = { copyName = it },
+                        label = { Text(stringResource(R.string.period_table_name_label)) },
+                        singleLine = true,
+                        isError = nameTaken,
+                        supportingText = if (nameTaken) {
+                            { Text(stringResource(R.string.period_table_name_taken)) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = SleepyTheme.fieldShape,
+                        colors = fieldColors
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.lingion.sleepy.ui.component.DialogActionButtons(
+                        confirmText = stringResource(R.string.ok),
+                        onConfirm = {
+                            scope.launch {
+                                val newId = viewModel.copyPeriodTableAs(periodTable.id, candidate)
+                                if (newId > 0) {
+                                    showCopyDialog = false
+                                    onBack()
+                                }
                             }
-                        }
-                    }
-                ) { Text(stringResource(R.string.ok)) }
+                        },
+                        dismissText = stringResource(R.string.cancel),
+                        onDismiss = { showCopyDialog = false },
+                        confirmEnabled = candidate.isNotBlank() && !nameTaken
+                    )
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { showCopyDialog = false }) { Text(stringResource(R.string.cancel)) }
-            }
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }

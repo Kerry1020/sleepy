@@ -53,7 +53,7 @@
 | ABIs | arm64-v8a / armeabi-v7a / x86_64 |
 | Languages | zh-CN · zh-TW · en · ja · es |
 
-Sleepy is an Android timetable app built around three principles: **light, fast, accurate**. It supports direct import from 337 Chinese university academic systems (JW), multi-format parsing, five home-screen widget types in 13 fixed-size variants, daily course notifications, dark mode, and multiple theme presets. The version and supported-school catalogue are maintained in the app's About page and on GitHub Releases.
+Sleepy is an Android timetable app built around three principles: **light, fast, accurate**. It supports direct import from 340 Chinese university academic systems (JW), multi-format parsing, five home-screen widget types in 13 fixed-size variants, daily course notifications, dark mode, and multiple theme presets. The version and supported-school catalogue are maintained in the app's About page and on GitHub Releases.
 
 ---
 
@@ -154,7 +154,7 @@ The protocol catalogue grows with school integrations. The table below shows pro
 
 The school catalogue changes with each release. Choose a listed university for the maintained path, or enter a JW URL in the search field when your university is not listed. Sleepy will try to detect a protocol from the URL and open it for login and import. Success still depends on the university page, its login flow, and a compatible parser.
 
-All supported universities (337) with their JW login URLs and protocol types are listed in **[Supported Schools List](docs/schools-list.md)** — searchable by full name, abbreviation, or pinyin initials; also useful for verifying JW addresses and school renames.
+All supported universities (340) with their JW login URLs and protocol types are listed in **[Supported Schools List](docs/schools-list.md)** — searchable by full name, abbreviation, or pinyin initials; also useful for verifying JW addresses and school renames.
 
 If URL detection or parsing does not work, file an adaptation request with the JW URL and the observed failure. Use the **[collection guide](docs/adapt-kit/README.md)** only when more page or network data is needed. Never include an account, password, verification code, or other personal data in an issue. You can [open an adaptation request](https://github.com/lingion/sleepy/issues/new?template=school_adaptation.yml) directly.
 
@@ -186,7 +186,7 @@ Fields: course name · teacher · room · notes · weekday · period range · we
 
 ---
 
-## Export
+## Export Timetable / Period Table
 
 Multiple export formats are available. File-based formats use the device's `Download/Sleepy/` directory and open the system share sheet; see the current Export screen for the exact list.
 
@@ -194,10 +194,13 @@ Multiple export formats are available. File-based formats use the device's `Down
   <img src="docs/screenshots/19-export.png" width="280">
 </p>
 
-> Screenshot: export page ("Mine → Export")
+> Screenshot: export page ("Mine → Export Timetable / Period Table")
 
 | Format | Use | Implementation |
 |---|---|---|
+
+The export screen first picks a course table or a period table (all course tables on top, a divider, then all period tables). Picking a **course table** offers four formats; picking a **period table** narrows the list to two (JSON and sleepy-v1).
+
 | **WakeUp-compatible JSON** | Full timetable structure; importable by WakeUp and similar apps | `ScheduleExporter.exportWakeUpJson` |
 | **Share text** | Compact text format (URL-encoded JSON); paste anywhere | `ScheduleExporter.exportWakeUpShareText` |
 | **ICS calendar** | Standard iCalendar; import into system / Google / Apple Calendar | `ScheduleExporter.exportIcs` |
@@ -287,7 +290,7 @@ Entry: "Mine" → "About". A dedicated page showing version, author, and open-so
 | **Author** | Lingion, tap to open the GitHub profile |
 | **Source** | github.com/lingion/sleepy, tappable |
 | **License note** | GPL-3.0 summary; contributions welcome |
-| **Open-source acknowledgements** | 83 upstream projects (9 cross-school + 74 per-school, across 32 school cards), their licenses, and the parts of Sleepy they informed |
+| **Open-source acknowledgements** | 9 cross-school projects plus 38 per-school credit cards, their licenses, and the parts of Sleepy they informed |
 
 The About page also checks for updates and shows the full release notes before downloading. Downloads can be cancelled.
 
@@ -495,7 +498,7 @@ Prefer to stay on GitHub? [Discussions](https://github.com/lingion/sleepy/discus
 
 [GPL-3.0](LICENSE)
 
-Sleepy is released under GPL-3.0. The JW adapters, protocol research, and timetable formats reference multiple open-source projects. The complete list of 83 projects (9 cross-school + 74 per-school, across 32 school cards), their licenses, and reference scope is available in the app under Mine → About → Open-source acknowledgements.
+Sleepy is released under GPL-3.0. The JW adapters, protocol research, and timetable formats reference multiple open-source projects. The complete list — 9 cross-school projects plus 38 per-school credit cards, with licenses and reference scope — is available in the app under Mine → About → Open-source acknowledgements.
 
 ---
 

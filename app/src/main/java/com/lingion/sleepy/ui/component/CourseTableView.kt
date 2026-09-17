@@ -183,6 +183,17 @@ fun CardsGridView(
     val sortedDays = visibleDays.sorted()
     val dayCount = sortedDays.size
 
+    // 用户反馈 2026-09-16: 占位行"文字放不下 → 灰块 + 点击展开/再点折叠"。
+    // 展开态键 = 占位行时间串("11:40-12:30", 周内多天共享同一空隙 → 同键联动展开);
+    // 会话级 remember — 翻周/离开页面即复位(与 rotationSteps 同生命周期哲学)。
+    // 展开/折叠通过改写 effectiveWeights 的该行权重实现, yOfRows/rowHeightAt/gridH
+    // 全部读同一张表 → 行高与 y 前缀和天然同源(时间轴不破)。
+    var expandedPlaceholders by remember { mutableStateOf(setOf<String>()) }
+    fun togglePlaceholder(key: String) {
+        expandedPlaceholders = if (key in expandedPlaceholders) expandedPlaceholders - key
+        else expandedPlaceholders + key
+    }
+
     // issue#23: 边缘节次节点的"行号"按 renderSlots 自然顺序取(已按 node ASC 排序);
     // 前置节点(-1, 0)排到 grid 顶部, 后置节点(N+1, N+2)排到 grid 底部,
     // 视觉上就是"第 0 节在第 1 节之上" / "第 N+1 节在第 N 节之下", 与插入直觉一致。
@@ -236,18 +247,38 @@ fun CardsGridView(
             )
             val rowH = rowHeightDp.dp
 
+            // 用户反馈 2026-09-16: 展开的占位行权重换成"正好显示完文字"的展开权重 —
+            // yOfRows / rowHeightAt / gridH 都读 effectiveWeights 同一张表, 行高与 y 同源。
+            // 占位行文字适配检测也是几何函数(随 rowH/scale 联动), 不放得下才允许灰置。
+            val effectiveWeights: List<Float>? = run {
+                val base = renderPlan.slotWeights ?: return@run null
+                base.mapIndexed { i, w ->
+                    val slot = renderSlots.getOrNull(i)
+                    if (slot != null && slot.isPlaceholder && slot.timeString in expandedPlaceholders) {
+                        maxOf(
+                            w,
+                            TimeTableUtils.placeholderExpandedWeight(
+                                rowHeightDp = rowHeightDp,
+                                gapDp = TimetableViewportPolicy.ROW_GAP_DP,
+                                requiredTextHeightDp = PLACEHOLDER_TEXT_REQUIRED_DP
+                            )
+                        )
+                    } else w
+                }
+            }
+
             // 用户反馈 2026-09-09 (精度): 时间轴按分钟加权 — 占位行只占真实分钟占比
             // (5 分钟占位 ≈ 0.111 标准行), 不再整行拉满把时间轴歪曲。
             // yOfRows(r) = 加权行坐标 r(0.0=网格顶, 1.0=一标准行) → dp;
             fun yOfRows(r: Float): Dp {
-                val ws = renderPlan.slotWeights ?: return rowH * r
+                val ws = effectiveWeights ?: return rowH * r
                 var acc = 0f
                 val full = r.toInt().coerceAtMost(ws.size)
                 for (i in 0 until full) acc += ws[i]
                 if (full < ws.size && r > full) acc += ws[full] * (r - full)
                 return rowH * acc
             }
-            fun rowHeightAt(i: Int): Dp = rowH * (renderPlan.slotWeights?.getOrNull(i) ?: 1f)
+            fun rowHeightAt(i: Int): Dp = rowH * (effectiveWeights?.getOrNull(i) ?: 1f)
 
             // 算出每列宽度 (dp)
             val colW = (maxWidth - timeW - gapW * (dayCount + 1)) / dayCount
@@ -317,11 +348,25 @@ fun CardsGridView(
                             horizontalArrangement = Arrangement.spacedBy(gapW),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // 用户反馈 2026-09-16: 占位行几何检测 — 文字放不下 = 灰块,
+                            // 点击展开(该行权重换展开权重, 下方时间轴同帧下移), 再点折叠。
+                            val phFitsText = if (!slot.isPlaceholder) true else {
+                                TimeTableUtils.placeholderTextFits(
+                                    rowWeight = effectiveWeights?.getOrNull(i) ?: 1f,
+                                    rowHeightDp = rowHeightDp,
+                                    gapDp = TimetableViewportPolicy.ROW_GAP_DP,
+                                    requiredTextHeightDp = PLACEHOLDER_TEXT_REQUIRED_DP
+                                )
+                            }
                             SingleTimeHeadCell(
                                 slot = slot,
                                 scale = scale,
                                 modifier = Modifier.width(timeW).fillMaxHeight(),
-                                cornerRatio = cornerRatio
+                                cornerRatio = cornerRatio,
+                                textFits = phFitsText,
+                                onToggleExpand = if (slot.isPlaceholder && !phFitsText) {
+                                    { togglePlaceholder(slot.timeString) }
+                                } else null
                             )
                             // 透明占位：保证行宽和表头一致
                             for (day in sortedDays) {
@@ -529,13 +574,20 @@ private fun Modifier.verticalResizeGesture(
     }
 }
 
+/** 用户反馈 2026-09-16: 占位行时间文字适配的最小内容区需求 = micro 一行 lineHeight 11dp
+ *  + SingleTimeHeadCell 上下 padding 8dp。放不下 → 只显示灰块(文字隐藏), 点击展开。 */
+private const val PLACEHOLDER_TEXT_REQUIRED_DP = 19f
+
 @Composable
-private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, cornerRatio: Float = 1f) {
+private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, cornerRatio: Float = 1f, textFits: Boolean = true, onToggleExpand: (() -> Unit)? = null) {
     val colors = SleepyTheme.colors
     val sd = { v: Float -> (v * scale).dp }
     val shape = RoundedCornerShape(sd(12f * cornerRatio))
     // 渲染期占位节次: 更低调的呈现 — 半透明底, 只显示时间不显示节号
     val isPh = slot.isPlaceholder
+    // 用户反馈 2026-09-16: 文字放不下的占位行 = 纯灰块(不显示文字), 点击展开/折叠。
+    // 只灰置占位卡片本身, 课程卡片照常渲染(几何由课程卡自身比例定位, 不受此影响)。
+    val phCollapsed = isPh && !textFits
     Box(
         modifier = modifier.padding(sd(2f)),
         contentAlignment = Alignment.Center
@@ -546,26 +598,35 @@ private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modi
                 .fillMaxHeight()
                 .clip(shape)
                 .background(if (isPh) colors.surfaceContainerLow.copy(alpha = 0.5f) else colors.surfaceContainerLow)
+                .then(
+                    if (onToggleExpand != null) Modifier.noRippleClickable { onToggleExpand() }
+                    else Modifier
+                )
                 .padding(sd(4f)),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (!isPh) {
+            if (phCollapsed) {
+                // 灰块形态: 无文字 — 信息靠点击展开
+                Box(modifier = Modifier.fillMaxSize().align(Alignment.Center))
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (!isPh) {
+                        Text(
+                            text = stringResource(R.string.period_format_node, slot.label),
+                            style = SleepyTextStyle.smallMeta().copy(fontWeight = FontWeight.SemiBold, fontSize = (10 * scale).sp, lineHeight = (14 * scale).sp),
+                            color = colors.onSurface,
+                            maxLines = 1
+                        )
+                        Spacer(modifier = Modifier.height(sd(1f)))
+                    }
                     Text(
-                        text = stringResource(R.string.period_format_node, slot.label),
-                        style = SleepyTextStyle.smallMeta().copy(fontWeight = FontWeight.SemiBold, fontSize = (10 * scale).sp, lineHeight = (14 * scale).sp),
-                        color = colors.onSurface,
-                        maxLines = 1
+                        text = slot.timeString,
+                        style = SleepyTextStyle.micro().copy(fontSize = (9 * scale).sp, lineHeight = (11 * scale).sp),
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(sd(1f)))
                 }
-                Text(
-                    text = slot.timeString,
-                    style = SleepyTextStyle.micro().copy(fontSize = (9 * scale).sp, lineHeight = (11 * scale).sp),
-                    color = colors.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }

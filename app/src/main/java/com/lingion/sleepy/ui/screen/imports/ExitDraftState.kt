@@ -1,11 +1,17 @@
 package com.lingion.sleepy.ui.screen.imports
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.lingion.sleepy.R
+import com.lingion.sleepy.ui.component.DialogActionButtons
+import com.lingion.sleepy.ui.theme.SleepyTheme
 
 /** The user's choice when leaving an import that may contain recoverable work. */
 enum class ExitDraftChoice {
@@ -62,6 +68,8 @@ fun reduceExitDraftState(
 
 /**
  * UI-only confirmation surface. Draft persistence is supplied by the caller for later integration.
+ * 2026-09-16 用户: 三个裸 TextButton 既不同排又无色块背景 — 换 DialogActionButtons
+ * 三键等宽色块一行排 (继续/留草稿=secondaryContainer, 退出并删除草稿=errorContainer)。
  */
 @Composable
 fun ExitDraftConfirmationDialog(
@@ -72,19 +80,24 @@ fun ExitDraftConfirmationDialog(
     AlertDialog(
         onDismissRequest = onContinue,
         title = { Text(stringResource(R.string.jw_import_exit_title)) },
-        text = { Text(stringResource(R.string.jw_import_exit_message)) },
-        confirmButton = {
-            TextButton(onClick = onContinue) {
-                Text(stringResource(R.string.jw_import_exit_continue))
+        text = {
+            Column {
+                Text(stringResource(R.string.jw_import_exit_message))
+                Spacer(Modifier.height(20.dp))
+                // 继续(第三位 secondary) / 留草稿(dismiss 位 secondary) / 退出并删除(confirm 位 destructive)
+                DialogActionButtons(
+                    confirmText = stringResource(R.string.jw_import_exit_delete_draft),
+                    onConfirm = onDeleteDraft,
+                    dismissText = stringResource(R.string.jw_import_exit_continue),
+                    onDismiss = onContinue,
+                    thirdText = stringResource(R.string.jw_import_exit_keep_draft),
+                    onThird = onKeepDraft,
+                    thirdDestructive = false,
+                    destructive = true
+                )
             }
         },
-        dismissButton = {
-            TextButton(onClick = onKeepDraft) {
-                Text(stringResource(R.string.jw_import_exit_keep_draft))
-            }
-            TextButton(onClick = onDeleteDraft) {
-                Text(stringResource(R.string.jw_import_exit_delete_draft))
-            }
-        },
+        confirmButton = {},
+        dismissButton = {}
     )
 }

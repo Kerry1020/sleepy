@@ -610,18 +610,22 @@ private fun HolidayRangeEditDialog(
                         )
                     ) { Text(stringResource(R.string.holiday_delete_range)) }
                 }
+                // 2026-09-16 用户: 裸 TextButton 无边界无色块 — 统一色块按钮行
+                com.lingion.sleepy.ui.component.DialogActionButtons(
+                    confirmText = stringResource(R.string.save),
+                    onConfirm = {
+                        val start = startDate ?: return@DialogActionButtons
+                        val end = endDate ?: return@DialogActionButtons
+                        // sourceKey 由 resolveEditTarget 填好: 网络段派生=挂接键, 纯用户段=保持 null
+                        onSave(HolidayRange(target.id, name.trim(), start, end, type, target.sourceKey))
+                    },
+                    dismissText = stringResource(R.string.cancel),
+                    onDismiss = onDismiss,
+                    confirmEnabled = datesValid
+                )
             }
         },
-        confirmButton = {
-            TextButton(enabled = datesValid, onClick = {
-                val start = startDate ?: return@TextButton
-                val end = endDate ?: return@TextButton
-                // sourceKey 由 resolveEditTarget 填好: 网络段派生=挂接键, 纯用户段=保持 null
-                onSave(HolidayRange(target.id, name.trim(), start, end, type, target.sourceKey))
-            }) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        }
+        confirmButton = {},
+        dismissButton = {}
     )
 }

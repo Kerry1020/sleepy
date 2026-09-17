@@ -792,7 +792,7 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="import_draft_saved_at">Saved %1$s</string>
     <string name="jw_import_exit_title">Exit import?</string>
     <string name="jw_import_exit_message">This import is not finished. You can keep a draft and continue later.</string>
-    <string name="jw_import_exit_continue">Continue importing</string>
-    <string name="jw_import_exit_keep_draft">Exit and keep draft</string>
-    <string name="jw_import_exit_delete_draft">Exit and delete draft</string>
+    <string name="jw_import_exit_continue">Continue</string>
+    <string name="jw_import_exit_keep_draft">Keep draft</string>
+    <string name="jw_import_exit_delete_draft">Delete draft</string>
 </resources>
