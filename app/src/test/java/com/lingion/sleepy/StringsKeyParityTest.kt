@@ -122,9 +122,9 @@ class StringsKeyParityTest {
     private val tomorrowReminderKeys = listOf(
         "reminder_tomorrow_time_label",
         "reminder_tomorrow_preview",
-        "reminder_daily_switches_title",
-        "reminder_daily_master_toggle_title",
-        "reminder_daily_master_toggle_sub",
+        // reminder_daily_switches_title / reminder_daily_master_toggle_title /
+        //   reminder_daily_master_toggle_sub 已删(2026-09-17 PR48 落地调整:
+        //   每日提醒区改单卡母子布局,独立「提醒开关」卡取消,总开关并入卡头)。
         "reminder_daily_today_toggle_title",
         "reminder_daily_today_toggle_sub",
         "reminder_tomorrow_toggle_title",

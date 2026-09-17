@@ -607,9 +607,6 @@
     <string name="reminder_daily_preview">示例：今日 15 号 您有 3 节课 第一节课 高等数学 于 08:00 在 教学楼A101 上课</string>
     <string name="reminder_tomorrow_time_label">明日预告时间</string>
     <string name="reminder_tomorrow_preview">示例：明日 16 号 您有 3 节课 第一节课 高等数学 于 08:00 在 教学楼A101 上课</string>
-    <string name="reminder_daily_switches_title">提醒开关</string>
-    <string name="reminder_daily_master_toggle_title">每日提醒总开关</string>
-    <string name="reminder_daily_master_toggle_sub">控制当天和前一天晚上的每日提醒</string>
     <string name="reminder_daily_today_toggle_title">今日摘要</string>
     <string name="reminder_daily_today_toggle_sub">在设定时间推送今日课程摘要</string>
     <string name="reminder_tomorrow_toggle_title">明日预告</string>

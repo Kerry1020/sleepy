@@ -628,9 +628,6 @@
     <string name="reminder_daily_title">每日提醒</string>
     <string name="reminder_tomorrow_time_label">明日預告時間</string>
     <string name="reminder_tomorrow_preview">範例：明日 16 號 您有 3 節課 第一節課 高等數學 於 08:00 在 教學樓A101 上課</string>
-    <string name="reminder_daily_switches_title">提醒開關</string>
-    <string name="reminder_daily_master_toggle_title">每日提醒總開關</string>
-    <string name="reminder_daily_master_toggle_sub">控制當天和前一天晚上的每日提醒</string>
     <string name="reminder_daily_today_toggle_title">今日摘要</string>
     <string name="reminder_daily_today_toggle_sub">在設定時間推送今日課程摘要</string>
     <string name="reminder_tomorrow_toggle_title">明日預告</string>
