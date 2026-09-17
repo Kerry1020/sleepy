@@ -119,6 +119,20 @@ class StringsKeyParityTest {
         "period_table_bind_preview_body"
     )
 
+    private val tomorrowReminderKeys = listOf(
+        "reminder_tomorrow_time_label",
+        "reminder_tomorrow_preview",
+        // reminder_daily_switches_title / reminder_daily_master_toggle_title /
+        //   reminder_daily_master_toggle_sub 已删(2026-09-17 PR48 落地调整:
+        //   每日提醒区改单卡母子布局,独立「提醒开关」卡取消,总开关并入卡头)。
+        "reminder_daily_today_toggle_title",
+        "reminder_daily_today_toggle_sub",
+        "reminder_tomorrow_toggle_title",
+        "reminder_tomorrow_toggle_sub",
+        "notif_tomorrow_title",
+        "notif_tomorrow_title_no_course"
+    )
+
     @Test
     fun all_six_locale_dirs_exist() {
         for (locale in localeDirs) {
@@ -136,6 +150,16 @@ class StringsKeyParityTest {
                     "period table key \"$key\" missing in $locale/strings.xml",
                     text.contains("name=\"$key\"")
                 )
+            }
+        }
+    }
+
+    @Test
+    fun tomorrow_reminder_keys_present_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in tomorrowReminderKeys) {
+                assertTrue("$locale missing $key", text.contains("name=\"$key\""))
             }
         }
     }
