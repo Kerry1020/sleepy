@@ -19,6 +19,9 @@ captures/
 *.log
 .verify/token
 
+# Local GitHub issue archives — full body/comments/events/attachments, never commit or push.
+issues/
+
 # Temp query/result files (e.g. ad-hoc web search dumps)
 q*.json
 *.tmp
