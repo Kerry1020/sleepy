@@ -628,9 +628,6 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="reminder_daily_title">Recordatorio diario</string>
     <string name="reminder_tomorrow_time_label">Hora de la vista previa de mañana</string>
     <string name="reminder_tomorrow_preview">Ejemplo: Mañana 16, tienes 3 clases. Primera clase Cálculo Avanzado a las 08:00 en Edificio A101</string>
-    <string name="reminder_daily_switches_title">Interruptores de recordatorio</string>
-    <string name="reminder_daily_master_toggle_title">Interruptor maestro del recordatorio diario</string>
-    <string name="reminder_daily_master_toggle_sub">Controla los recordatorios diarios del mismo día y de la noche anterior</string>
     <string name="reminder_daily_today_toggle_title">Resumen de hoy</string>
     <string name="reminder_daily_today_toggle_sub">Envía el resumen de hoy a la hora elegida</string>
     <string name="reminder_tomorrow_toggle_title">Vista previa de mañana</string>

@@ -221,7 +221,7 @@ fun ReminderScreen(onBack: () -> Unit) {
 
             // Sub-settings — only visible when master is on
             if (masterEnabled) {
-                // Daily reminder
+                // Daily reminder — single card with parent switch in header + expandable sub items
                 item {
                     ReminderCard {
                         Row(
@@ -230,7 +230,7 @@ fun ReminderScreen(onBack: () -> Unit) {
                         ) {
                             IconBox(icon = Icons.Outlined.AccessTime, color = colors.primary)
                             Spacer(modifier = Modifier.size(12.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.reminder_daily_title),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -242,77 +242,66 @@ fun ReminderScreen(onBack: () -> Unit) {
                                     color = colors.onSurfaceVariant
                                 )
                             }
+                            Switch(
+                                checked = dailyEnabled,
+                                onCheckedChange = { enabled ->
+                                    dailyEnabled = enabled
+                                    AppPrefs.setDailyReminderEnabled(context, enabled)
+                                    SleepyApp.get().notificationScheduler.scheduleAll()
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = colors.onPrimary,
+                                    checkedTrackColor = colors.primary
+                                )
+                            )
                         }
 
-                        SubDivider()
-                        ReminderTimeRow(
-                            label = stringResource(R.string.reminder_daily_time_label),
-                            time = dailyTime,
-                            onClick = { timePickerTarget = DailyReminderTimeTarget.Today }
-                        )
-                        Text(
-                            text = stringResource(R.string.reminder_daily_preview),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp, end = 4.dp)
-                        )
-                        SubDivider()
-                        ReminderTimeRow(
-                            label = stringResource(R.string.reminder_tomorrow_time_label),
-                            time = tomorrowTime,
-                            onClick = { timePickerTarget = DailyReminderTimeTarget.Tomorrow }
-                        )
-                        Text(
-                            text = stringResource(R.string.reminder_tomorrow_preview),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp, end = 4.dp)
-                        )
-                    }
-                }
-
-                // Daily reminder switches deliberately live below time settings.
-                item {
-                    ReminderCard {
-                        Text(
-                            text = stringResource(R.string.reminder_daily_switches_title),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                            color = colors.onSurface,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                        )
-                        SubDivider()
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_daily_master_toggle_title),
-                            subtitle = stringResource(R.string.reminder_daily_master_toggle_sub),
-                            checked = dailyEnabled,
-                            onCheckedChange = { enabled ->
-                                dailyEnabled = enabled
-                                AppPrefs.setDailyReminderEnabled(context, enabled)
-                                SleepyApp.get().notificationScheduler.scheduleAll()
-                            }
-                        )
-                        SubDivider()
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_daily_today_toggle_title),
-                            subtitle = stringResource(R.string.reminder_daily_today_toggle_sub),
-                            checked = todayEnabled,
-                            onCheckedChange = { enabled ->
-                                todayEnabled = enabled
-                                AppPrefs.setTodayReminderEnabled(context, enabled)
-                                SleepyApp.get().notificationScheduler.scheduleAll()
-                            }
-                        )
-                        SubDivider()
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_tomorrow_toggle_title),
-                            subtitle = stringResource(R.string.reminder_tomorrow_toggle_sub),
-                            checked = tomorrowEnabled,
-                            onCheckedChange = { enabled ->
-                                tomorrowEnabled = enabled
-                                AppPrefs.setTomorrowReminderEnabled(context, enabled)
-                                SleepyApp.get().notificationScheduler.scheduleAll()
-                            }
-                        )
+                        if (dailyEnabled) {
+                            SubDivider()
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_daily_today_toggle_title),
+                                subtitle = stringResource(R.string.reminder_daily_today_toggle_sub),
+                                checked = todayEnabled,
+                                onCheckedChange = { enabled ->
+                                    todayEnabled = enabled
+                                    AppPrefs.setTodayReminderEnabled(context, enabled)
+                                    SleepyApp.get().notificationScheduler.scheduleAll()
+                                }
+                            )
+                            ReminderTimeRow(
+                                label = stringResource(R.string.reminder_daily_time_label),
+                                time = dailyTime,
+                                onClick = { timePickerTarget = DailyReminderTimeTarget.Today }
+                            )
+                            Text(
+                                text = stringResource(R.string.reminder_daily_preview),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp, end = 4.dp)
+                            )
+                            SubDivider()
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_tomorrow_toggle_title),
+                                subtitle = stringResource(R.string.reminder_tomorrow_toggle_sub),
+                                checked = tomorrowEnabled,
+                                onCheckedChange = { enabled ->
+                                    tomorrowEnabled = enabled
+                                    AppPrefs.setTomorrowReminderEnabled(context, enabled)
+                                    SleepyApp.get().notificationScheduler.scheduleAll()
+                                }
+                            )
+                            ReminderTimeRow(
+                                label = stringResource(R.string.reminder_tomorrow_time_label),
+                                time = tomorrowTime,
+                                onClick = { timePickerTarget = DailyReminderTimeTarget.Tomorrow }
+                            )
+                            Text(
+                                text = stringResource(R.string.reminder_tomorrow_preview),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp, end = 4.dp)
+                            )
+                        }
                     }
                 }
 

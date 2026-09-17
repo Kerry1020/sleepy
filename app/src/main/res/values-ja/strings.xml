@@ -628,9 +628,6 @@
     <string name="reminder_daily_title">毎日リマインダー</string>
     <string name="reminder_tomorrow_time_label">明日のプレビュー時刻</string>
     <string name="reminder_tomorrow_preview">例：明日 16 日、授業は 3 コマ。最初の授業 高等数学 08:00 @ 教学棟A101</string>
-    <string name="reminder_daily_switches_title">リマインダーの切り替え</string>
-    <string name="reminder_daily_master_toggle_title">毎日リマインダーの主スイッチ</string>
-    <string name="reminder_daily_master_toggle_sub">当日と前夜の毎日リマインダーを制御します</string>
     <string name="reminder_daily_today_toggle_title">今日のサマリー</string>
     <string name="reminder_daily_today_toggle_sub">指定時刻に今日の授業サマリーを通知</string>
     <string name="reminder_tomorrow_toggle_title">明日のプレビュー</string>

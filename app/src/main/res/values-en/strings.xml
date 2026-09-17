@@ -643,9 +643,6 @@ Per-school attribution (one card per school, expand to see details) — Hefei Un
     <string name="reminder_daily_title">Daily Reminder</string>
     <string name="reminder_tomorrow_time_label">Tomorrow preview time</string>
     <string name="reminder_tomorrow_preview">Example: Tomorrow the 16th, 3 classes. First class 08:00 Advanced Math @ Bldg A101</string>
-    <string name="reminder_daily_switches_title">Reminder switches</string>
-    <string name="reminder_daily_master_toggle_title">Daily reminder master switch</string>
-    <string name="reminder_daily_master_toggle_sub">Controls same-day and previous-evening daily reminders</string>
     <string name="reminder_daily_today_toggle_title">Today summary</string>
     <string name="reminder_daily_today_toggle_sub">Send today\'s course summary at the set time</string>
     <string name="reminder_tomorrow_toggle_title">Tomorrow preview</string>
