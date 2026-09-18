@@ -56,7 +56,12 @@
 - 组合数学 星期四 第 9-10 节 教师 高峻 周 4-11
 - 总数 ≥ 6
 
+`real form B page inside PageFrame iframe is selected and parsed end to end` 整链锁:
+frameset + PageFrame(StuCourseQuery.aspx 形态 B) → dgData 锚选中 → JwXjuParser ≥6 条 →
+抽验 day/startNode/teacher 端到端不换样.
+
 红绿验证 (TDD §6): 撤掉 JwWakeUpCompatParsers.kt 修复 → 该测试由绿翻红 → 恢复 → 仍绿.
+整链测试红绿同法: revert 时 selectBestFrame 仍选 PageFrame (锚在), 但 parser 出 0 课 → 断言红.
 
 ## SOP 影响
 
@@ -75,6 +80,6 @@
 
 ## 测试结果
 
-- XJU 单测 11/11 全绿
-- 全套件 1965/1965 全绿
+- XJU 单测 12/12 全绿 (含整链帧捕获测试)
+- 全套件 1966/1966 全绿
 - Lint 38 errors / 434 warnings / 1 hint = 与 main pre-existing 基线一致 (零新增)

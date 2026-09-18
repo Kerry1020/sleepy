@@ -257,4 +257,31 @@ class XjuPostgraduateAdmissionTest {
         // 真实页含 6 个独立课程位 (3 课 × 2 时段); 一格多课由 xju fullwidth semicolon 测试覆盖
         assertTrue("解析数应包含 6 条 (3 课 × 2 时段)", courses.size >= 6)
     }
+
+    @Test
+    fun `real form B page inside PageFrame iframe is selected and parsed end to end`() {
+        // 整链锁: 真实用户到达路径 = frameset(Default.aspx) + PageFrame(StuCourseQuery.aspx 形态 B)
+        // 帧捕获 (_dgdata 尾子串锚) → selectBestFrame → JwXjuParser 形态 B 网格还原
+        val realHtml = javaClass.classLoader?.getResourceAsStream("jw_fixtures/xju-postgraduate-real-gwork.html")
+            ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+        assertNotNull("real-shape fixture 必须存在", realHtml)
+        val top = """<html><head><title>新疆大学研究生培养管理信息系统</title></head><body>
+            <iframe id="PageFrame" name="PageFrame"></iframe></body></html>"""
+        val snapshots = com.lingion.sleepy.ui.screen.imports.FrameSnapshot.fromJson(
+            """{"ok":true,"url":"https://yjspy.xju.edu.cn/Gstudent/Default.aspx","depth":8,"frames":[
+                {"name":"(top)","src":"https://yjspy.xju.edu.cn/Gstudent/Default.aspx","depth":0,"path":[],"html":${org.json.JSONObject.quote(top)},"blocked":""},
+                {"name":"PageFrame","src":"https://yjspy.xju.edu.cn/Gstudent/Course/StuCourseQuery.aspx","depth":1,"path":["PageFrame"],"html":${org.json.JSONObject.quote(realHtml!!)},"blocked":""}
+            ]}"""
+        )
+        val r = com.lingion.sleepy.ui.screen.imports.FrameTraversalTree.selectBestFrame(snapshots)
+        assertEquals("形态 B 真实页必须被 dgData 锚选中", com.lingion.sleepy.ui.screen.imports.FrameCaptureStatus.OK, r.status)
+        assertTrue(r.matchedAnchors.isNotEmpty())
+        val courses = JwXjuParser(r.html).generateCourseList()
+        assertTrue("抓到的形态 B frame HTML 必须解析出 ≥6 条课, 实得 ${courses.size}", courses.size >= 6)
+        // 抽验端到端不换样: 帧捕获送进 parser 后 位置/教师 仍准确
+        val gaoSuan = courses.first { it.name == "高级算法设计与分析1班" }
+        assertEquals(3, gaoSuan.day)
+        assertEquals(3, gaoSuan.startNode)
+        assertEquals("孙冬璞", gaoSuan.teacher)
+    }
 }
