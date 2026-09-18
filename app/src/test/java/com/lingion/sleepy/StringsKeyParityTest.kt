@@ -119,6 +119,29 @@ class StringsKeyParityTest {
         "period_table_bind_preview_body"
     )
 
+    private val tomorrowReminderKeys = listOf(
+        "reminder_tomorrow_time_label",
+        "reminder_tomorrow_preview",
+        "reminder_daily_today_toggle_title",
+        "reminder_daily_today_toggle_sub",
+        "reminder_tomorrow_toggle_title",
+        "reminder_tomorrow_toggle_sub",
+        "notif_tomorrow_title",
+        "notif_tomorrow_title_no_course"
+    )
+
+    /**
+     * 已删除的键 (PR48 落地调整 2026-09-17): 每日提醒区改单卡母子布局,
+     * 独立「提醒开关」卡取消, 总开关并入卡头。反向锁: 任何 locale 复活
+     * 这些键 = 布局回退信号 (UI 已无消费方, 残留键会被 UnusedResources
+     * lint 命中, 且文案与新布局语义冲突)。
+     */
+    private val removedReminderKeys = listOf(
+        "reminder_daily_switches_title",
+        "reminder_daily_master_toggle_title",
+        "reminder_daily_master_toggle_sub"
+    )
+
     @Test
     fun all_six_locale_dirs_exist() {
         for (locale in localeDirs) {
@@ -135,6 +158,30 @@ class StringsKeyParityTest {
                 assertTrue(
                     "period table key \"$key\" missing in $locale/strings.xml",
                     text.contains("name=\"$key\"")
+                )
+            }
+        }
+    }
+
+    @Test
+    fun tomorrow_reminder_keys_present_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in tomorrowReminderKeys) {
+                assertTrue("$locale missing $key", text.contains("name=\"$key\""))
+            }
+        }
+    }
+
+    @Test
+    fun removed_reminder_keys_stay_deleted_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in removedReminderKeys) {
+                assertTrue(
+                    "removed key \"$key\" resurrected in $locale/strings.xml — " +
+                        "PR48 单卡母子布局已无该键消费方, 复活=布局回退信号",
+                    !text.contains("name=\"$key\"")
                 )
             }
         }
