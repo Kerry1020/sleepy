@@ -522,6 +522,9 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
 /**
  * 贡献者: 直接向本项目提交代码并合入的开发者 (与"上游参考仓库"致谢是两回事)。
  * v1.0.53 用户令: 收录 PR #29 作者 jim139129 (NEU 教务导入修复)。
+ * v1.0.57 用户令: 收录 YYiChen (PR #43 课表自适应高度 + PR #48 前一晚明日预告)、
+ *                  LzBsA (PR #30 燕山大学研究生 boya_pp 协议,虽 PR 已 CLOSED 但 commit
+ *                  `1a0b78d4` 走 contributor-preserving merge `2b0a9119` 保留作者落 main)。
  * 姓名/handle 是通用标识不翻译; 贡献描述沿用本页硬编码中文说明的既有模式。
  */
 private data class ContributorEntry(val id: String, val title: String, val meta: String, val usage: String)
@@ -530,5 +533,13 @@ private val contributorEntries: List<ContributorEntry> = listOf(
     ContributorEntry(
         "contributor-jim139129", "jim139129", "GitHub @jim139129",
         "已合并多项 PR 并持续反馈 issue — 全部提交与讨论记录见 github.com/jim139129"
+    ),
+    ContributorEntry(
+        "contributor-YYiChen", "YYiChen", "GitHub @YYiChen",
+        "已合并 PR #43 课表自适应高度、PR #48 前一晚明日预告 — 全部提交与讨论记录见 github.com/YYiChen"
+    ),
+    ContributorEntry(
+        "contributor-LzBsA", "LzBsA", "GitHub @LzBsA",
+        "已合并 PR #30 燕山大学研究生平台 boya_pp 协议适配 (贡献者保留式 merge) — 全部提交与讨论记录见 github.com/LzBsA"
     )
 )
