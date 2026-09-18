@@ -203,4 +203,58 @@ class XjuPostgraduateAdmissionTest {
         assertTrue("一格两课应拆出 ≥1 条", courses.isNotEmpty())
         courses.forEach { assertEquals(1, it.day) }
     }
+
+    // ---------- ⑤ 真实"学期课表信息查询"页 — 2026-09-17 用户报修 ----------
+    @Test
+    fun `real gwork 学期课表信息查询 page parses courses with time-band header and chinese node labels`() {
+        val html = javaClass.classLoader?.getResourceAsStream("jw_fixtures/xju-postgraduate-real-gwork.html")
+            ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+        assertNotNull("real-shape fixture 必须存在", html)
+        val courses = JwXjuParser(html!!).generateCourseList()
+        assertTrue("真实 Gwork 课表页应至少解析出 3 门课, 实得 ${courses.size}", courses.size >= 3)
+
+        val gaoSuan = courses.first { it.name == "高级算法设计与分析1班" }
+        assertEquals("高级算法设计与分析1班 应在星期三", 3, gaoSuan.day)
+        assertEquals("节次三=第3节起(12行真实表头)", 3, gaoSuan.startNode)
+        assertEquals("rowspan=2 → 第3-4节连堂", 4, gaoSuan.endNode)
+        assertEquals("孙冬璞", gaoSuan.teacher)
+        assertEquals(12, gaoSuan.startWeek)
+        assertEquals(19, gaoSuan.endWeek)
+        // 高级算法同时出现在周一第5-6节 (下午第1段)
+        val gaoSuan2 = courses.filter { it.name == "高级算法设计与分析1班" }
+            .first { it.day == 1 && it.startNode == 5 }
+        assertEquals(6, gaoSuan2.endNode)
+        assertEquals("孙冬璞", gaoSuan2.teacher)
+
+        val ml = courses.first { it.name == "机器学习1班" }
+        assertEquals("机器学习1班 应在星期二", 2, ml.day)
+        assertEquals(5, ml.startNode)
+        assertEquals(6, ml.endNode)
+        assertEquals("陈晨", ml.teacher)
+        assertEquals(3, ml.startWeek)
+        assertEquals(10, ml.endWeek)
+        // 机器学习同时出现在周四第7-8节
+        val ml2 = courses.filter { it.name == "机器学习1班" }
+            .first { it.day == 4 && it.startNode == 7 }
+        assertEquals(8, ml2.endNode)
+        assertEquals("陈晨", ml2.teacher)
+
+        val cms = courses.first { it.name == "组合数学1班" }
+        assertEquals("组合数学1班 应在星期二", 2, cms.day)
+        assertEquals(7, cms.startNode)
+        assertEquals(8, cms.endNode)
+        assertEquals("高峻", cms.teacher)
+        assertEquals(4, cms.startWeek)
+        assertEquals(11, cms.endWeek)
+        // 组合数学同时出现在周四第9-10节 (晚上段)
+        val cms2 = courses.filter { it.name == "组合数学1班" }
+            .first { it.day == 4 && it.startNode == 9 }
+        assertEquals(10, cms2.endNode)
+        assertEquals("高峻", cms2.teacher)
+        assertEquals(4, cms2.startWeek)
+        assertEquals(11, cms2.endWeek)
+
+        // 真实页含 6 个独立课程位 (3 课 × 2 时段); 一格多课由 xju fullwidth semicolon 测试覆盖
+        assertTrue("解析数应包含 6 条 (3 课 × 2 时段)", courses.size >= 6)
+    }
 }
