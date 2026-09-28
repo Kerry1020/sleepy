@@ -1,0 +1,4 @@
+05d7233a150249dbccdbf3db0ce234b6062b05512ea223019aa12905862e64aa  sleepy-collector-linux-amd64
+2dd53136ab018618b96197c51c0d7dd741eda0293c0d898a292bbfa715e6831f  sleepy-collector-macos-amd64
+c2604e62b88c9984e48958592e23a29b0d0b75c0e241ce97db0c02a068262803  sleepy-collector-macos-arm64
+58bf0be9a3ea233592d54650a84f8ce7f50d7bede359f098d62fb1351ada5ea0  sleepy-collector-windows-amd64.exe
