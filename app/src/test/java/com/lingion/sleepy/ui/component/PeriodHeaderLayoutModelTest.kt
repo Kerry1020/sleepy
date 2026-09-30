@@ -200,3 +200,90 @@ class PeriodHeaderAdaptiveFontTest {
         assertEquals(52f, legacyColumnWidthDp(listOf(48f, 52f, 45f)), 0.001f)
     }
 }
+
+/**
+ * 用户定稿 2026-09-30 (网格表头列统一):
+ *   ① 同列所有卡片宽 = 最宽行的包络宽 (不再逐行收口);
+ *   ② 每行三元素 (开始时间/标签/结束时间) 各自以最宽行对应元素的
+ *      middle point 对齐 — 保持行间固有错开关系, 整列一致。
+ *
+ * solveColumnPlacement 输入全列各行的 metrics, 输出每行的最终排布
+ * (统一卡片宽 + 各元素对齐基准行中点)。
+ */
+class PeriodHeaderColumnUniformPlacementTest {
+
+    private val u = 0f
+
+    /** 典型列: 第 1000 节行最宽, 其余行窄。 */
+    private val wideRow = PeriodHeaderMetrics(
+        startWidth = 34f, endWidth = 34f, labelWidth = 60f, showX = false,
+    )
+    private val narrowRow = PeriodHeaderMetrics(
+        startWidth = 30f, endWidth = 30f, labelWidth = 16f, showX = false,
+    )
+
+    @Test
+    fun all_rows_share_the_widest_row_card_width() {
+        val placements = solveColumnPlacement(listOf(wideRow, narrowRow), u)
+        assertEquals(2, placements.size)
+        assertEquals(
+            "窄行卡片宽必须等于最宽行卡片宽",
+            placements[0].contentWidth, placements[1].contentWidth, 0.001f,
+        )
+    }
+
+    @Test
+    fun widest_row_placement_unchanged_from_per_row_solution() {
+        val placements = solveColumnPlacement(listOf(wideRow, narrowRow), u)
+        val alone = wideRow.solvePlacement(u)
+        assertEquals(alone.timeBaseLeft, placements[0].timeBaseLeft, 0.001f)
+        assertEquals(alone.labelLeft, placements[0].labelLeft, 0.001f)
+        assertEquals(alone.contentWidth, placements[0].contentWidth, 0.001f)
+    }
+
+    @Test
+    fun every_row_element_midpoints_align_to_widest_row() {
+        val placements = solveColumnPlacement(listOf(wideRow, narrowRow), u)
+        val base = placements[0]
+        val other = placements[1]
+        // 基准行 (最宽) 自身中点
+        val baseTimeMid = base.timeBaseLeft + wideRow.startWidth / 2f
+        val baseEndMid = base.timeBaseLeft + wideRow.endWidth / 2f
+        val baseLabelMid = base.labelLeft + wideRow.labelWidth / 2f
+        // 窄行中点 = 各自左缘 + 自身宽 / 2
+        assertEquals(baseTimeMid, other.timeBaseLeft + narrowRow.startWidth / 2f, 0.001f)
+        assertEquals(baseEndMid, other.timeBaseLeft + narrowRow.endWidth / 2f, 0.001f)
+        assertEquals(baseLabelMid, other.labelLeft + narrowRow.labelWidth / 2f, 0.001f)
+    }
+
+    @Test
+    fun staggered_relationship_is_preserved_not_flattened_to_center() {
+        // 悬挂 u=-1: 标签右缘贴时间块左缘 — 标签中点在时间中点左侧。
+        // 整列对齐后各元素中点仍逐元素对应, 不等于全部压到同一中点。
+        val placements = solveColumnPlacement(listOf(wideRow, narrowRow), -1f)
+        val base = placements[0]
+        val other = placements[1]
+        val baseTimeMid = base.timeBaseLeft + wideRow.startWidth / 2f
+        val baseLabelMid = base.labelLeft + wideRow.labelWidth / 2f
+        val otherTimeMid = other.timeBaseLeft + narrowRow.startWidth / 2f
+        val otherLabelMid = other.labelLeft + narrowRow.labelWidth / 2f
+        // u=-1 下标签中点 ≠ 时间中点 (错开保留)
+        assertTrue(baseLabelMid < baseTimeMid)
+        // 窄行同样错开, 且错开方向一致 (两侧标签都在时间中点左侧)
+        assertTrue(otherLabelMid < otherTimeMid)
+    }
+
+    @Test
+    fun empty_column_returns_empty_list() {
+        assertTrue(solveColumnPlacement(emptyList(), u).isEmpty())
+    }
+
+    @Test
+    fun single_row_degenerates_to_per_row_placement() {
+        val placements = solveColumnPlacement(listOf(narrowRow), u)
+        val alone = narrowRow.solvePlacement(u)
+        assertEquals(alone.timeBaseLeft, placements[0].timeBaseLeft, 0.001f)
+        assertEquals(alone.labelLeft, placements[0].labelLeft, 0.001f)
+        assertEquals(alone.contentWidth, placements[0].contentWidth, 0.001f)
+    }
+}
