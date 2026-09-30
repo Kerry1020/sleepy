@@ -299,6 +299,24 @@ class WidgetVariantRenderTest {
     }
 
     @Test
+    fun `compact window anchors nearest busy day when display auto-jumps`() {
+        val today = LocalDate.of(2026, 9, 2)
+        val nearest = LocalDate.of(2026, 9, 5)
+        assertEquals(
+            listOf(nearest, nearest.plusDays(1), nearest.plusDays(2)),
+            WidgetBitmapRenderers.compactWindowDates(
+                today, todayFirst = true, anchorDate = nearest
+            )
+        )
+        assertEquals(
+            listOf(nearest.minusDays(1), nearest, nearest.plusDays(1)),
+            WidgetBitmapRenderers.compactWindowDates(
+                today, todayFirst = false, anchorDate = nearest
+            )
+        )
+    }
+
+    @Test
     fun `compact shown days prefers window in date order across weeks`() {
         // 跨周窗口 [周日(7),周一(1),周二(2)] 必须按日期升序, 不得按 dayOfWeek 重排
         val mon = LocalDate.of(2026, 8, 31)
