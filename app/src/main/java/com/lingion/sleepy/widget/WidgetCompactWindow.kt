@@ -22,18 +22,15 @@ internal object WidgetCompactWindow {
         maxWeek: Int,
         today: LocalDate,
         todayFirst: Boolean,
-        displayWeek: Int? = null,
+        displayDate: LocalDate? = null,
     ): List<DayData> {
-        val dates = if (displayWeek != null) {
-            (1..3).map { day -> DateUtils.dateOfWeek(startDate, displayWeek, day) }
-        } else {
-            WidgetBitmapRenderers.compactWindowDates(today, todayFirst)
-        }
+        val anchorDate = displayDate ?: today
+        val dates = WidgetBitmapRenderers.compactWindowDates(today, todayFirst, anchorDate)
         return dates.map { effectiveDate ->
             val dow = HolidayTransferHelper.effectiveDayOfWeek(
                 com.lingion.sleepy.SleepyApp.get(), tableId, effectiveDate
             )
-            val week = displayWeek ?: DateUtils.currentWeek(startDate, effectiveDate)
+            val week = DateUtils.currentWeek(startDate, effectiveDate).coerceIn(1, maxWeek)
             val afterEnd = DateUtils.semesterStatus(startDate, maxWeek, effectiveDate) == DateUtils.SemesterStatus.AFTER_END
             val visible = if (afterEnd) emptyList()
                 else repo.getCoursesByDayOnce(tableId, dow).filter { it.inWeek(week) }.sortedBy { it.startNode }

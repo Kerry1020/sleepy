@@ -972,9 +972,13 @@ object WidgetBitmapRenderers {
      * 固定三天, 不跳空天; 日期可越出本周(上下周打通由数据层按所在周周次过滤课程)。
      * 纯函数零 LocalDate.now() — today 由调用方注入。
      */
-    fun compactWindowDates(today: LocalDate, todayFirst: Boolean): List<LocalDate> =
-        if (todayFirst) listOf(today, today.plusDays(1), today.plusDays(2))
-        else listOf(today.minusDays(1), today, today.plusDays(1))
+    fun compactWindowDates(
+        today: LocalDate,
+        todayFirst: Boolean,
+        anchorDate: LocalDate = today
+    ): List<LocalDate> =
+        if (todayFirst) listOf(anchorDate, anchorDate.plusDays(1), anchorDate.plusDays(2))
+        else listOf(anchorDate.minusDays(1), anchorDate, anchorDate.plusDays(1))
 
     /**
      * WeekView 小档列选取(渲染与单测共用单一事实来源):
