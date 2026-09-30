@@ -224,7 +224,7 @@ open class WeekViewWidgetReceiver : AppWidgetProvider() {
                         val compactWindow = WidgetCompactWindow.build(
                             repo, table.id, table.timeJson, table.startDate, table.maxWeek,
                             today, WidgetCompactWindowStore.isTodayFirst(context, appWidgetId),
-                            displayWeek = source.display.targetWeek.takeIf {
+                            displayDate = source.display.targetDate.takeIf {
                                 source.display.status == com.lingion.sleepy.util.WeekDisplayStatus.NEAREST_BUSY_DAY
                             }
                         )
