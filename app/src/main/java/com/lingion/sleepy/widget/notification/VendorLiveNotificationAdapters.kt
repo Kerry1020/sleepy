@@ -11,10 +11,14 @@ import com.lingion.sleepy.R
 const val ACTION_APP_NOTIFICATION_SETTINGS = Settings.ACTION_APP_NOTIFICATION_SETTINGS
 const val ACTION_CHANNEL_NOTIFICATION_SETTINGS = Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS
 
-/** Stable order for all vendor families: vendor candidate, channel, application. */
+/**
+ * Stable order for all vendor families: channel, vendor, application.
+ * 通道页最优先 — 它直达"流体云/超级岛"通道本身; 厂商通用通知管理页(OxygenOS 实测)
+ * 会打开一个不含本应用通道的全局页, 所以退居其后, 应用通知页兜底。
+ */
 fun vendorSettingsSpecs(vendor: LiveCardVendor): List<IntentSpec> = buildList {
-    vendorSettingsAction(vendor)?.let { add(IntentSpec(it)) }
     add(IntentSpec(ACTION_CHANNEL_NOTIFICATION_SETTINGS))
+    vendorSettingsAction(vendor)?.let { add(IntentSpec(it)) }
     add(IntentSpec(ACTION_APP_NOTIFICATION_SETTINGS))
 }
 

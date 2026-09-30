@@ -738,6 +738,10 @@
     <string name="reminder_fluid_status_settings_required">Fluid Cloud / Super Island を有効にするには、まずシステム設定を開いてください。</string>
     <string name="reminder_fluid_status_not_supported">現在のシステムでは Fluid Cloud / Super Island をサポートしていません。</string>
     <string name="reminder_fluid_go_to_settings">設定を開く</string>
+    <string name="reminder_fluid_test_button">ライブ更新テスト</string>
+    <string name="reminder_fluid_test_started">テストカードを投稿しました。通知シェード上部を確認してください</string>
+    <string name="reminder_fluid_test_course">テスト授業</string>
+    <string name="reminder_fluid_test_room">テスト教室</string>
     <string name="reminder_reliability_title">バックグラウンドの信頼性</string>
     <string name="reminder_reliability_notification">通知権限：%1$s</string>
     <string name="reminder_reliability_exact_alarm">正確なアラーム：%1$s</string>
