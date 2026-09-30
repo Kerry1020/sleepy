@@ -123,8 +123,8 @@ class MineNavRedoCourseListContractTest {
     fun `schedule screen undo redo capsule is paired via single component`() {
         // 必须有一个 private/composable 函数 UndoRedoCapsule(showUndo, showRedo, onUndo, onRedo)
         assertTrue(
-            "ScheduleScreen 必须声明 private UndoRedoCapsule(showUndo, showRedo, onUndo, onRedo)",
-            Regex("""fun\s+UndoRedoCapsule\(\s*showUndo:\s*Boolean\s*,\s*showRedo:\s*Boolean\s*,\s*onUndo:\s*\(\)\s*->\s*Unit\s*,\s*onRedo:\s*\(\)\s*->\s*Unit\s*\)""")
+            "ScheduleScreen 必须声明 private UndoRedoCapsule(showUndo, showRedo, scale, onUndo, onRedo)",
+            Regex("""fun\s+UndoRedoCapsule\(\s*showUndo:\s*Boolean\s*,\s*showRedo:\s*Boolean\s*,\s*scale:\s*Float\s*,\s*onUndo:\s*\(\)\s*->\s*Unit\s*,\s*onRedo:\s*\(\)\s*->\s*Unit\s*\)""")
                 .containsMatchIn(scheduleScreen)
         )
     }
@@ -151,18 +151,21 @@ class MineNavRedoCourseListContractTest {
     }
 
     @Test
-    fun `UndoRedoCapsule uses stadium shape CircleShape with two 32dp halves and 1dp divider`() {
-        // 体育场形状 = Row 整体 clip(CircleShape)
-        // 中缝 Box 宽 1dp
-        // 左半/右半各自 32dp 宽
+    fun `UndoRedoCapsule preserves its default stadium and only yields space on collision`() {
         val capsuleBlock = Regex(
             """fun\s+UndoRedoCapsule\([\s\S]*?\n\}"""
         ).find(scheduleScreen)?.value ?: error("UndoRedoCapsule 找不到")
         assertTrue("胶囊外 Row 必须 clip(CircleShape)", capsuleBlock.contains(".clip(CircleShape)"))
         assertTrue("中缝 Box 宽必须是 1.dp", capsuleBlock.contains(".size(width = 1.dp"))
-        val halves = Regex("""\.size\(width\s*=\s*32\.dp,\s*height\s*=\s*32\.dp\)""")
-            .findAll(capsuleBlock).count()
-        assertEquals("胶囊必须有两半(各 32dp×32dp)Box", 2, halves)
+        assertTrue("胶囊默认半区必须保持 32dp", capsuleBlock.contains("val halfSize = 32.dp * scale"))
+        assertTrue("胶囊比例必须由顶栏实际可用空间决定", scheduleScreen.contains("val capsuleScale"))
+        assertTrue("空间足够时胶囊必须保持原尺寸", scheduleScreen.contains("coerceIn(0.65f, 1f)"))
+        assertTrue("中央周导航必须提供实际位置用于防碰撞", scheduleScreen.contains("positionInParent().x"))
+
+        val weekButtonBlock = Regex(
+            """fun\s+WeekNavButton\([\s\S]*?\n\}"""
+        ).find(scheduleScreen)?.value ?: error("WeekNavButton 找不到")
+        assertTrue("其他顶栏按钮必须保持固定 32dp", weekButtonBlock.contains(".size(32.dp)"))
     }
 
     @Test

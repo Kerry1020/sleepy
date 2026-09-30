@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -485,6 +488,10 @@ private fun TopBar(
     val isOnActual = currentWeek == actualWeek
     val semesterStatus = displayContext?.semesterStatus
         ?: DateUtils.semesterStatus(startDate, maxWeek)
+    val density = LocalDensity.current
+    var centerLeftPx by remember { mutableFloatStateOf(Float.POSITIVE_INFINITY) }
+    val capsuleScale = ((with(density) { centerLeftPx.toDp().value } - 32f - 6f -
+        (if (scaleUncommitted) 38f else 0f) - 6f) / 65f).coerceIn(0.65f, 1f)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -516,6 +523,7 @@ private fun TopBar(
                     UndoRedoCapsule(
                         showUndo = hasUndo,
                         showRedo = hasRedo,
+                        scale = capsuleScale,
                         onUndo = onUndo,
                         onRedo = onRedo
                     )
@@ -533,6 +541,9 @@ private fun TopBar(
             }
             // 翻页三件套(箭头+胶囊+箭头) — 箭头紧贴胶囊
             Row(
+                modifier = Modifier.onGloballyPositioned {
+                    centerLeftPx = it.positionInParent().x
+                },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -681,13 +692,16 @@ private fun WeekNavButton(
 private fun UndoRedoCapsule(
     showUndo: Boolean,
     showRedo: Boolean,
+    scale: Float,
     onUndo: () -> Unit,
     onRedo: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
+    val halfSize = 32.dp * scale
+    val dividerHeight = 14.dp * scale
     Row(
         modifier = Modifier
-            .height(32.dp)
+            .height(halfSize)
             .clip(CircleShape)
             .background(colors.surfaceContainerHigh),
         verticalAlignment = Alignment.CenterVertically
@@ -695,33 +709,41 @@ private fun UndoRedoCapsule(
         // 左半: 撤回 — 无可撤回时半透明禁用(占位保形, 双侧共存才像一体胶囊)
         Box(
             modifier = Modifier
-                .size(width = 32.dp, height = 32.dp)
+                .then(
+                    if (scale == 1f) Modifier.size(width = 32.dp, height = 32.dp)
+                    else Modifier.size(width = halfSize, height = halfSize)
+                )
                 .noRippleClickable(enabled = showUndo, onClick = onUndo),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Undo,
                 contentDescription = stringResource(R.string.schedule_undo),
-                tint = colors.onSurfaceVariant.copy(alpha = if (showUndo) 1f else 0.38f)
+                tint = colors.onSurfaceVariant.copy(alpha = if (showUndo) 1f else 0.38f),
+                modifier = Modifier.size(20.dp * scale)
             )
         }
         // 中缝: 淡淡竖线 — 与图标同色调降透明度, 视觉上"一体两半"
         Box(
             modifier = Modifier
-                .size(width = 1.dp, height = 14.dp)
+                .size(width = 1.dp, height = dividerHeight)
                 .background(colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.inactive))
         )
         // 右半: 取消撤回 — 无可重做时半透明禁用
         Box(
             modifier = Modifier
-                .size(width = 32.dp, height = 32.dp)
+                .then(
+                    if (scale == 1f) Modifier.size(width = 32.dp, height = 32.dp)
+                    else Modifier.size(width = halfSize, height = halfSize)
+                )
                 .noRippleClickable(enabled = showRedo, onClick = onRedo),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Redo,
                 contentDescription = stringResource(R.string.schedule_redo),
-                tint = colors.onSurfaceVariant.copy(alpha = if (showRedo) 1f else 0.38f)
+                tint = colors.onSurfaceVariant.copy(alpha = if (showRedo) 1f else 0.38f),
+                modifier = Modifier.size(20.dp * scale)
             )
         }
     }
