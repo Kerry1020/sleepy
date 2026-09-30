@@ -10,7 +10,7 @@ import java.io.File
  * vivo operation flips 0→1 on update, clickResp is sent, baseInfos.progress
  * is gone (use infos.progress), shortInfos has image/icon, capsule has icon,
  * Meizu capsule has icon + colors, Xiaomi does not auto-expand on every
- * repaint and references miui.focus.pics.
+ * repaint and references the Xiaomi standard promoted-ongoing path.
  */
 class VendorLiveCardRendererFixContractTest {
 
@@ -60,32 +60,23 @@ class VendorLiveCardRendererFixContractTest {
     }
 
     @Test
-    fun `xiaomi island flag reflection uses primitive boolean parameter`() {
-        // v1.0.57 regression: reflection targeted getBoolean(String, java.lang.Boolean),
-        // which NoSuchMethodError'd on device → island flag always false → Xiaomi
-        // extras never injected → 超级岛回落普通通知. Lock the primitive type.
-        assertTrue(
-            "xiaomiIslandFeatureFlag must reflect getBoolean(String, Boolean.TYPE); " +
-                "Boolean::class.java selects the wrong overload and always throws",
-            supportSource.contains("java.lang.Boolean.TYPE")
-        )
+    fun `xiaomi matches v1056 and carries no private focus extras`() {
+        assertFalse(source.contains("putString(\"miui.focus"))
+        assertFalse(source.contains("putBundle(\"miui.focus"))
+        assertFalse(source.contains("private fun addXiaomiExtras"))
+        assertTrue(source.contains("LiveCardVendor.XIAOMI -> Unit"))
+        assertTrue(source.contains("setRequestPromotedOngoing(true)"))
         assertFalse(
-            "Boolean::class.java in SystemProperties reflection picks the boxed " +
-                "overload that does not exist on device",
-            supportSource.contains("getBoolean\", String::class.java, Boolean::class.java"),
+            "Renderer must not reflect private Xiaomi SystemProperties",
+            supportSource.contains("SystemProperties")
         )
     }
 
     @Test
     fun `support suppress lint lives where hidden apis are actually called`() {
         assertTrue(
-            "xiaomiIslandFeatureFlag reflects SystemProperties — needs BlockedPrivateApi",
-            supportSource.contains("@SuppressLint(\"BlockedPrivateApi\")")
-        )
-        assertTrue(
             "vivoRegisterSceneList reflects NotificationManager — needs BlockedPrivateApi",
-            // Count occurrences: at least 2 (xiaomi + vivo).
-            supportSource.windowed("@SuppressLint(\"BlockedPrivateApi\")".length).count { it == "@SuppressLint(\"BlockedPrivateApi\")" } >= 2
+            supportSource.contains("@SuppressLint(\"BlockedPrivateApi\")")
         )
         assertFalse(
             "renderer calls no hidden API — must not carry SuppressLint",
@@ -98,26 +89,6 @@ class VendorLiveCardRendererFixContractTest {
         assertTrue(
             "Promoted ongoing is part of the OPPO baseline lifecycle",
             source.contains("setRequestPromotedOngoing(true)")
-        )
-    }
-
-    @Test
-    fun `xiaomi disables auto-expand on every update`() {
-        assertTrue(
-            "Xiaomi must not auto-expand on every repaint (causes 15s expand churn)",
-            source.contains("put(\"enableFloat\", false)")
-        )
-        assertTrue(
-            "Xiaomi should still allow first-shot expand via islandFirstFloat",
-            source.contains("put(\"islandFirstFloat\", true)")
-        )
-    }
-
-    @Test
-    fun `xiaomi ships pics bundle so bigIslandArea picInfo resolves`() {
-        assertTrue(
-            "Xiaomi renderer must register miui.focus.pics",
-            source.contains("\"miui.focus.pics\"")
         )
     }
 
@@ -202,15 +173,6 @@ class VendorLiveCardRendererFixContractTest {
         assertTrue(
             "vivo island rightInfo must carry progress value",
             source.contains("island.superx.rightInfo.progressValue")
-        )
-    }
-
-    @Test
-    fun `xiaomi big island includes top-level pic info sibling`() {
-        val bigIsland = source.substringAfter("put(\"bigIslandArea\"").substringBefore("put(\"smallIslandArea\"")
-        assertTrue(
-            "Xiaomi bigIslandArea must have a top-level picInfo sibling",
-            bigIsland.contains("put(\"picInfo\"")
         )
     }
 
