@@ -204,8 +204,9 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             val fgOnSurface     = scheme.onSurface.toIntArgb()
             val fgOnSurfaceVar  = scheme.onSurfaceVariant.toIntArgb()
             val gridLine        = scheme.surfaceVariant.toIntArgb()
-            // 统一底色开关的中性底 = 当前主题最浅的 M3 surface container (跟随主题派生, 非写死色)
-            val unifiedCourseBg = scheme.surfaceContainerLowest.toIntArgb()
+            // 统一底色开关的中性底 = 所选主题的 secondaryContainer (2026-09-28 用户令:
+            // 与「我的」页「刷新所有小组件」FilledTonalButton 同色, 即主题色淡调)
+            val unifiedCourseBg = scheme.secondaryContainer.toIntArgb()
             val colorless       = AppPrefs.isWidgetColorless(context)
 
             // v23: 课程颜色完全对齐 CourseTableView — 黄金角 HSL 分配
@@ -390,6 +391,42 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
             // PERIOD_HEADER_CARD_PAD_DP (3dp) 与预览/周视图逐层相等 (用户 2026-09-28 令)。
             val cardPadPx = dp(PERIOD_HEADER_CARD_PAD_DP).toFloat()
             val cardRadiusPx = dp(8f).toFloat()
+            // 整列统一字号 — 列级 forColumn 先按全列最紧约束算一次 (用户 2026-09-29 令),
+            // 与 Compose 侧 CourseTableView.columnFont 同一算法同一输入域 (sp)。
+            val spToPxForColumn = { v: Float ->
+                android.util.TypedValue.applyDimension(
+                    android.util.TypedValue.COMPLEX_UNIT_SP, v,
+                    context.resources.displayMetrics
+                )
+            }
+            val columnSharedFont = if (widgetHeaderLayout == "three_line") {
+                val rows = slots.mapNotNull { slot ->
+                    val isSingleNode = slot.nodeStart == slot.nodeEnd
+                    val label = if (widgetHeaderShowX && isSingleNode) {
+                        PeriodHeaderFormatter.fullLabel(slot.nodeStart, widgetHeaderStyle)
+                    } else {
+                        PeriodHeaderFormatter.range(slot.nodeStart, slot.nodeEnd, widgetHeaderStyle)
+                    }
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                    p.textSize = spToPxForColumn(11f)
+                    val startW = p.measureText(slot.displayStart)
+                    val endW = p.measureText(slot.displayEnd)
+                    p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    p.textSize = spToPxForColumn(12f)
+                    val labelW = p.measureText(label)
+                    val timeMaxW = maxOf(startW, endW)
+                    PeriodHeaderAdaptiveFont.RowConstraint(
+                        inkWidthSp = (timeMaxW + labelW) / density,
+                        timeMaxWidthSp = timeMaxW / density,
+                        labelWidthSp = labelW / density,
+                    )
+                }
+                PeriodHeaderAdaptiveFont.forColumn(
+                    cardWidthSp = (timeW - 2f * cardPadPx).coerceAtLeast(1f) / density,
+                    cardHeightSp = (slotH - 2f * cardPadPx).coerceAtLeast(1f) / density,
+                    rows = rows,
+                )
+            } else null
             for (i in 1..maxNode) {
                 val rowY = bodyTop + gapH + (i - 1) * (slotH + gapH)
                 val slot = slots.getOrNull(i - 1)
@@ -429,12 +466,15 @@ open class WeekGridWidgetProvider : AppWidgetProvider() {
                     )
                     val cardInnerW = (timeW - 2f * cardPadPx).coerceAtLeast(1f)
                     val cardInnerH = (slotH - 2f * cardPadPx).coerceAtLeast(1f)
-                    val adaptive = PeriodHeaderAdaptiveFont.compute(
-                        cardWidthPx = cardInnerW,
-                        cardHeightPx = cardInnerH,
-                        inkWidthPx = baseMetrics.inkWidth(widgetHeaderHanging),
-                        timeMaxWidthPx = baseMetrics.timeMax,
-                        labelWidthPx = baseLabelW,
+                    // 单位契约: PeriodHeaderAdaptiveFont 输入输出是 sp 语义(Compose 侧 .sp 渲染),
+                    // Canvas Paint.textSize 是 px 语义 → 必须 px/density 入参、sp→px 出参。
+                    // dp 字面量数值≈sp 禁再除 density (2026-09-30 修单位 bug)。
+                    val adaptive = columnSharedFont ?: PeriodHeaderAdaptiveFont.compute(
+                        cardWidthSp = cardInnerW / density,
+                        cardHeightSp = cardInnerH / density,
+                        inkWidthSp = baseMetrics.inkWidth(widgetHeaderHanging) / density,
+                        timeMaxWidthSp = baseMetrics.timeMax / density,
+                        labelWidthSp = baseLabelW / density,
                     )
                     val timeSizePx = spToPx(adaptive.timeSize)
                     val labelSizePx = spToPx(adaptive.labelSize)
