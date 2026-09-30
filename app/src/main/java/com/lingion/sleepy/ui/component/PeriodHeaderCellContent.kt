@@ -113,6 +113,7 @@ fun PeriodHeaderCellContent(
     hangingUnitsOverride: Float? = null,
     showXOverride: Boolean? = null,
     sharedFont: PeriodHeaderAdaptiveFont? = null,
+    sharedPlacement: PeriodHeaderPlacement? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -167,7 +168,10 @@ fun PeriodHeaderCellContent(
             val labelH = measurer.measure(label, labelStyleAdaptive).size.height.toFloat()
             val endH = measurer.measure(slot.displayEnd, timeStyleAdaptive).size.height.toFloat()
             val metrics = PeriodHeaderMetrics(startWidth, endWidth, labelWidth, showX && slot.nodeStart == slot.nodeEnd)
-            val placement = metrics.solvePlacement(hangingUnits)
+            // 用户令 2026-09-30: 整列统一排布 — sharedPlacement 由调用方按全列
+            // 最宽行解一次, 本行各元素平移到基准行对应元素的 middle point;
+            // 未传 (预览/单卡) 时退回逐行排布保持原行为。
+            val placement = sharedPlacement ?: metrics.solvePlacement(hangingUnits)
             val contentWidthPx = placement.contentWidth
             val contentWidth = with(density) { contentWidthPx.toDp() }
             val contentHeight = with(density) { (startH + labelH + endH).toDp() }

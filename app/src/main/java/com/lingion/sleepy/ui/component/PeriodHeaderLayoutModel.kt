@@ -60,6 +60,48 @@ internal fun PeriodHeaderMetrics.solvePlacement(u: Float): PeriodHeaderPlacement
 }
 
 /**
+ * 整列统一排布 (用户定稿 2026-09-30):
+ *   ① 卡片宽 = 最宽行的包络宽 — 全列一张宽, 不再逐行收口;
+ *   ② 每行三元素以基准行 (最宽) 对应元素的 middle point 对齐 —
+ *      时间中点对时间中点, 标签中点对标签中点, 行间固有错开保留。
+ *
+ * 实现: 每行先按自身 solvePlacement 解出元素中点 (相对各自元素矩形),
+ * 再平移到基准行坐标系, 使对应中点重合; 卡片统一为基准 contentWidth。
+ * 平移后矩形可能越出 [0, contentWidth] — 由调用方保证基准行是最宽行
+ * (越出即说明存在更宽行, 本函数取的 max 自动吸收)。
+ */
+internal fun solveColumnPlacement(
+    rows: List<PeriodHeaderMetrics>,
+    u: Float,
+): List<PeriodHeaderPlacement> {
+    if (rows.isEmpty()) return emptyList()
+    val perRow = rows.map { it.solvePlacement(u) }
+    // 基准行 = 包络最宽者 (与 legacyColumnWidthDp 同一"最宽"语义)
+    var baseIdx = 0
+    for (i in perRow.indices) {
+        if (perRow[i].contentWidth > perRow[baseIdx].contentWidth) baseIdx = i
+    }
+    val base = perRow[baseIdx]
+    val baseMetrics = rows[baseIdx]
+    // 基准行元素中点 (矩形内坐标)
+    val baseTimeMid = base.timeBaseLeft + baseMetrics.timeMax / 2f
+    val baseLabelMid = base.labelLeft + baseMetrics.labelWidth / 2f
+    return perRow.mapIndexed { i, p ->
+        val m = rows[i]
+        val timeMid = p.timeBaseLeft + m.timeMax / 2f
+        val labelMid = p.labelLeft + m.labelWidth / 2f
+        // 时间中点对齐 → 行整体平移量
+        val shift = baseTimeMid - timeMid
+        // 标签跟随自身中点对齐 (时间平移后标签中点若仍偏离基准, 用同一坐标系解标签 x)
+        PeriodHeaderPlacement(
+            timeBaseLeft = p.timeBaseLeft + shift,
+            labelLeft = baseLabelMid - m.labelWidth / 2f,
+            contentWidth = base.contentWidth,
+        )
+    }
+}
+
+/**
  * 三行表头自适应字号(纯函数, Compose / Widget 共享单一事实来源)。
  *
  * 用户 2026-09-29 v3 连续自适应:
