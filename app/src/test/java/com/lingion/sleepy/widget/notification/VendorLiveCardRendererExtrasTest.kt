@@ -1,5 +1,6 @@
 package com.lingion.sleepy.widget.notification
 
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -23,27 +24,19 @@ class VendorLiveCardRendererExtrasTest {
         }
 
     @Test
-    fun `xiaomi extras use miui focus param and param v2 envelope`() {
-        assertTrue(
-            "Xiaomi renderer must put miui.focus.param extras",
-            rendererSource.contains("\"miui.focus.param\"")
+    fun `xiaomi keeps the v1056 promoted ongoing path free of vendor extras`() {
+        assertFalse(
+            "Xiaomi renderer must not attach Focus extras to the v1.0.56 path",
+            rendererSource.contains("putString(\"miui.focus") ||
+                rendererSource.contains("putBundle(\"miui.focus")
         )
-        assertTrue(
-            "Xiaomi renderer must wrap params in param_v2",
-            rendererSource.contains("\"param_v2\"")
+        assertFalse(
+            "Xiaomi renderer must not define a vendor-specific extras builder",
+            rendererSource.contains("private fun addXiaomiExtras")
         )
-        assertTrue(
-            "Xiaomi renderer must include bigIslandArea",
-            rendererSource.contains("\"bigIslandArea\"")
-        )
-        assertTrue(
-            "Xiaomi renderer must include paramtextInfo (correct key path)",
-            rendererSource.contains("\"miui.focus.paramtextInfo\"")
-        )
-        assertTrue(
-            "Xiaomi renderer must include sequence for ordering",
-            rendererSource.contains("\"sequence\"")
-        )
+        assertTrue(rendererSource.contains("LiveCardVendor.XIAOMI -> Unit"))
+        assertTrue(rendererSource.contains("setRequestPromotedOngoing(true)"))
+        assertTrue(rendererSource.contains("ProgressStyle"))
     }
 
     @Test
