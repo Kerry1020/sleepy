@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import android.os.Build
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -356,11 +358,9 @@ fun ReminderScreen(onBack: () -> Unit) {
     }
 
     fun openBatteryOptimizationSettings() {
-        try {
-            context.startActivity(
-                Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            )
-        } catch (_: Exception) {}
+        // 厂商耗电/自启动管理页优先 — 原生"电池优化"列表页没有"无限制后台活动"选项,
+        // 该选项只存在于厂商定制省电页; 厂商页打不开才落标准弹窗/原生列表。
+        com.lingion.sleepy.widget.notification.launchBatterySettings(context)
     }
 
     fun onMasterToggle(on: Boolean) {
@@ -710,6 +710,34 @@ fun ReminderScreen(onBack: () -> Unit) {
                                         color = colors.onSurfaceVariant,
                                         modifier = Modifier.padding(top = 6.dp)
                                     )
+                                    // 强制唤起一次流体云: 走真实 FluidCloudService 渲染管线
+                                    // (同一通知 ID / 同一 vendor 分支), 用示例课程 2 分钟窗口,
+                                    // 让用户当场验证岛/胶囊是否出现, 不用等课前窗口。
+                                    FilledTonalButton(
+                                        onClick = {
+                                            try {
+                                                androidx.core.content.ContextCompat.startForegroundService(
+                                                    context,
+                                                    Intent(
+                                                        context,
+                                                        com.lingion.sleepy.widget.notification.FluidCloudService::class.java
+                                                    ).setAction(com.lingion.sleepy.widget.notification.FluidCloudService.ACTION_TEST)
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    R.string.reminder_fluid_test_started,
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } catch (t: Throwable) {
+                                                android.util.Log.w("ReminderScreen", "fluid test start failed", t)
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 10.dp)
+                                    ) {
+                                        Text(stringResource(R.string.reminder_fluid_test_button))
+                                    }
                                     reliabilitySnapshot?.let { snapshot ->
                                         Column(
                                             modifier = Modifier
@@ -835,10 +863,14 @@ fun ReminderScreen(onBack: () -> Unit) {
                                                         try {
                                                             val intent = Intent(spec.action).apply {
                                                                 putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName)
-                                                                putExtra(
-                                                                    android.provider.Settings.EXTRA_CHANNEL_ID,
-                                                                    com.lingion.sleepy.widget.notification.CourseNotificationScheduler.CHANNEL_FLUID
-                                                                )
+                                                                // EXTRA_CHANNEL_ID 只对通道设置页有意义;
+                                                                // 厂商全局页收到会忽略, 应用页不需要。
+                                                                if (spec.action == android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS) {
+                                                                    putExtra(
+                                                                        android.provider.Settings.EXTRA_CHANNEL_ID,
+                                                                        com.lingion.sleepy.widget.notification.CourseNotificationScheduler.CHANNEL_FLUID
+                                                                    )
+                                                                }
                                                             }
                                                             ctx.startActivity(intent)
                                                             true

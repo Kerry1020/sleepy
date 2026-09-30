@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.lingion.sleepy.R
 import com.lingion.sleepy.util.AppPrefs
@@ -162,6 +163,16 @@ object VendorLiveCardRenderer {
     ) {
         val hasFocusPermission = support.xiaomiFocusGranted(context)
         val hasIslandFlag = support.xiaomiIslandFeatureFlag()
+        // 岛诊断探针 (v1.0.57 回归排查): 三闸门 + 协议版本打 logcat, 配合用户
+        // *#*#284#*#* 日志定位"降级普通通知"是哪一层挡的 (canShowFocus=权限审核,
+        // protocol: 0=无 1=OS1 2=OS2 3=OS3 支持岛, 小米语料 focus-notification.md §一)
+        val focusProtocol = try {
+            android.provider.Settings.System.getInt(context.contentResolver, "notification_focus_protocol", 0)
+        } catch (_: Throwable) { -1 }
+        Log.d(
+            "VendorLiveCard",
+            "xiaomi gates: canShowFocus=$hasFocusPermission islandFlag=$hasIslandFlag focusProtocol=$focusProtocol"
+        )
         // HyperOS-ToolKit requires BOTH gates: package permission and island feature.
         // A single positive signal is insufficient; otherwise a plain MIUI device
         // receives private extras that SystemUI silently ignores.

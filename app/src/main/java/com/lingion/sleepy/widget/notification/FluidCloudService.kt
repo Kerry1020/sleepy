@@ -40,12 +40,23 @@ class FluidCloudService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        courseName = intent?.getStringExtra("courseName") ?: getString(R.string.default_course_name)
-        room = intent?.getStringExtra("room").orEmpty().ifBlank { getString(R.string.default_room) }
-        teacher = intent?.getStringExtra("teacher").orEmpty()
-        startTime = intent?.getStringExtra("startTime").orEmpty()
-        notifyEpoch = intent?.getLongExtra("notifyEpoch", 0L) ?: 0L
-        classEpoch = intent?.getLongExtra("classEpoch", 0L) ?: 0L
+        if (intent?.action == ACTION_TEST) {
+            // 流体云测试入口: 用示例课程强制唤起一次, 窗口 2 分钟(进度条真实推进)。
+            val now = System.currentTimeMillis()
+            courseName = getString(R.string.reminder_fluid_test_course)
+            room = getString(R.string.reminder_fluid_test_room)
+            teacher = ""
+            startTime = android.text.format.DateFormat.format("HH:mm", now + TEST_WINDOW_MS).toString()
+            notifyEpoch = now
+            classEpoch = now + TEST_WINDOW_MS
+        } else {
+            courseName = intent?.getStringExtra("courseName") ?: getString(R.string.default_course_name)
+            room = intent?.getStringExtra("room").orEmpty().ifBlank { getString(R.string.default_room) }
+            teacher = intent?.getStringExtra("teacher").orEmpty()
+            startTime = intent?.getStringExtra("startTime").orEmpty()
+            notifyEpoch = intent?.getLongExtra("notifyEpoch", 0L) ?: 0L
+            classEpoch = intent?.getLongExtra("classEpoch", 0L) ?: 0L
+        }
 
         if (notifyEpoch <= 0L || classEpoch <= notifyEpoch) {
             val now = System.currentTimeMillis()
@@ -137,6 +148,8 @@ class FluidCloudService : Service() {
 
     companion object {
         private const val UPDATE_INTERVAL_MS = 15_000L
+        private const val TEST_WINDOW_MS = 2 * 60_000L
+        const val ACTION_TEST = "com.lingion.sleepy.action.FLUID_TEST"
         // MODE_A / MODE_B 死常量已删（从未被读取——服务固定走 ProgressStyle 进度条模式）
     }
 }
