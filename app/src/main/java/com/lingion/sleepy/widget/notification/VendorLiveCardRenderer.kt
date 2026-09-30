@@ -128,6 +128,11 @@ object VendorLiveCardRenderer {
             .setContentTitle(state.courseName)
             .setContentText(state.detailText)
             .setSubText(state.room)
+            .setStyle(
+                NotificationCompat.ProgressStyle()
+                    .setStyledByProgress(true)
+                    .setProgress(state.progress)
+            )
             .setProgress(100, state.progress, false)
             .setStyle(progressStyleFor(state.progress))
             .setOngoing(true)
