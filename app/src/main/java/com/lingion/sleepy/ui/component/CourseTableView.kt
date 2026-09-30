@@ -279,17 +279,29 @@ fun CardsGridView(
     } else {
         d(68f)
     }
-    // 用户令 2026-09-27: 可见卡片按每行自己的文字包络收口(在 timeW 轨道内居中),
-    // timeW 只作为最宽行的列轨道保证对齐 — 窄行不再被最宽行撑出大片空白卡。
-    val slotCardWidths = remember(renderSlots, headerStyle, headerLayout, headerHanging, headerShowX, scale) {
-        if (headerLayout == "three_line") {
-            renderSlots.map { slot ->
-                threeLineWidthDp(
-                    listOf(slot), headerStyle, scale, headerTextMeasurer,
-                    headerDensity, headerHanging, headerShowX,
-                )
+    // 用户令 2026-09-30: 整列统一卡宽 — 所有行卡片 = timeW (整列最宽包络),
+    // 窄行文字由列级中点对齐 (PeriodHeaderCellContent sharedPlacement),
+    // 取代 2026-09-27 的逐行收口 (用户复令: 卡片宽度永远一致, 禁参差)。
+    val columnPlacements = remember(renderSlots, headerStyle, headerLayout, headerHanging, headerShowX, scale) {
+        if (headerLayout != "three_line") return@remember null
+        val timeStyle = headerTimeStyle(scale)
+        val labelStyle = headerLabelStyle(scale)
+        // 与 PeriodHeaderCellContent 自适应字号投影同一口径: 16sp 投影
+        val projection = PeriodHeaderAdaptiveFont.MAX_LABEL_SP / PeriodHeaderAdaptiveFont.BASE_LABEL_SP
+        val rows = renderSlots.filter { !it.isPlaceholder }.map { slot ->
+            val label = if (headerShowX && slot.nodeStart == slot.nodeEnd) {
+                PeriodHeaderFormatter.fullLabel(slot.nodeStart, headerStyle)
+            } else {
+                PeriodHeaderFormatter.range(slot.nodeStart, slot.nodeEnd, headerStyle)
             }
-        } else null
+            PeriodHeaderMetrics(
+                startWidth = headerTextMeasurer.measure(slot.displayStart, timeStyle).size.width * projection,
+                endWidth = headerTextMeasurer.measure(slot.displayEnd, timeStyle).size.width * projection,
+                labelWidth = headerTextMeasurer.measure(label, labelStyle).size.width.toFloat() * projection,
+                showX = headerShowX && slot.nodeStart == slot.nodeEnd,
+            )
+        }
+        solveColumnPlacement(rows, headerHanging)
     }
     val gapH = d(4f)
     val gapW = d(5f)
@@ -473,13 +485,16 @@ fun CardsGridView(
                                 slot = slot,
                                 scale = scale,
                                 modifier = Modifier.width(timeW).fillMaxHeight(),
-                                visibleWidth = slotCardWidths?.getOrNull(i),
+                                visibleWidth = null,
                                 cornerRatio = cornerRatio,
                                 textFits = phFitsText,
                                 onToggleExpand = if (slot.isPlaceholder && !phFitsText) {
                                     { togglePlaceholder(slot.timeString) }
                                 } else null,
                                 sharedFont = columnFont,
+                                sharedPlacement = columnPlacements?.getOrNull(
+                                    renderSlots.subList(0, i).count { !it.isPlaceholder }
+                                ),
                             )
                             // 透明占位：保证行宽和表头一致
                             for (day in sortedDays) {
@@ -694,7 +709,7 @@ private fun Modifier.verticalResizeGesture(
 private const val PLACEHOLDER_TEXT_REQUIRED_DP = 19f
 
 @Composable
-private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, visibleWidth: androidx.compose.ui.unit.Dp? = null, cornerRatio: Float = 1f, textFits: Boolean = true, onToggleExpand: (() -> Unit)? = null, sharedFont: PeriodHeaderAdaptiveFont? = null) {
+private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, visibleWidth: androidx.compose.ui.unit.Dp? = null, cornerRatio: Float = 1f, textFits: Boolean = true, onToggleExpand: (() -> Unit)? = null, sharedFont: PeriodHeaderAdaptiveFont? = null, sharedPlacement: PeriodHeaderPlacement? = null) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
     val headerLayout = AppPrefs.getPeriodHeaderLayout(context)
@@ -742,6 +757,7 @@ private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modi
                     style = headerStyle,
                     scale = scale,
                     sharedFont = sharedFont,
+                    sharedPlacement = sharedPlacement,
                 )
             }
         }
