@@ -74,6 +74,14 @@ class JwNewSchoolsTest {
         assertFalse("现行 url 禁止含 jsxsd", lyu.url.contains("jsxsd"))
     }
 
+    @Test
+    fun `AHYZ uses the verified import entry URL`() {
+        val schools = parse(loadSchoolsJson())
+        val ahyz = schools.single { it.name == "安徽第二医学院" }
+        assertEquals("http://ehall.ahyz.cn/new/index.html", ahyz.url)
+        assertEquals(JwProtocol.TYPE_WISEDU, ahyz.type)
+    }
+
     // -------- 2. parseSchoolsJson 读取 status 字段 --------
 
     @Test
