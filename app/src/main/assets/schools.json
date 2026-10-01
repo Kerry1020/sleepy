@@ -2627,7 +2627,7 @@
   {
     "sortKey": "Z",
     "name": "浙江财经大学",
-    "url": "http://jwxt.zufe.edu.cn/jwglxt/xtgl/login_slogin.html",
+    "url": "http://jwxt.zufe.edu.cn/sso/driotlogin",
     "type": "zf_new",
     "aliases": [],
     "sortKeyFull": "zhejiangcaijingdaxue"
