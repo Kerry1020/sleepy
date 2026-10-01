@@ -56,6 +56,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -127,7 +129,9 @@ fun JwWebViewLoginScreen(
     var progress by remember { mutableStateOf(0) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember { mutableStateOf(school.url) }
-    var urlDraft by remember { mutableStateOf(school.url) }
+    var urlDraft by remember {
+        mutableStateOf(TextFieldValue(school.url, TextRange(school.url.length)))
+    }
     var editingUrl by remember { mutableStateOf(false) }
     // #18: 桌面 UA 开关 — true 时重建 WebView 用 Chrome 桌面 UA
     var desktopUa by remember { mutableStateOf(false) }
@@ -254,7 +258,7 @@ fun JwWebViewLoginScreen(
     // ② 无 scheme 自动补 https://, 与浏览器地址栏惯例一致;
     // ③ 提交后立即退出编辑态 — currentUrl 由导航回调回写, 不手工猜 URL。
     fun submitUrl() {
-        val raw = urlDraft.trim()
+        val raw = urlDraft.text.trim()
         if (raw.isEmpty()) return
         val normalized = if (raw.startsWith("http://", true) || raw.startsWith("https://", true)) {
             raw
@@ -323,7 +327,10 @@ fun JwWebViewLoginScreen(
                             if (editingUrl) {
                                 submitUrl()
                             } else {
-                                urlDraft = currentUrl
+                                urlDraft = TextFieldValue(
+                                    text = currentUrl,
+                                    selection = TextRange(currentUrl.length),
+                                )
                                 editingUrl = true
                             }
                         },

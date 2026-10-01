@@ -50,7 +50,8 @@ class JwUrlBarContractTest {
 
     @Test
     fun screen_seeds_edit_draft_from_live_url_and_exits_edit_before_back() {
-        assertTrue(screen.contains("urlDraft = currentUrl"))
+        assertTrue(screen.contains("text = currentUrl"))
+        assertTrue(screen.contains("TextRange(currentUrl.length)"))
         assertTrue(screen.contains("if (editingUrl) editingUrl = false else onBack()"))
     }
 
@@ -59,5 +60,14 @@ class JwUrlBarContractTest {
         assertTrue(screen.contains("if (!editingUrl) {"))
         assertTrue(screen.contains("desktopUa = !desktopUa"))
         assertTrue(screen.contains("webViewRef?.reload()"))
+    }
+
+    @Test
+    fun screen_keeps_cursor_state_in_textFieldValue_seeded_at_end() {
+        // TextFieldValue (text + selection) — selection 随用户拖拽/输入保持;
+        // 进编辑态时 TextRange(length) 把光标播种到末尾, 横向滚动跟随光标
+        assertTrue(screen.contains("mutableStateOf(TextFieldValue("))
+        assertTrue(screen.contains("TextRange(currentUrl.length)"))
+        assertTrue(screen.contains("urlDraft.text.trim()"))
     }
 }
