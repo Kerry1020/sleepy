@@ -410,7 +410,7 @@
 | 学校 | 教务登录地址 | 协议 |
 |---|---|---|
 | 浙大宁波理工学院(别名:宁波理工) | http://jwxt.nit.net.cn/default2.aspx | `zf` |
-| 浙江财经大学 | http://jwxt.zufe.edu.cn/jwglxt/xtgl/login_slogin.html | `zf_new` |
+| 浙江财经大学 | http://jwxt.zufe.edu.cn/sso/driotlogin | `zf_new` |
 | 浙江传媒学院 | http://newjw.cuz.edu.cn/jwglxt | `zf_new` |
 | 浙江大学 | https://zdbk.zju.edu.cn/ | `zju` |
 | 浙江工商大学 | http://124.160.64.163/jwglxt/xtgl/ | `zf_new` |
