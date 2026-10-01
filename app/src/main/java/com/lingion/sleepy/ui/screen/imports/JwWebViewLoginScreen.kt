@@ -26,6 +26,12 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -120,6 +126,9 @@ fun JwWebViewLoginScreen(
     val snackbar = remember { SnackbarHostState() }
     var progress by remember { mutableStateOf(0) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var currentUrl by remember { mutableStateOf(school.url) }
+    var urlDraft by remember { mutableStateOf(school.url) }
+    var editingUrl by remember { mutableStateOf(false) }
     // #18: 桌面 UA 开关 — true 时重建 WebView 用 Chrome 桌面 UA
     var desktopUa by remember { mutableStateOf(false) }
     var uaSwitchReload by remember { mutableStateOf(0) }
@@ -133,6 +142,7 @@ fun JwWebViewLoginScreen(
     val sepPortalHintMsg = stringResource(R.string.jw_err_ucas_sep_portal)
     val fetchTimeoutMsg = stringResource(R.string.jw_fetch_timeout)
     val fetchNoCoursesMsg = stringResource(R.string.jw_fetch_no_courses)
+    val urlInvalidMsg = stringResource(R.string.jw_url_invalid)
 
     // wisedu (金智) 协议：WebView 内 fetch 课表 JSON 的回调结果处理
     // 桥回调已切到主线程；result 形如 {ok:true,data:"<xskcb.do JSON>"} 或 {ok:false,err:"..."}
@@ -239,7 +249,34 @@ fun JwWebViewLoginScreen(
         }, FETCH_TIMEOUT_MS)
     }
 
+    // 浏览器式地址栏: 校验 + 规范化 + 提交导航。
+    // ① 仅 http/https 放行 — loadUrl 可执行 javascript: 等 scheme, 必须挡注入;
+    // ② 无 scheme 自动补 https://, 与浏览器地址栏惯例一致;
+    // ③ 提交后立即退出编辑态 — currentUrl 由导航回调回写, 不手工猜 URL。
+    fun submitUrl() {
+        val raw = urlDraft.trim()
+        if (raw.isEmpty()) return
+        val normalized = if (raw.startsWith("http://", true) || raw.startsWith("https://", true)) {
+            raw
+        } else {
+            "https://$raw"
+        }
+        val uri = normalized.toUri()
+        val valid = (uri.scheme == "http" || uri.scheme == "https") &&
+            uri.host?.isNotBlank() == true
+        if (!valid) {
+            scope.launch { snackbar.showSnackbar(urlInvalidMsg) }
+            return
+        }
+        editingUrl = false
+        webViewRef?.loadUrl(normalized)
+    }
+
     BackHandler {
+        if (editingUrl) {
+            editingUrl = false
+            return@BackHandler
+        }
         webViewRef?.let { wv ->
             if (wv.canGoBack()) wv.goBack() else onBack()
         } ?: onBack()
@@ -249,13 +286,26 @@ fun JwWebViewLoginScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(school.name, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            text = JwProtocol.displayName(school.type),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (editingUrl) {
+                        OutlinedTextField(
+                            value = urlDraft,
+                            onValueChange = { urlDraft = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            placeholder = { Text(stringResource(R.string.jw_url_hint)) },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                            keyboardActions = KeyboardActions(onGo = { submitUrl() }),
                         )
+                    } else {
+                        Column {
+                            Text(school.name, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                text = currentUrl,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -264,6 +314,24 @@ fun JwWebViewLoginScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            if (editingUrl) {
+                                submitUrl()
+                            } else {
+                                urlDraft = currentUrl
+                                editingUrl = true
+                            }
+                        },
+                        enabled = webViewRef != null
+                    ) {
+                        Icon(
+                            if (editingUrl) Icons.Outlined.Check else Icons.Outlined.Edit,
+                            contentDescription = stringResource(
+                                if (editingUrl) R.string.jw_url_submit else R.string.jw_edit_url
+                            )
+                        )
+                    }
                     // #18: 部分门户 (UCAS SEP 等) 手机 UA 下不显示"个人课表"入口,
                     // 桌面 UA 可见。切换 = 销毁重建 WebView (UA 只在创建期生效),
                     // 同步保留 cookie (CookieManager 全局共享) 与当前 URL
@@ -468,6 +536,9 @@ fun JwWebViewLoginScreen(
                 desktopUa = desktopUa,
                 recreateKey = uaSwitchReload,
                 onProgressChange = { p -> progress = p },
+                onNavigationUrlChanged = { url ->
+                    if (!editingUrl && !url.isNullOrBlank()) currentUrl = url
+                },
                 onWebViewCreated = { wv -> webViewRef = wv },
                 onHtmlCaptured = { html -> onHtmlCaptured(html, school, emptyList(), "") },
                 onWiseduResult = handleWiseduResult,
@@ -515,6 +586,7 @@ private fun JwWebView(
     desktopUa: Boolean,
     recreateKey: Int,
     onProgressChange: (Int) -> Unit,
+    onNavigationUrlChanged: (String?) -> Unit = {},
     onWebViewCreated: (WebView) -> Unit,
     onHtmlCaptured: (String) -> Unit,
     onWiseduResult: (String) -> Unit = {},
@@ -612,12 +684,15 @@ private fun JwWebView(
                     webView = this,
                     school = school,
                     desktopMode = desktopUa,
-                ) { finished ->
-                    Log.d("JwWebView", "onPageFinished url=$finished")
-                    lastUrl = finished ?: url
-                    // Install after every navigation: page scripts may replace fetch/XHR globals.
-                    evaluateJavascript(DIAGNOSTIC_NETWORK_INSTALL_JS, null)
-                }
+                    onPageFinished = { finished ->
+                        Log.d("JwWebView", "onPageFinished url=$finished")
+                        lastUrl = finished ?: url
+                        // Install after every navigation: page scripts may replace fetch/XHR globals.
+                        evaluateJavascript(DIAGNOSTIC_NETWORK_INSTALL_JS, null)
+                    },
+                    onUrlChanged = onNavigationUrlChanged,
+                )
+                onNavigationUrlChanged(lastUrl)
                 loadUrl(lastUrl)
                 onWebViewCreated(this)
                 onWebViewReady?.invoke(this)
