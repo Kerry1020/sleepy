@@ -686,15 +686,25 @@ private const val WISEDU_FETCH_JS = """
       return;
     }
     // 0. 先 GET 我的课表(wdkb)微应用入口，初始化 app 会话；否则 module API 返回 403
+    // 会话已死时入口/module API 返回 403 HTML 页（如 AHYZ openresty 金智壳），
+    // 必须先看状态码再解析，否则 r.json() 抛 SyntaxError 文案不可读。
     fetch('/jwapp/sys/wdkb/*default/index.do', {credentials:'include'})
-    .then(function(){
+    .then(function(response){
+      if (!response.ok) {
+        throw new Error('WISEDU_HTTP_403: 会话已过期或无权访问，请返回上一步退出登录后重新进入教务登录');
+      }
       return fetch('/jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do', {
         method:'POST',
         headers:{'X-Requested-With':'XMLHttpRequest'},
         credentials:'include'
       });
     })
-    .then(function(r){ return r.json(); })
+    .then(function(response){
+      if (!response.ok) {
+        throw new Error('WISEDU_HTTP_403: 会话已过期或无权访问，请返回上一步退出登录后重新进入教务登录');
+      }
+      return response.json();
+    })
     .then(function(d){
       var rows = [];
       try { rows = d.datas.dqxnxq.rows || []; } catch(e) {}
