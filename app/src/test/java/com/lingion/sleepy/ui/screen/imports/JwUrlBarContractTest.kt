@@ -50,8 +50,7 @@ class JwUrlBarContractTest {
 
     @Test
     fun screen_seeds_edit_draft_from_live_url_and_exits_edit_before_back() {
-        assertTrue(screen.contains("text = currentUrl"))
-        assertTrue(screen.contains("TextRange(currentUrl.length)"))
+        assertTrue(screen.contains("TextFieldValue(text = currentUrl)"))
         assertTrue(screen.contains("if (editingUrl) editingUrl = false else onBack()"))
     }
 
@@ -63,11 +62,13 @@ class JwUrlBarContractTest {
     }
 
     @Test
-    fun screen_keeps_cursor_state_in_textFieldValue_seeded_at_end() {
-        // TextFieldValue (text + selection) — selection 随用户拖拽/输入保持;
-        // 进编辑态时 TextRange(length) 把光标播种到末尾, 横向滚动跟随光标
-        assertTrue(screen.contains("mutableStateOf(TextFieldValue("))
-        assertTrue(screen.contains("TextRange(currentUrl.length)"))
+    fun screen_keeps_cursor_state_in_textFieldValue_without_seeding_selection() {
+        // TextFieldValue (text + selection) — selection 交给输入框内部管理:
+        // 点"编辑"只换文本不预设光标位置 (规范: 光标出现时机 = 用户点进输入框,
+        // 位置 = 点击处); 单行字段内建横向滚动随光标/选区移动
+        assertTrue(screen.contains("mutableStateOf(TextFieldValue(school.url))"))
+        assertTrue(screen.contains("TextFieldValue(text = currentUrl)"))
         assertTrue(screen.contains("urlDraft.text.trim()"))
+        assertTrue(!screen.contains("TextRange(currentUrl.length)"))
     }
 }

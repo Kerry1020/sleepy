@@ -56,7 +56,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,9 +128,7 @@ fun JwWebViewLoginScreen(
     var progress by remember { mutableStateOf(0) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember { mutableStateOf(school.url) }
-    var urlDraft by remember {
-        mutableStateOf(TextFieldValue(school.url, TextRange(school.url.length)))
-    }
+    var urlDraft by remember { mutableStateOf(TextFieldValue(school.url)) }
     var editingUrl by remember { mutableStateOf(false) }
     // #18: 桌面 UA 开关 — true 时重建 WebView 用 Chrome 桌面 UA
     var desktopUa by remember { mutableStateOf(false) }
@@ -327,10 +324,7 @@ fun JwWebViewLoginScreen(
                             if (editingUrl) {
                                 submitUrl()
                             } else {
-                                urlDraft = TextFieldValue(
-                                    text = currentUrl,
-                                    selection = TextRange(currentUrl.length),
-                                )
+                                urlDraft = TextFieldValue(text = currentUrl)
                                 editingUrl = true
                             }
                         },
