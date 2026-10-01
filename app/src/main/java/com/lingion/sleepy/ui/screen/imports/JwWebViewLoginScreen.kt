@@ -28,8 +28,11 @@ import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Button
@@ -56,7 +59,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -128,7 +130,11 @@ fun JwWebViewLoginScreen(
     var progress by remember { mutableStateOf(0) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember { mutableStateOf(school.url) }
-    var urlDraft by remember { mutableStateOf(TextFieldValue(school.url)) }
+    // state 版输入框 (TextFieldState) — 旧 TextFieldValue 重载走 legacy 路径,
+    // 其拖拽手柄 (TextFieldSelectionState) 字节码全量零 scroll 调用, 拖光标到
+    // 边缘文本不跟随; state 版核心节点拖拽 selection 变化 → measure pass 自动
+    // bring-into-view 跟随光标 (TextFieldCoreModifierNode.updateScrollState)。
+    val urlDraft = rememberTextFieldState(school.url)
     var editingUrl by remember { mutableStateOf(false) }
     // #18: 桌面 UA 开关 — true 时重建 WebView 用 Chrome 桌面 UA
     var desktopUa by remember { mutableStateOf(false) }
@@ -255,7 +261,7 @@ fun JwWebViewLoginScreen(
     // ② 无 scheme 自动补 https://, 与浏览器地址栏惯例一致;
     // ③ 提交后立即退出编辑态 — currentUrl 由导航回调回写, 不手工猜 URL。
     fun submitUrl() {
-        val raw = urlDraft.text.trim()
+        val raw = urlDraft.text.trim().toString()
         if (raw.isEmpty()) return
         val normalized = if (raw.startsWith("http://", true) || raw.startsWith("https://", true)) {
             raw
@@ -289,13 +295,13 @@ fun JwWebViewLoginScreen(
                 title = {
                     if (editingUrl) {
                         OutlinedTextField(
-                            value = urlDraft,
-                            onValueChange = { urlDraft = it },
+                            state = urlDraft,
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
+                            lineLimits = TextFieldLineLimits.SingleLine,
                             placeholder = { Text(stringResource(R.string.jw_url_hint)) },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                            keyboardActions = KeyboardActions(onGo = { submitUrl() }),
+                            onKeyboardAction = KeyboardActionHandler { submitUrl() },
+                            scrollState = rememberScrollState(),
                         )
                     } else {
                         Column {
@@ -324,7 +330,9 @@ fun JwWebViewLoginScreen(
                             if (editingUrl) {
                                 submitUrl()
                             } else {
-                                urlDraft = TextFieldValue(text = currentUrl)
+                                urlDraft.edit {
+                                    replace(0, length, currentUrl)
+                                }
                                 editingUrl = true
                             }
                         },

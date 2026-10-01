@@ -37,7 +37,7 @@ class JwUrlBarContractTest {
     @Test
     fun screen_keeps_url_draft_separate_from_live_navigation_url() {
         assertTrue(screen.contains("var currentUrl by remember"))
-        assertTrue(screen.contains("var urlDraft by remember"))
+        assertTrue(screen.contains("val urlDraft = rememberTextFieldState(school.url)"))
         assertTrue(screen.contains("var editingUrl by remember"))
         assertTrue(screen.contains("if (!editingUrl &&"))
     }
@@ -50,7 +50,7 @@ class JwUrlBarContractTest {
 
     @Test
     fun screen_seeds_edit_draft_from_live_url_and_exits_edit_before_back() {
-        assertTrue(screen.contains("TextFieldValue(text = currentUrl)"))
+        assertTrue(screen.contains("replace(0, length, currentUrl)"))
         assertTrue(screen.contains("if (editingUrl) editingUrl = false else onBack()"))
     }
 
@@ -62,12 +62,12 @@ class JwUrlBarContractTest {
     }
 
     @Test
-    fun screen_keeps_cursor_state_in_textFieldValue_without_seeding_selection() {
-        // TextFieldValue (text + selection) — selection 交给输入框内部管理:
-        // 点"编辑"只换文本不预设光标位置 (规范: 光标出现时机 = 用户点进输入框,
-        // 位置 = 点击处); 单行字段内建横向滚动随光标/选区移动
-        assertTrue(screen.contains("mutableStateOf(TextFieldValue(school.url))"))
-        assertTrue(screen.contains("TextFieldValue(text = currentUrl)"))
+    fun screen_uses_state_text_field_with_scrollable_single_line() {
+        // state 版才走 TextFieldCoreModifierNode 的横向滚动路径;
+        // 编辑时只替换文本, 不播种 selection, 首次点击位置由输入框决定。
+        assertTrue(screen.contains("rememberTextFieldState(school.url)"))
+        assertTrue(screen.contains("TextFieldLineLimits.SingleLine"))
+        assertTrue(screen.contains("scrollState = rememberScrollState()"))
         assertTrue(screen.contains("urlDraft.text.trim()"))
         assertTrue(!screen.contains("TextRange(currentUrl.length)"))
     }
