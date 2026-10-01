@@ -309,7 +309,11 @@ fun JwWebViewLoginScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            if (editingUrl) editingUrl = false else onBack()
+                        }
+                    ) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
@@ -332,34 +336,36 @@ fun JwWebViewLoginScreen(
                             )
                         )
                     }
-                    // #18: 部分门户 (UCAS SEP 等) 手机 UA 下不显示"个人课表"入口,
-                    // 桌面 UA 可见。切换 = 销毁重建 WebView (UA 只在创建期生效),
-                    // 同步保留 cookie (CookieManager 全局共享) 与当前 URL
-                    IconButton(
-                        onClick = {
-                            desktopUa = !desktopUa
-                            uaSwitchReload++   // 触发 JwWebView 重建 (UA 创建期生效)
-                        },
-                        enabled = webViewRef != null
-                    ) {
-                        // 图标随状态切换: 当前手机 UA → 显示 Computer (点了变桌面);
-                        // 当前桌面 UA → 显示 PhoneAndroid (点了回手机)
-                        Icon(
-                            if (desktopUa) Icons.Outlined.PhoneAndroid else Icons.Outlined.Computer,
-                            contentDescription = stringResource(
-                                if (desktopUa) R.string.jw_toggle_mobile_ua
-                                else R.string.jw_toggle_desktop_ua
+                    if (!editingUrl) {
+                        // #18: 部分门户 (UCAS SEP 等) 手机 UA 下不显示"个人课表"入口,
+                        // 桌面 UA 可见。切换 = 销毁重建 WebView (UA 只在创建期生效),
+                        // 同步保留 cookie (CookieManager 全局共享) 与当前 URL
+                        IconButton(
+                            onClick = {
+                                desktopUa = !desktopUa
+                                uaSwitchReload++   // 触发 JwWebView 重建 (UA 创建期生效)
+                            },
+                            enabled = webViewRef != null
+                        ) {
+                            // 图标随状态切换: 当前手机 UA → 显示 Computer (点了变桌面);
+                            // 当前桌面 UA → 显示 PhoneAndroid (点了回手机)
+                            Icon(
+                                if (desktopUa) Icons.Outlined.PhoneAndroid else Icons.Outlined.Computer,
+                                contentDescription = stringResource(
+                                    if (desktopUa) R.string.jw_toggle_mobile_ua
+                                    else R.string.jw_toggle_desktop_ua
+                                )
                             )
-                        )
-                    }
-                    IconButton(
-                        onClick = { webViewRef?.reload() },
-                        enabled = webViewRef != null
-                    ) {
-                        Icon(
-                            Icons.Outlined.Refresh,
-                            contentDescription = stringResource(R.string.jw_refresh)
-                        )
+                        }
+                        IconButton(
+                            onClick = { webViewRef?.reload() },
+                            enabled = webViewRef != null
+                        ) {
+                            Icon(
+                                Icons.Outlined.Refresh,
+                                contentDescription = stringResource(R.string.jw_refresh)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

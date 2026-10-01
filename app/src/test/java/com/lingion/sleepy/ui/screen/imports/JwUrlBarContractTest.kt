@@ -47,4 +47,17 @@ class JwUrlBarContractTest {
         assertTrue(screen.contains("(uri.scheme == \"http\" || uri.scheme == \"https\")"))
         assertTrue(screen.contains("loadUrl(normalized)"))
     }
+
+    @Test
+    fun screen_seeds_edit_draft_from_live_url_and_exits_edit_before_back() {
+        assertTrue(screen.contains("urlDraft = currentUrl"))
+        assertTrue(screen.contains("if (editingUrl) editingUrl = false else onBack()"))
+    }
+
+    @Test
+    fun screen_hides_secondary_actions_while_editing_to_preserve_url_field_width() {
+        assertTrue(screen.contains("if (!editingUrl) {"))
+        assertTrue(screen.contains("desktopUa = !desktopUa"))
+        assertTrue(screen.contains("webViewRef?.reload()"))
+    }
 }
