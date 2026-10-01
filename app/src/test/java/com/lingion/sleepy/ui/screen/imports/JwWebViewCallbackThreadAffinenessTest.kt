@@ -172,4 +172,22 @@ val userDir = System.getProperty("user.dir") ?: ""
             "view.settings"
         )
     }
+
+    @Test
+    fun doUpdateVisitedHistory_doesNotReadViewUrl() {
+        assertNoOffendingCalls(
+            "doUpdateVisitedHistory",
+            Regex("""\bview\.url\b|\bwebView\.url\b"""),
+            "view.url (use the callback url parameter)"
+        )
+    }
+
+    @Test
+    fun doUpdateVisitedHistory_doesNotReadViewSettings() {
+        assertNoOffendingCalls(
+            "doUpdateVisitedHistory",
+            Regex("""\bview\.settings\b|\bview\.getSettings\b|\bwebView\.(settings|getSettings)\b"""),
+            "view.settings"
+        )
+    }
 }
