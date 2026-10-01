@@ -581,6 +581,10 @@
     <string name="jw_fetch_timeout">抓取超时：教务服务器长时间无响应，请检查网络后重试</string>
     <string name="jw_fetch_no_courses">抓取成功但未解析到课程：请确认页面已显示本学期课表且学期选择正确</string>
     <string name="jw_refresh">刷新当前页面</string>
+    <string name="jw_edit_url">编辑当前网址</string>
+    <string name="jw_url_submit">访问网址</string>
+    <string name="jw_url_hint">输入网址</string>
+    <string name="jw_url_invalid">请输入有效的 HTTP 或 HTTPS 网址</string>
     <string name="jw_toggle_desktop_ua">切换桌面版网页</string>
     <string name="jw_toggle_mobile_ua">切换手机版网页</string>
 

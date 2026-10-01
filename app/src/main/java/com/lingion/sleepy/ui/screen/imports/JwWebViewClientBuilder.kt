@@ -43,12 +43,14 @@ object JwWebViewClientBuilder {
      *                    后注入 viewport 覆盖 JS (钉布局宽 1024px, 触发 Bootstrap
      *                    桌面分支 — UA 字符串本身对布局零影响)。
      * @param onPageFinished onPageFinished 回调。
+     * @param onUrlChanged 每次 WebView 导航历史更新时收到真实 URL。
      */
     fun build(
         webView: WebView,
         school: JwSchoolInfo,
         desktopMode: Boolean = false,
         onPageFinished: (String?) -> Unit = {},
+        onUrlChanged: (String?) -> Unit = {},
     ): WebViewClient {
         // 主线程读: settings.userAgentString 是 main-thread-only API, 只能在工厂期一次捕获。
         val userAgent = webView.settings.userAgentString
@@ -65,7 +67,7 @@ object JwWebViewClientBuilder {
         // 布局宽度恒为手机屏宽, Bootstrap @media(min-width:980px) 永不命中 → 页面零变化。
         // 全协议注入后: 桌面 UA + 1024px 视口 = 响应式门户真正切桌面分支。
         val desktopViewport = desktopMode
-        return JwWebViewClientImpl(interceptors, ctx, schoolHost, desktopViewport, onPageFinished)
+        return JwWebViewClientImpl(interceptors, ctx, schoolHost, desktopViewport, onPageFinished, onUrlChanged)
     }
 
     /**
@@ -97,6 +99,7 @@ private class JwWebViewClientImpl(
     private val schoolHost: String,
     private val desktopViewport: Boolean,
     private val onPageFinished: (String?) -> Unit,
+    private val onUrlChanged: (String?) -> Unit,
 ) : WebViewClient() {
 
     override fun shouldInterceptRequest(
@@ -125,6 +128,7 @@ private class JwWebViewClientImpl(
 
     override fun onPageFinished(view: WebView?, url: String?) {
         onPageFinished(url)
+        onUrlChanged(url)
         // issue #18 PCUA 修复 → 2026-09-13 扩全协议: 桌面模式 → 页面加载完后注入
         // viewport 覆盖, 把 layout viewport 钉到 1024px 触发 @media (min-width: 980px)
         // 桌面分支 (响应式门户侧栏展开)。UA 字符串对响应式布局零影响, viewport 是
@@ -138,5 +142,9 @@ private class JwWebViewClientImpl(
                 view.evaluateJavascript(DESKTOP_VIEWPORT_JS, null)
             }, 300)
         }
+    }
+
+    override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+        onUrlChanged(url)
     }
 }

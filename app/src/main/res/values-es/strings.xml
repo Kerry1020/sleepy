@@ -469,6 +469,10 @@
     <string name="jw_import_page">Importar esta página</string>
     <string name="jw_fetch_timeout">Tiempo de espera agotado: el servidor no respondió durante mucho tiempo. Verifique su red y reintente</string>
     <string name="jw_fetch_no_courses">Se obtuvo correctamente pero no se encontraron cursos: asegúrese de que la página muestre el horario del semestre actual y que el semestre sea correcto</string>
+    <string name="jw_edit_url">Editar la URL actual</string>
+    <string name="jw_url_submit">Abrir URL</string>
+    <string name="jw_url_hint">Introducir URL</string>
+    <string name="jw_url_invalid">Introduce una URL HTTP o HTTPS válida</string>
     <string name="jw_refresh">Refresh</string>
     <string name="jw_toggle_desktop_ua">Cambiar a la versión de escritorio del sitio</string>
     <string name="jw_toggle_mobile_ua">Cambiar a la versión móvil del sitio</string>
