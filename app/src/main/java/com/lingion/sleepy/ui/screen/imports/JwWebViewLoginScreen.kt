@@ -694,8 +694,8 @@ private fun JwWebView(
 
                 }
                 JwDiagnosticSession.resetSession()
-        evaluateJavascript(DIAGNOSTIC_NETWORK_INSTALL_JS, null)
-        webViewClient = JwWebViewClientBuilder.build(
+                evaluateJavascript(DIAGNOSTIC_NETWORK_INSTALL_JS, null)
+                webViewClient = JwWebViewClientBuilder.build(
                     webView = this,
                     school = school,
                     desktopMode = desktopUa,
