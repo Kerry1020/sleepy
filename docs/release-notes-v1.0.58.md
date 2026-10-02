@@ -1,6 +1,6 @@
 # Sleepy v1.0.58
 
-> Full data migration, system calendar export, browser-style URL editing, and 346-school coverage.
+> Full data migration, system calendar export, browser-style URL editing, and 347-school coverage.
 
 ## What's New
 
@@ -51,6 +51,10 @@ The Anhui Second Medical College entry was switched to the portal page (`ehall.a
 
 The Zhejiang University of Finance and Economics entry now points to the student SSO page (`/sso/driotlogin`). The previously listed `login_slogin.html` page is reserved for teachers; students who opened it were bounced back to the login screen in a loop.
 
+### Hangzhou City University (HZCU) support
+
+Hangzhou City University is now covered (346 → 347 schools). The entry uses the dedicated SSO entrance (`ijw.hzcu.edu.cn/sso/ddlogin`); the generic academic-system login page lacks the app-integration callback and would loop back to the login screen. The verified schedule capture (16 courses) parses with zero parser changes. Thanks to WestGu for the detailed capture package in issue #90, and to the maintainers of shangkeschedule, Xu-Jack11/MySchedule, and LanternCX/HZCUCourseChoose for cross-repository corroboration.
+
 ### Anhui Second Medical College (ahyz) support
 
 Full wisedu protocol adaptation for Anhui Second Medical College. Compatible with their SFSY field (indicates current semester via a boolean flag in the term API). Falls back to the first term row when the term list has a single entry and no explicit current marker.
@@ -97,7 +101,7 @@ A "Live update test" button appears below the Fluid Cloud switch when the switch
 
 ### Reference index
 
-- **Issues:** #58 (ZUFE student SSO entry corrected; fix cherry-picked into this release from its branch) and #59 (distinct debug package identity, delivered by PR #68).
+- **Issues:** #58 (ZUFE student SSO entry corrected; fix cherry-picked into this release from its branch), #59 (distinct debug package identity, delivered by PR #68), and #90 (HZCU admission; capture package by WestGu).
 - **Pull requests:** #63 (full-data migration backup export/import), #89 and #87 (AHYZ portal entry and Anhui Second Medical College integration), #88 (long-URL cursor scrolling), #86 (Wisedu semester detection via the SFSY field), #81 (MJTNC chaoxing timetable parsing), #80, #67, and #66 (Xiaomi Super Island restoration line), #74 (live-update test button and settings/battery routing), #84 (widget 3-day window anchored at the nearest busy day), #82 (undo capsule overlap on narrow screens), #85 (unified period-header column width), #73 (table-header font auto-sizing without truncation), #78 (centered course names inside wrapped cards), #79 (widget preview images restored, first contribution by @Cold577), #75 (widget background follows the current theme), #83 (system calendar export and grid laboratory features), and #72 (Windows test source paths, external contribution by @jim139129). Repository and maintenance line: #68 (debug package identity), #65 (miuiWidget declarations removed), #77 (machine paths removed from tests and fixtures), #69 (FAQ and LLM index refresh), #64 (tag-derived version and release workflow), #70 (main history repair), #76 (contributor branch and PR workflow docs), and #60 (commit gating and CI workflows).
 - **Reference policy:** the references above come from commits merged into `main` in this range, verified against GitHub pull-request records. Changes without an explicit reference are listed by behavior and protocol only; no PR or issue number is fabricated.
 
@@ -110,21 +114,21 @@ A "Live update test" button appears below the Fluid Cloud switch when the switch
 
 ## Verification
 
-- Tests: `./gradlew :app:testDebugUnitTest` — 2,419 tests, 0 failures, 0 errors.
+- Tests: `./gradlew :app:testDebugUnitTest` — 2,421 tests, 0 failures, 0 errors.
 - Lint: `./gradlew :app:lintDebug` — 489 warnings, 27 hints, 0 errors.
 - Build: `./gradlew :app:assembleRelease` — successful; `versionName 1.0.58`, `versionCode 10058`.
 - APK SHA-256:
-  - arm64-v8a: `e5d339adcf42fabbe1f5fa728946ccb427e0dbfb26552660e32bf5d2486a87ea` (3,788,153 bytes)
-  - armeabi-v7a: `67488eae1f13d338a48c58c597ea1d4a953d59509ce0870c55a44d8e396731c6` (3,785,461 bytes)
-  - x86_64: `ef16334e675db0d3b6197f8cdd744107fb227b42ce1cc1ae255b5b020b014dcc` (3,787,259 bytes)
-  - universal: `f748ef7676f41e0bd84619e39239f8f2aa4f5b0aa31a1437a4048f57aa98154f` (3,886,089 bytes)
-- Baseline: `v1.0.57` tag (`220fdd38`) through `696f13bd`; 33 commits.
+  - arm64-v8a: `cc528486a55e3cb531a2744cdaf3c562fdccc4116e23496962d8e5899490c4de` (3,790,269 bytes)
+  - armeabi-v7a: `6187cc4dad183f741296e073542b0468bfba8329ee708293d774015c360c0043` (3,787,577 bytes)
+  - x86_64: `8391b9135e08593a7a8afd1ff5b0b0fa7001050b6554f53e306bb40a9860802b` (3,789,375 bytes)
+  - universal: `100ca5323d87e9e502dc29b62242887c79e0443930bd863a26c010bde7bc76a3` (3,888,205 bytes)
+- Baseline: `v1.0.57` tag (`220fdd38`) through `81d17e34`; 37 commits.
 
 ---
 
 # Sleepy v1.0.58
 
-> 全量迁移备份、系统日历导出、浏览器式网址栏、346 所学校覆盖。
+> 全量迁移备份、系统日历导出、浏览器式网址栏、347 所学校覆盖。
 
 ## 新增功能
 
@@ -175,6 +179,10 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 
 浙江财经大学条目改为学生统一认证入口（`/sso/driotlogin`）。原先指向的 `login_slogin.html` 页面仅供教师使用，学生打开会被弹回登录页形成死循环。
 
+### 浙大城市学院（HZCU）支持
+
+浙大城市学院现已收录（346 → 347 所）。条目使用 SSO 专用入口（`ijw.hzcu.edu.cn/sso/ddlogin`）；教务通用登录页缺少应用集成回调，会弹回登录页死循环。实测课表采集（16 门课）解析零改动。感谢 WestGu 在 issue #90 提交的详细采集包，感谢 shangkeschedule、Xu-Jack11/MySchedule、LanternCX/HZCUCourseChoose 维护者的跨仓互证。
+
 ### 安徽第二医学院（ahyz）支持
 
 安徽第二医学院 wisedu 协议完整适配。兼容其 SFSY 字段（学期 API 中以布尔值标记当前学期）。当学期列表唯一且无显式当前标记时，安全回退取首行。
@@ -221,7 +229,7 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 
 ### 引用索引
 
-- **Issues：** #58（浙财大学生统一认证入口修正，修复自其分支 cherry-pick 进本版）、#59（debug 包独立身份，由 PR #68 落地）。
+- **Issues：** #58（浙财大学生统一认证入口修正，修复自其分支 cherry-pick 进本版）、#59（debug 包独立身份，由 PR #68 落地）、#90（浙大城市学院收录，采集包来自 WestGu）。
 - **Pull requests：** #63（全量迁移备份导出/导入）、#89 和 #87（AHYZ 门户入口与安徽第二医学院适配）、#88（长网址光标横向跟随）、#86（Wisedu 学期识别兼容 SFSY 字段）、#81（闽江师范超星课表解析）、#80、#67、#66（小米超级岛恢复线）、#74（流体云实测按钮与设置/电池优化跳转）、#84（小组件 3 日窗锚定最近有课日）、#82（窄屏撤回胶囊不重叠）、#85（表头列统一卡宽）、#73（表头字号自适应不截断）、#78（换行课程名盒内居中）、#79（小组件选择器预览图恢复，外部首次贡献者 @Cold577）、#75（小组件底色跟随主题）、#83（系统日历导出与网格实验室功能），以及 #72（Windows 测试源路径，外部贡献者 @jim139129）。仓库与维护线：#68（debug 包身份规范）、#65（摘除 miuiWidget 声明）、#77（清理测试与 fixture 中的机器路径）、#69（FAQ 与 LLM 索引刷新）、#64（版本 tag 派生与发布工作流）、#70（main 历史修复）、#76（贡献者分支与 PR 操作文档）、#60（提交门禁与 CI 工作流）。
 - **引用原则：** 上述引用均来自本范围内合入 `main` 的提交，并对照 GitHub Pull Request 记录逐一核实。没有明确 PR/Issue 编号的改动只按实际行为和协议列出，不臆造编号。
 
@@ -234,12 +242,12 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 
 ## 验证
 
-- 单测：`./gradlew :app:testDebugUnitTest` — 2,419 个测试，0 失败，0 错误。
+- 单测：`./gradlew :app:testDebugUnitTest` — 2,421 个测试，0 失败，0 错误。
 - lint：`./gradlew :app:lintDebug` — 489 条 warning、27 条 hint、0 error。
 - 构建：`./gradlew :app:assembleRelease` — 成功；`versionName 1.0.58`、`versionCode 10058`。
 - APK SHA-256：
-  - arm64-v8a：`e5d339adcf42fabbe1f5fa728946ccb427e0dbfb26552660e32bf5d2486a87ea`（3,788,153 字节）
-  - armeabi-v7a：`67488eae1f13d338a48c58c597ea1d4a953d59509ce0870c55a44d8e396731c6`（3,785,461 字节）
-  - x86_64：`ef16334e675db0d3b6197f8cdd744107fb227b42ce1cc1ae255b5b020b014dcc`（3,787,259 字节）
-  - universal：`f748ef7676f41e0bd84619e39239f8f2aa4f5b0aa31a1437a4048f57aa98154f`（3,886,089 字节）
-- 基线：v1.0.57 tag（`220fdd38`）至 `696f13bd`；33 个提交。
+  - arm64-v8a：`cc528486a55e3cb531a2744cdaf3c562fdccc4116e23496962d8e5899490c4de`（3,790,269 字节）
+  - armeabi-v7a：`6187cc4dad183f741296e073542b0468bfba8329ee708293d774015c360c0043`（3,787,577 字节）
+  - x86_64：`8391b9135e08593a7a8afd1ff5b0b0fa7001050b6554f53e306bb40a9860802b`（3,789,375 字节）
+  - universal：`100ca5323d87e9e502dc29b62242887c79e0443930bd863a26c010bde7bc76a3`（3,888,205 字节）
+- 基线：v1.0.57 tag（`220fdd38`）至 `81d17e34`；37 个提交。
