@@ -540,6 +540,13 @@ private val perSchoolEntries: List<PerSchoolEntry> = listOf(
     PerSchoolEntry(
         "school-four-school-jw", "四校教务协议交叉验证（2026-09）",
         "NWUPL: dream2333/NWUPL-Pure-EMS (间接协议旁证)\nLIXIN: classic EAMS 采集形态（未复制代码）\nKMUST: linling-zy/kust-schedule (间接协议旁证, Apache-2.0)\nNUIT: 3056810551/nuit-class-schedule (直接字段旁证, 未复制代码)"
+    ),
+    PerSchoolEntry(
+        "school-hzcu", "浙大城市学院 HZCU",
+        "用户采集包实锤 zf_new 协议 (新正方 zftal-ui-v5 裸 /kbcx/ 路径, SSO /sso/ddlogin 专用入口, issue #90)\n" +
+            "qiqqqqq517/shangkeschedule (Apache-2.0, 该校 zhengfang_new 条目互证)\n" +
+            "Xu-Jack11/MySchedule (MIT, 同端点直接旁证)\n" +
+            "LanternCX/HZCUCourseChoose (MIT, 选课端点旁证)"
     )
 )
 

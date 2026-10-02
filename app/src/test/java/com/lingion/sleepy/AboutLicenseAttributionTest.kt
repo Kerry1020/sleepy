@@ -116,6 +116,10 @@ class AboutLicenseAttributionTest {
         Attribution("Crazioker/agency", ""),
         // 广东医科大学 GDMU (用户采集包确认 zf_new 协议, 无外部学生仓库)
         Attribution("GDMU", ""),
+        // 浙大城市学院 HZCU (issue #90, 用户采集包确认 zf_new 协议 + SSO 专用入口, 2026-10)
+        Attribution("HZCU", ""),
+        Attribution("Xu-Jack11/MySchedule", ""),
+        Attribution("LanternCX/HZCUCourseChoose", ""),
         // 长沙理工大学 CSUST
         Attribution("zHElEARN/CSUSTKit", ""),
         Attribution("CreaMakers/EduSpider", ""),

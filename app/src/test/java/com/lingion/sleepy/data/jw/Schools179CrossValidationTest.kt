@@ -179,7 +179,8 @@ class Schools179CrossValidationTest {
         // 2026-09-15 收录西南交通大学(YETHAN, 用户采集包) → 338; 广西农业职业技术大学(zf_new, 用户实测导入通过) → 339
         // 2026-09-16 收录新疆大学(研究生 xju_post, Gwork 族, 用户报 URL) → 340
         // 341 existing entries + four newly verified schools.
-        assertEquals(346, entries().size)
+        // 2026-10-02 收录浙大城市学院(zf_new, issue #90 WestGu 采集包, SSO /sso/ddlogin 入口) → 347
+        assertEquals(347, entries().size)
     }
 
     @Test
