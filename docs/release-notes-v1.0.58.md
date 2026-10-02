@@ -83,6 +83,10 @@ Header font ranges from 11 sp to 16 sp, driven by the measured card height. The 
 
 When a course name wraps to two lines inside a course card, each line is now horizontally centered within the card instead of left-aligned. Affects both normal and conflict cards.
 
+### Widget drag-to-place crash fixed
+
+On some launchers (including EMUI and ColorOS), long-pressing a widget in the picker and dragging it to the home screen showed a transparent preview, and releasing the finger crashed the launcher instead of placing the widget. Tapping to add still worked. Provider declarations returned to the v1.0.56 shape: the lock-screen category was removed (some launchers cannot build a stable drop placeholder for it), the static preview layout is declared again alongside the preview image, and the runtime preview registration introduced for Android 15 pickers was withdrawn. Widgets behave exactly as in v1.0.56 during add-to-home.
+
 ### Widget preview images restored
 
 Static widget preview images are used for launcher previews. Runtime bitmap container previews that caused launcher display issues were removed.
@@ -114,15 +118,15 @@ A "Live update test" button appears below the Fluid Cloud switch when the switch
 
 ## Verification
 
-- Tests: `./gradlew :app:testDebugUnitTest` — 2,421 tests, 0 failures, 0 errors.
-- Lint: `./gradlew :app:lintDebug` — 489 warnings, 27 hints, 0 errors.
+- Tests: `./gradlew :app:testDebugUnitTest` — 2,420 tests, 0 failures, 0 errors.
+- Lint: `./gradlew :app:lintDebug` — 488 warnings, 27 hints, 0 errors.
 - Build: `./gradlew :app:assembleRelease` — successful; `versionName 1.0.58`, `versionCode 10058`.
 - APK SHA-256:
-  - arm64-v8a: `cc528486a55e3cb531a2744cdaf3c562fdccc4116e23496962d8e5899490c4de` (3,790,269 bytes)
-  - armeabi-v7a: `6187cc4dad183f741296e073542b0468bfba8329ee708293d774015c360c0043` (3,787,577 bytes)
-  - x86_64: `8391b9135e08593a7a8afd1ff5b0b0fa7001050b6554f53e306bb40a9860802b` (3,789,375 bytes)
-  - universal: `100ca5323d87e9e502dc29b62242887c79e0443930bd863a26c010bde7bc76a3` (3,888,205 bytes)
-- Baseline: `v1.0.57` tag (`220fdd38`) through `81d17e34`; 37 commits.
+  - arm64-v8a: `b173cf22d45b608c8cf19625da2616ec01620f79418d98cddfe9970be51f4a8c` (3,790,393 bytes)
+  - armeabi-v7a: `7f8b43f48e1a6d508b82f290a6bf46f4af8882f54ef0cb32fbac21577b6d11ed` (3,787,701 bytes)
+  - x86_64: `84eb9ed5819cf3881523ea5f236378387543ba7d4fbc612f0f85315253ae8781` (3,789,499 bytes)
+  - universal: `c37062fa89c1fa3fc014a6681cec1fb86d20b312272c5899642b87019c3bf1b8` (3,888,329 bytes)
+- Baseline: `v1.0.57` tag (`220fdd38`) through `f09b641b`; 38 commits.
 
 ---
 
@@ -211,6 +215,10 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 
 课程名在卡片内换行时，各行现在水平居中，不再左对齐。影响普通课程卡和冲突课程卡。
 
+### 小组件拖放崩溃修复
+
+在部分启动器（含 EMUI、ColorOS）上，从组件选择器长按拖拽小组件到桌面时预览全透明，手松开放置时启动器直接崩溃，组件未能添加；单击添加不受影响。Provider 声明回到 v1.0.56 形态：移除锁屏类别（部分启动器无法为其建立稳定的落位占位），恢复静态预览布局声明，撤回面向 Android 15 选择器的运行时预览注册。添加到桌面的行为与 v1.0.56 完全一致。
+
 ### 小组件预览图恢复
 
 桌面启动器预览使用静态预览图。移除了此前导致启动器显示异常的运行时位图容器预览。
@@ -242,12 +250,12 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 
 ## 验证
 
-- 单测：`./gradlew :app:testDebugUnitTest` — 2,421 个测试，0 失败，0 错误。
-- lint：`./gradlew :app:lintDebug` — 489 条 warning、27 条 hint、0 error。
+- 单测：`./gradlew :app:testDebugUnitTest` — 2,420 个测试，0 失败，0 错误。
+- lint：`./gradlew :app:lintDebug` — 488 条 warning、27 条 hint、0 error。
 - 构建：`./gradlew :app:assembleRelease` — 成功；`versionName 1.0.58`、`versionCode 10058`。
 - APK SHA-256：
-  - arm64-v8a：`cc528486a55e3cb531a2744cdaf3c562fdccc4116e23496962d8e5899490c4de`（3,790,269 字节）
-  - armeabi-v7a：`6187cc4dad183f741296e073542b0468bfba8329ee708293d774015c360c0043`（3,787,577 字节）
-  - x86_64：`8391b9135e08593a7a8afd1ff5b0b0fa7001050b6554f53e306bb40a9860802b`（3,789,375 字节）
-  - universal：`100ca5323d87e9e502dc29b62242887c79e0443930bd863a26c010bde7bc76a3`（3,888,205 字节）
-- 基线：v1.0.57 tag（`220fdd38`）至 `81d17e34`；37 个提交。
+  - arm64-v8a：`b173cf22d45b608c8cf19625da2616ec01620f79418d98cddfe9970be51f4a8c`（3,790,393 字节）
+  - armeabi-v7a：`7f8b43f48e1a6d508b82f290a6bf46f4af8882f54ef0cb32fbac21577b6d11ed`（3,787,701 字节）
+  - x86_64：`84eb9ed5819cf3881523ea5f236378387543ba7d4fbc612f0f85315253ae8781`（3,789,499 字节）
+  - universal：`c37062fa89c1fa3fc014a6681cec1fb86d20b312272c5899642b87019c3bf1b8`（3,888,329 字节）
+- 基线：v1.0.57 tag（`220fdd38`）至 `f09b641b`；38 个提交。
