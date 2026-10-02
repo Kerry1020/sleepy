@@ -565,5 +565,9 @@ private val contributorEntries: List<ContributorEntry> = listOf(
     ContributorEntry(
         "contributor-LzBsA", "LzBsA", "GitHub @LzBsA",
         "已合并 PR #30 燕山大学研究生平台 boya_pp 协议适配 (贡献者保留式 merge) — 全部提交与讨论记录见 github.com/LzBsA"
+    ),
+    ContributorEntry(
+        "contributor-Cold577", "冷冷冷 Cold577", "GitHub @Cold577",
+        "已合并 PR #79 小组件选择器预览图修复 (运行时位图容器 previewLayout 摘除) — 全部提交与讨论记录见 github.com/Cold577"
     )
 )

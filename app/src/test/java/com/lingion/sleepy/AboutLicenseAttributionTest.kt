@@ -298,6 +298,7 @@ class AboutLicenseAttributionTest {
 
     private val CONTRIBUTOR_ATTRIBUTIONS = listOf(
         Attribution("jim139129", "github.com/jim139129"),
+        Attribution("Cold577", "github.com/Cold577"),
     )
 
     /** 贡献者区块标题, 6 语各有一条 string。 */
@@ -377,6 +378,10 @@ class AboutLicenseAttributionTest {
         assertTrue(
             "LicenseScreen.kt 贡献者条目必须含 GitHub 主页链接 github.com/jim139129",
             region.contains("github.com/jim139129")
+        )
+        assertTrue(
+            "LicenseScreen.kt 贡献者条目必须含 GitHub 主页链接 github.com/Cold577",
+            region.contains("github.com/Cold577")
         )
         for (t in listOf("PR ×", "issue ×", "#13", "#16", "#29", "#8 ", "#9 ")) {
             assertFalse(
