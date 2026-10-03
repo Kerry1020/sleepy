@@ -122,11 +122,11 @@ A "Live update test" button appears below the Fluid Cloud switch when the switch
 - Lint: `./gradlew :app:lintDebug` — 488 warnings, 27 hints, 0 errors.
 - Build: `./gradlew :app:assembleRelease` — successful; `versionName 1.0.58`, `versionCode 10058`.
 - APK SHA-256:
-  - arm64-v8a: `b173cf22d45b608c8cf19625da2616ec01620f79418d98cddfe9970be51f4a8c` (3,790,393 bytes)
-  - armeabi-v7a: `7f8b43f48e1a6d508b82f290a6bf46f4af8882f54ef0cb32fbac21577b6d11ed` (3,787,701 bytes)
-  - x86_64: `84eb9ed5819cf3881523ea5f236378387543ba7d4fbc612f0f85315253ae8781` (3,789,499 bytes)
-  - universal: `c37062fa89c1fa3fc014a6681cec1fb86d20b312272c5899642b87019c3bf1b8` (3,888,329 bytes)
-- Baseline: `v1.0.57` tag (`220fdd38`) through `f09b641b`; 38 commits.
+  - arm64-v8a: `84a80cdcedbf31ebfeaa61a3b5c5cf7a98430e2615a882dc0f16a05cecf30492` (3,790,393 bytes)
+  - armeabi-v7a: `663b53dd70fa5c4960173159539d48aa3675bedbbf9cf08828563eae997c7867` (3,787,701 bytes)
+  - x86_64: `a4667457f576cd5b7891f249c7a0dc66849dfe4882c82ffd3e0811c7f14b0dac` (3,789,499 bytes)
+  - universal: `328e7153f785f5fc60eefa284ce81634937977713aa2459e387e9a0a23518d3e` (3,888,329 bytes)
+- Baseline: `v1.0.57` tag (`220fdd38`) through `5ffa3201`; 34 commits.
 
 ---
 
@@ -254,8 +254,8 @@ Wisedu 院校返回 HTTP 403/401（会话过期）时，页面显示"登录已�
 - lint：`./gradlew :app:lintDebug` — 488 条 warning、27 条 hint、0 error。
 - 构建：`./gradlew :app:assembleRelease` — 成功；`versionName 1.0.58`、`versionCode 10058`。
 - APK SHA-256：
-  - arm64-v8a：`b173cf22d45b608c8cf19625da2616ec01620f79418d98cddfe9970be51f4a8c`（3,790,393 字节）
-  - armeabi-v7a：`7f8b43f48e1a6d508b82f290a6bf46f4af8882f54ef0cb32fbac21577b6d11ed`（3,787,701 字节）
-  - x86_64：`84eb9ed5819cf3881523ea5f236378387543ba7d4fbc612f0f85315253ae8781`（3,789,499 字节）
-  - universal：`c37062fa89c1fa3fc014a6681cec1fb86d20b312272c5899642b87019c3bf1b8`（3,888,329 字节）
-- 基线：v1.0.57 tag（`220fdd38`）至 `f09b641b`；38 个提交。
+  - arm64-v8a：`84a80cdcedbf31ebfeaa61a3b5c5cf7a98430e2615a882dc0f16a05cecf30492`（3,790,393 字节）
+  - armeabi-v7a：`663b53dd70fa5c4960173159539d48aa3675bedbbf9cf08828563eae997c7867`（3,787,701 字节）
+  - x86_64：`a4667457f576cd5b7891f249c7a0dc66849dfe4882c82ffd3e0811c7f14b0dac`（3,789,499 字节）
+  - universal：`328e7153f785f5fc60eefa284ce81634937977713aa2459e387e9a0a23518d3e`（3,888,329 字节）
+- 基线：v1.0.57 tag（`220fdd38`）至 `5ffa3201`；34 个提交。
