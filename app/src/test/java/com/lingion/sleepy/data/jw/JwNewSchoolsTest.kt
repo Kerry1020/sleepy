@@ -23,7 +23,15 @@ class JwNewSchoolsTest {
     /** 走生产同源解析路径(companion static, T12 方案 A) */
     private fun parse(text: String): List<JwSchoolInfo> = JwImportViewModel.parseSchoolsJson(text)
 
-    // -------- 1. 临沂大学条目存在性 + 字段正确性 --------
+    // -------- 1. 学校条目存在性 + 字段正确性 --------
+
+    @Test
+    fun `Zhejiang University of Finance and Economics uses student SSO login`() {
+        val schools = parse(loadSchoolsJson())
+        val zufe = schools.single { it.name == "浙江财经大学" }
+        assertEquals("学生入口必须使用统一身份认证地址", "http://jwxt.zufe.edu.cn/sso/driotlogin", zufe.url)
+        assertEquals("浙江财经大学仍使用新版正方协议", "zf_new", zufe.type)
+    }
 
     @Test
     fun `Linyi University is the single zf_new entry under sortKey L`() {
