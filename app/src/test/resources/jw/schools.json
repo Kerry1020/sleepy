@@ -2615,6 +2615,17 @@
   },
   {
     "sortKey": "Z",
+    "name": "浙大城市学院",
+    "url": "http://ijw.hzcu.edu.cn/sso/ddlogin",
+    "type": "zf_new",
+    "aliases": [
+      "hzcu",
+      "ZUCC"
+    ],
+    "sortKeyFull": "zhedachengshixueyuan"
+  },
+  {
+    "sortKey": "Z",
     "name": "浙大宁波理工学院",
     "url": "http://jwxt.nit.net.cn/default2.aspx",
     "type": "zf",
@@ -2627,7 +2638,7 @@
   {
     "sortKey": "Z",
     "name": "浙江财经大学",
-    "url": "http://jwxt.zufe.edu.cn/jwglxt/xtgl/login_slogin.html",
+    "url": "http://jwxt.zufe.edu.cn/sso/driotlogin",
     "type": "zf_new",
     "aliases": [],
     "sortKeyFull": "zhejiangcaijingdaxue"

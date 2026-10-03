@@ -97,6 +97,19 @@ class JwNewZfParserTest {
         assertCourses("kblist_single_double_weeks", courses)
     }
 
+    /**
+     * 浙大城市学院 HZCU (issue #90, WestGu 采集包 2026-10-01) 真实 kbList 报文:
+     * zf_new zftal-ui-v5 裸 /kbcx/ 路径, xqj 为字符串数字, zcd 逗号分段非连续周,
+     * 教师名已脱敏。16 课原始行 → 节次×周次全展开, 校验 HZCU 形态完整落库。
+     */
+    @Test
+    fun `json kblist hzcu issue90 real capture full expansion`() {
+        val src = readFixture("kblist_hzcu_issue90.json")
+        val courses = JwNewZfParser(src).generateCourseList()
+        assertCourses("kblist_hzcu_issue90", courses)
+        assertEquals("HZCU 16 课原始行应展开为 29 条", 29, courses.size)
+    }
+
     @Test
     fun `json kblist bitmap and extremes parses 32bit`() {
         val src = readFixture("kblist_bitmap_and_extremes.json")

@@ -89,23 +89,24 @@ class WidgetInfoXmlContractTest {
         }
     }
 
-    /** Provider descriptions must use the long localized text, not the short picker label. */
+    /** Provider description 回归锁: 保持 v1.0.56 短 label (2026-10-03 拖放崩溃回退)。
+     *  v1.0.57 曾换长 description, 与 keyguard 同批回退。 */
     @Test
-    fun `every provider uses its localized widget description resource`() {
+    fun `every provider uses its short label as description resource`() {
         val expected = mapOf(
-            "today_widget_info" to "widget_today_description",
-            "today_small_widget_info" to "widget_today_small_description",
-            "today_wide_widget_info" to "widget_today_wide_description",
-            "twoday_widget_info" to "widget_twoday_description",
-            "twoday_small_widget_info" to "widget_twoday_small_description",
-            "twoday_wide_widget_info" to "widget_twoday_wide_description",
-            "week_list_widget_info" to "widget_week_list_description",
-            "week_list_small_widget_info" to "widget_week_list_small_description",
-            "weeklist_wide_widget_info" to "widget_week_list_wide_description",
-            "week_view_widget_info" to "widget_week_view_description",
-            "week_view_small_widget_info" to "widget_week_view_small_description",
-            "week_grid_widget_info" to "widget_week_grid_description",
-            "week_grid_small_widget_info" to "widget_week_grid_small_description"
+            "today_widget_info" to "widget_today_label",
+            "today_small_widget_info" to "widget_today_small_label",
+            "today_wide_widget_info" to "widget_today_wide_label",
+            "twoday_widget_info" to "widget_twoday_label",
+            "twoday_small_widget_info" to "widget_twoday_small_label",
+            "twoday_wide_widget_info" to "widget_twoday_wide_label",
+            "week_list_widget_info" to "widget_week_list_label",
+            "week_list_small_widget_info" to "widget_week_list_small_label",
+            "weeklist_wide_widget_info" to "widget_week_list_wide_label",
+            "week_view_widget_info" to "widget_week_view_label",
+            "week_view_small_widget_info" to "widget_week_view_small_label",
+            "week_grid_widget_info" to "widget_week_grid_label",
+            "week_grid_small_widget_info" to "widget_week_grid_small_label"
         )
         expected.forEach { (xmlName, stringName) ->
             val description = infoXmls.getValue(xmlName).getAttribute("android:description")
@@ -243,17 +244,38 @@ class WidgetInfoXmlContractTest {
         }
     }
 
-    /** 小米要求初始根节点使用 background 系统 id，并填满 widget 容器。 */
+    /** 初始位图根节点回归锁: ImageView @+id/widget_bitmap (v1.0.56 形态)。
+     *  历史: v1.0.57 f4a377cb 改用 FrameLayout(@android:id/background +
+     *  splash_background) 试图兼容小米 AppVault, 后续 53e8ca1f 摘掉小米
+     *  全部声明后该根节点已无存在理由; 2026-10-03 拖放崩溃排查顺手
+     *  回到裸 ImageView, 减少 OEM 启动器对根布局的解释路径。 */
     @Test
-    fun `bitmap widget container has Xiaomi compatible root background`() {
+    fun `bitmap widget container is a bare ImageView (v1 0 56 shape)`() {
         val file = sequenceOf(
             File("app/src/main/res/layout/widget_bitmap_container.xml"),
             File("src/main/res/layout/widget_bitmap_container.xml")
         ).first { it.isFile }
         val root = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement
-        assertEquals("@android:id/background", root.getAttribute("android:id"))
+        assertEquals("ImageView", root.tagName)
+        assertEquals("@+id/widget_bitmap", root.getAttribute("android:id"))
         assertEquals("match_parent", root.getAttribute("android:layout_width"))
         assertEquals("match_parent", root.getAttribute("android:layout_height"))
+    }
+
+    /** previewLayout 回归锁 (v1.0.56 形态): 全部 13 info XML 必须保留 previewLayout。
+     *  历史: v1.0.58 范围 PR#79 2554919f 摘除 previewLayout 后, Android 15+
+     *  OEM 选取器(华为 EMUI/ColorOS 拖拽预览走 API35 setWidgetPreview 路径)
+     *  拖拽预览变透明 + 放置崩 (用户 Mate30 实锤)。回退后 v1.0.56 previewLayout
+     *  作为静态回退链必须重新存在; 锁 previewLayout 为必填属性。 */
+    @Test
+    fun `every info xml retains previewLayout as static fallback`() {
+        infoXmls.forEach { (name, root) ->
+            val preview = root.getAttribute("android:previewLayout")
+            assertTrue(
+                "$name must keep android:previewLayout (rollback guard for 2026-10-03 drag-to-place crash), got \"$preview\"",
+                preview.startsWith("@layout/")
+            )
+        }
     }
 
     /**
@@ -288,22 +310,22 @@ class WidgetInfoXmlContractTest {
     }
 
     /**
-     * 锁屏(负一屏/keyguard)类别: 全部变体声明 home_screen|keyguard。
-     * 用户 2026-09-19 明示指令: 锁屏小组件直接做, 课程信息是否上锁屏由用户自己选。
-     * Android 12+ 的锁屏承载由系统/Launcher 决定, keyguard 类别是可被识别的前提。
+     * 纯桌面类别回归锁: 全部变体只声明 home_screen (v1.0.56 形态)。
+     * 历史: v1.0.57 曾扩 home_screen|keyguard (ce9f91e5), 部分厂商启动器
+     * (ColorOS/EMUI) 在拖拽落位阶段对 keyguard 类别无法建立稳定占位 →
+     * 拖拽无实体 + 手松开启动器崩溃 (2026-10-03 回退定法, 先例
+     * fix/widget-launcher-placement 6fbd16da)。恢复 keyguard 前必须先真机
+     * 拖放全链验证。
      */
     @Test
-    fun `every info xml declares home_screen and keyguard categories`() {
+    fun `every info xml declares home_screen only - no keyguard`() {
         infoXmls.forEach { (name, root) ->
             val category = root.getAttribute("android:widgetCategory")
             val parts = category.split('|', ',', ' ').filter { it.isNotBlank() }
-            assertTrue(
-                "$name must declare android:widgetCategory containing home_screen, got \"$category\"",
-                parts.contains("home_screen")
-            )
-            assertTrue(
-                "$name must declare android:widgetCategory containing keyguard, got \"$category\"",
-                parts.contains("keyguard")
+            assertEquals(
+                "$name must declare widgetCategory exactly home_screen (keyguard breaks OEM drag-to-place; see 2026-10-03 rollback), got \"$category\"",
+                listOf("home_screen"),
+                parts
             )
         }
     }
