@@ -64,7 +64,11 @@ jobs:
             curl -s -o /dev/null -w 'http=%{http_code} time=%{time_total}\n' --max-time 15 "$u" || echo 'curl-error'
           done
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --info --stacktrace 2>&1 | tail -400
+        # pipefail 必须显式开: 无它时 gradle 非零退出码被 tail 吞掉, 红测试假绿
+        # (issue #98: preview_skips_ink_guard 红但 android-unit-test 绿, 差点带病合入)
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --info --stacktrace 2>&1 | tee gradle-unit-test.log | tail -400
 
   android-lint:
     # 信息性检查, 不在 ruleset 必需检查清单里 (仓库有历史 lint 基线, 存量 error 未清零)
