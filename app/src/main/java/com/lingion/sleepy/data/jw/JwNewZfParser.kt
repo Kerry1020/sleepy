@@ -257,7 +257,11 @@ class JwNewZfParser(source: String) : JwParser(source) {
      *   2. 两位补零: "0102" / "0304" — 偶数长度纯数字串, 每 2 位一节
      *   3. 多段逗号: "3-4,6-7" — 每段独立, 拆多条课程
      */
-    private fun parseSectionRanges(s: String): List<Pair<Int, Int>> {
+    private fun parseSectionRanges(s0: String): List<Pair<Int, Int>> {
+        // 惠州学院 HZU (2026-10-04 采集包): jc 字段带「节」后缀 ("8-9节"/"10-12节"),
+        // 部分老版本教务直接把 jc 喂进来 (jcs 缺失时 firstStr 落到 jc)。先剥后缀再分段,
+        // 否则 "2节".toIntOrNull() = null → 整条范围串静默丢弃 → 0 课 → 误报「解析结果为空」。
+        val s = s0.replace("节", "").trim()
         if (s.isBlank()) return emptyList()
         val out = mutableListOf<Pair<Int, Int>>()
         s.split(",", "，", ";", "；").forEach { seg ->

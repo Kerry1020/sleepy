@@ -1033,6 +1033,16 @@
   },
   {
     "sortKey": "H",
+    "name": "惠州学院",
+    "url": "https://jwxt.hzu.edu.cn/",
+    "type": "zf_new",
+    "aliases": [
+      "hzu"
+    ],
+    "sortKeyFull": "huizhouxueyuan"
+  },
+  {
+    "sortKey": "H",
     "name": "华南理工大学",
     "url": "http://xsjw2018.jw.scut.edu.cn/",
     "type": "zf_new",

@@ -180,7 +180,8 @@ class Schools179CrossValidationTest {
         // 2026-09-16 收录新疆大学(研究生 xju_post, Gwork 族, 用户报 URL) → 340
         // 341 existing entries + four newly verified schools.
         // 2026-10-02 收录浙大城市学院(zf_new, issue #90 WestGu 采集包, SSO /sso/ddlogin 入口) → 347
-        assertEquals(347, entries().size)
+        // 2026-10-04 收录惠州学院(zf_new, 用户采集包 sleepy-adapt-1004, jwxt.hzu.edu.cn) → 348
+        assertEquals(348, entries().size)
     }
 
     @Test
