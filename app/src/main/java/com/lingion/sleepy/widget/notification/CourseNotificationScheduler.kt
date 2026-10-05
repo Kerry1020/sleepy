@@ -202,6 +202,11 @@ class CourseNotificationScheduler(private val context: Context) {
 
         android.util.Log.d("CourseScheduler", "table=${table?.id}:${table?.name} start=${table?.startDate} today=$today dow=$dow")
         if (table == null) return
+        // 法定节假日不上课前闹钟 (调休补班日不在 holidays 内, 正常排)
+        if (com.lingion.sleepy.util.HolidayManager.isPublicHoliday(app, today, table.id)) {
+            android.util.Log.d("CourseScheduler", "holiday skip before-class alarms today=$today")
+            return
+        }
         val week = DateUtils.currentWeek(table.startDate, today)
         val allCourses = SleepyApp.get().repository.getCoursesByDayOnce(table.id, dow)
         // 防呆: 学期范围外不上课前闹钟(钳制周数会误匹配第 1 周的课)
@@ -285,6 +290,8 @@ class CourseNotificationScheduler(private val context: Context) {
         val minutes = AppPrefs.getBeforeClassMinutes(app)
         val today = LocalDate.now()
         val table = resolveCurrentTable() ?: return
+        // 法定节假日不弹流体云 (调休补班日照常)
+        if (com.lingion.sleepy.util.HolidayManager.isPublicHoliday(app, today, table.id)) return
         val dow = com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(app, table.id, today)
         val week = DateUtils.currentWeek(table.startDate, today)
         // 防呆: 学期范围外不触发流体云(钳制周数会误匹配第 1 周的课)
@@ -422,7 +429,12 @@ private suspend fun sendScheduleSummary(
     )
     val dayOfMonth = targetDate.dayOfMonth
 
-    val courses = if (table == null) {
+    // 法定节假日 (且非该表调休上课日) → 按无课处理: 摘要/预告不再谎报当天课表。
+    // 调休补班日不在 holidays 集内, 不受影响; 网络数据缺失时 isPublicHoliday=false 保守保留提醒。
+    val holidaySkip = table != null && com.lingion.sleepy.util.HolidayManager
+        .isPublicHoliday(context.applicationContext, targetDate, table.id)
+
+    val courses = if (table == null || holidaySkip) {
         emptyList()
     } else {
         val week = DateUtils.currentWeek(table.startDate, targetDate)

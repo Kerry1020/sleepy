@@ -126,6 +126,10 @@ class ClassDndScheduler(private val context: Context) {
             if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
                 != DateUtils.SemesterStatus.IN_RANGE
             ) return@flatMap emptyList()
+            // 法定节假日不上课 → 无 DND 边界 (调休补班日不在 holidays 内, 正常排)
+            if (com.lingion.sleepy.util.HolidayManager.isPublicHoliday(context, date, table.id)) {
+                return@flatMap emptyList()
+            }
             val week = DateUtils.currentWeek(table.startDate, date)
             val dow = com.lingion.sleepy.widget.HolidayTransferHelper
                 .effectiveDayOfWeek(context, table.id, date)
