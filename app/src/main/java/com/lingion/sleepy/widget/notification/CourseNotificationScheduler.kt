@@ -35,9 +35,39 @@ import java.time.ZoneId
  * 课程通知调度器 — 支持每日提醒 + 每节课前提醒。
  *
  * 每日提醒：在用户指定时间发送今日课程摘要。
- * 课前提醒：每天凌晨调度当天每节课前 N 分钟的通知。
+ * 课前提醒：预排未来 7 天(含今天)每节课前 N 分钟的精确闹钟；
+ *          每天 00:05 全窗口重同步(先取消后重排, 幂等)。
+ *
+ * 可测性: 闹钟落地/数据读取/环境值全部走注入接口
+ * ([BeforeClassAlarmPort]/[BeforeClassDataSource]/[BeforeClassEnv]),
+ * JVM 单测用 internal 构造器注入 fake, 不需要 Android 运行时。
  */
-class CourseNotificationScheduler(private val context: Context) {
+class CourseNotificationScheduler private constructor(
+    private val rawContext: Context?,
+    private val alarmPort: BeforeClassAlarmPort,
+    private val env: BeforeClassEnv,
+    private val dataSource: BeforeClassDataSource
+) {
+
+    /** 生产构造器 — 外部调用方(SleepyApp/各 Receiver)保持 `CourseNotificationScheduler(context)` 不变。 */
+    constructor(context: Context) : this(
+        context.applicationContext,
+        AndroidBeforeClassAlarmPort(context.applicationContext),
+        AndroidBeforeClassEnv(context.applicationContext),
+        AndroidBeforeClassDataSource(context.applicationContext)
+    )
+
+    /** JVM 单测构造器 — 注入 fake 闹钟端口/环境/数据源; 只有课前闹钟链路函数可用。 */
+    internal constructor(
+        alarmPort: BeforeClassAlarmPort,
+        env: BeforeClassEnv,
+        dataSource: BeforeClassDataSource
+    ) : this(null, alarmPort, env, dataSource)
+
+    private val context: Context
+        get() = requireNotNull(rawContext) {
+            "CourseNotificationScheduler: 测试构造器未注入 Context, 不可调用依赖 Android 运行时的方法"
+        }
 
     companion object {
         const val CHANNEL_DAILY = "sleepy_daily"
@@ -49,6 +79,9 @@ class CourseNotificationScheduler(private val context: Context) {
         private const val RC_BEFORE_CLASS_SCHEDULER = 2
         private const val RC_TOMORROW_DAILY = 3
         private const val RC_BEFORE_CLASS_BASE = 100 // + courseId offset
+
+        /** 课前闹钟预排窗口: 今天起 7 个日历天(参照 shiguang WIDGET_SYNC_DAYS=7) */
+        internal const val BEFORE_CLASS_WINDOW_DAYS = 7
 
         // Notification IDs
         const val NOTIFY_DAILY = 1001
@@ -95,15 +128,9 @@ class CourseNotificationScheduler(private val context: Context) {
 
         // 课前提醒的 request code 用 RC_BEFORE_CLASS_BASE + course.id（稳定唯一）。
         // 取消时遍历数据库里所有课程 id，逐个 cancel，不再依赖写死的 50 上限。
-        // 改为 suspend + withContext(IO) 查库，不再在主线程 runBlocking 阻塞导致 ANR。
-        val courseIds = withContext(Dispatchers.IO) {
-            runCatching {
-                SleepyApp.get().repository.let { repo ->
-                    repo.getAllTables().flatMap { repo.getCourses(it.id) }
-                }.map { it.id.toInt() }
-            }.getOrDefault(emptyList())
-        }
-        cancelCourseAlarmIds(alarmManager, courseIds)
+        // 改为 suspend + 注入数据源查库，不再在主线程 runBlocking 阻塞导致 ANR。
+        val courseIds = runCatching { dataSource.allCourseIds() }.getOrDefault(emptyList())
+        courseIds.forEach { alarmPort.cancel(RC_BEFORE_CLASS_BASE + it.toInt()) }
     }
 
     /**
@@ -113,16 +140,7 @@ class CourseNotificationScheduler(private val context: Context) {
      * 故删除前捕获 id 列表、删除后调这里显式清理孤儿闹钟。
      */
     fun cancelCourseAlarms(courseIds: List<Long>) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        cancelCourseAlarmIds(alarmManager, courseIds.map { it.toInt() })
-    }
-
-    private fun cancelCourseAlarmIds(alarmManager: AlarmManager, courseIds: List<Int>) {
-        for (cid in courseIds) {
-            try {
-                alarmManager.cancel(buildPendingIntent(RC_BEFORE_CLASS_BASE + cid, BeforeClassNotifyReceiver::class.java))
-            } catch (_: Exception) {}
-        }
+        courseIds.forEach { alarmPort.cancel(RC_BEFORE_CLASS_BASE + it.toInt()) }
     }
 
     // ==================== Daily ====================
@@ -172,7 +190,7 @@ class CourseNotificationScheduler(private val context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pending = buildPendingIntent(RC_BEFORE_CLASS_SCHEDULER, BeforeClassScheduleReceiver::class.java)
 
-        // Schedule at 00:05 every day
+        // Schedule at 00:05 every day — 每日全窗口重同步(幂等: 先取消后重排)
         val target = LocalTime.of(0, 5)
         var next = LocalDate.now().atTime(target)
         if (LocalTime.now().isAfter(target)) next = next.plusDays(1)
@@ -180,93 +198,90 @@ class CourseNotificationScheduler(private val context: Context) {
 
         setRepeatingAlarm(alarmManager, epoch, AlarmManager.INTERVAL_DAY, pending)
 
-        // Also immediately schedule for today (in case app was opened after midnight)
+        // Also immediately schedule for the next 7 days (in case app was opened after midnight)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            scheduleTodayBeforeClassAlarms()
+            scheduleNext7DaysExactAlarms()
         }
     }
 
     /**
-     * Queries today's courses and schedules individual before-class alarms.
-     * Called by [BeforeClassScheduleReceiver] at midnight and by [scheduleBeforeClassDaily].
+     * 兼容入口 — 语义已升级为「未来 7 天全窗口重同步」(幂等)。
+     * 保留供 [BeforeClassScheduleReceiver](每日 00:05)与 debug 接收器调用。
      */
-    suspend fun scheduleTodayBeforeClassAlarms() {
-        val app = context.applicationContext
-        android.util.Log.d("CourseScheduler", "scheduleToday start enabled=${AppPrefs.isBeforeClassEnabled(app)} minutes=${AppPrefs.getBeforeClassMinutes(app)}")
-        if (!AppPrefs.isBeforeClassEnabled(app)) return
-        val minutes = AppPrefs.getBeforeClassMinutes(app)
-        val today = LocalDate.now()
-        val table = resolveCurrentTable()
-        val dow = com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(app, table?.id, today)
+    suspend fun scheduleTodayBeforeClassAlarms() = scheduleNext7DaysExactAlarms()
 
-
-        android.util.Log.d("CourseScheduler", "table=${table?.id}:${table?.name} start=${table?.startDate} today=$today dow=$dow")
-        if (table == null) return
-        val week = DateUtils.currentWeek(table.startDate, today)
-        val allCourses = SleepyApp.get().repository.getCoursesByDayOnce(table.id, dow)
-        // 防呆: 学期范围外不上课前闹钟(钳制周数会误匹配第 1 周的课)
-        if (DateUtils.semesterStatus(table.startDate, table.maxWeek, today) != DateUtils.SemesterStatus.IN_RANGE) return
-        val courses = allCourses.filter { it.inWeek(week) }
-        android.util.Log.d("CourseScheduler", "week=$week coursesAll=${allCourses.size} coursesInWeek=${courses.size}")
-
-        // Parse time nodes
+    /**
+     * 预排未来 7 个日历天(含今天)的课前精确闹钟 — 参照 shiguang
+     * CourseNotificationWorker 的 idempotent resync: 先取消窗口内旧槽位再重排,
+     * 重复调用不产生重复闹钟。
+     *
+     * requestCode = RC_BEFORE_CLASS_BASE + course.id(课程 id 稳定唯一),
+     * 同一门课每周重复时 PendingIntent 天然互相覆盖, 最终只保留未来最近一次触发。
+     * 学期范围外的天跳过(防呆: currentWeek 钳制会误匹配第 1 周的课)。
+     */
+    suspend fun scheduleNext7DaysExactAlarms() {
+        if (!env.isBeforeClassEnabled()) return
+        val table = dataSource.resolveCurrentTable() ?: return
+        val minutes = env.beforeClassMinutes()
+        val nowEpoch = env.nowEpochMs()
+        val today = env.todayDate()
         val nodes = TimeTableUtils.parseNodes(table.timeJson)
 
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val now = System.currentTimeMillis()
-
-        courses.forEachIndexed { index, course ->
-            // Get course start time
-            android.util.Log.d("CourseScheduler", "course index=$index id=${course.id} name=${course.courseName} ownTime=${course.ownTime} start=${course.startTime} node=${course.startNode}")
-            val startTimeStr = if (course.ownTime && course.startTime.isNotBlank()) {
-                course.startTime
-            } else {
-                nodes.find { it.node == course.startNode }?.let { String.format("%02d:%02d", it.start.hour, it.start.minute) }
-            } ?: run {
-                android.util.Log.w("CourseScheduler", "skip no start time course=${course.id}")
-                return@forEachIndexed
+        // 1) 枚举窗口内的天, 收集课程行(仅学期内的天)
+        val days = (0 until BEFORE_CLASS_WINDOW_DAYS).map { offset ->
+            val date = today.plusDays(offset.toLong())
+            if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
+                    != DateUtils.SemesterStatus.IN_RANGE
+            ) {
+                return@map date to emptyList()
             }
-            val parts = startTimeStr.split(":")
-            val h = parts.getOrNull(0)?.toIntOrNull()
-            val m = parts.getOrNull(1)?.toIntOrNull()
-            // 钳制：ownTime/startTime 可能是破损值（h≥24/m≥60），非法则跳过本节
-            if (h == null || m == null || h !in 0..23 || m !in 0..59) {
-                android.util.Log.w("CourseScheduler", "skip invalid time course=${course.id} time=$startTimeStr")
-                return@forEachIndexed
-            }
+            val week = DateUtils.currentWeek(table.startDate, date)
+            val dow = dataSource.effectiveDayOfWeek(table.id, date)
+            date to dataSource.coursesForDay(table.id, dow).filter { it.inWeek(week) }
+        }
 
-            val classStart = today.atTime(h, m)
-            val notifyTime = classStart.minusMinutes(minutes.toLong())
-            val epoch = notifyTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        // 2) 幂等清理: 取消窗口内全部课程行的旧闹钟(重复槽位一并覆盖)
+        days.flatMap { it.second }.forEach { course ->
+            alarmPort.cancel(RC_BEFORE_CLASS_BASE + course.id.toInt())
+        }
 
-            android.util.Log.d("CourseScheduler", "course=${course.id} start=$classStart notify=$notifyTime epoch=$epoch now=$now")
-            if (epoch <= now) {
-                android.util.Log.d("CourseScheduler", "skip past alarm course=${course.id}")
-                return@forEachIndexed
-            }
+        // 3) 逐天重排未来槽位; 同 courseId 保留最早的未来触发
+        //    (每周重复课共享 requestCode, 先到先得 = 最早未来一次, 天然去重)
+        val seenCourseIds = HashSet<Int>()
+        days.forEach { (date, courses) ->
+            courses.forEach { course ->
+                val startStr = if (course.ownTime && course.startTime.isNotBlank()) {
+                    course.startTime
+                } else {
+                    nodes.find { it.node == course.startNode }
+                        ?.let { String.format("%02d:%02d", it.start.hour, it.start.minute) }
+                } ?: return@forEach
+                val parts = startStr.split(":")
+                val h = parts.getOrNull(0)?.toIntOrNull()
+                val m = parts.getOrNull(1)?.toIntOrNull()
+                // 钳制：ownTime/startTime 可能是破损值（h≥24/m≥60），非法则跳过本节
+                if (h == null || m == null || h !in 0..23 || m !in 0..59) return@forEach
 
-            val intent = Intent(context, BeforeClassNotifyReceiver::class.java).apply {
-                putExtra("courseName", course.courseName)
-                putExtra("room", course.room)
-                putExtra("teacher", course.teacher)
-                putExtra("startTime", String.format("%02d:%02d", h, m))
-                putExtra("notifyEpoch", epoch)
-                putExtra("classEpoch", classStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            }
-            val pending = PendingIntent.getBroadcast(
-                context, RC_BEFORE_CLASS_BASE + course.id.toInt(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+                val classStart = date.atTime(h, m)
+                val notifyTime = classStart.minusMinutes(minutes.toLong())
+                val epoch = notifyTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                if (epoch <= nowEpoch) return@forEach // 已过触发点(或恰好到点, 由当日接收器兜底)
 
-            // Use exact alarm for precision, fall back to inexact on Android 12+ without grant
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                alarmManager.set(AlarmManager.RTC_WAKEUP, epoch, pending)
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, epoch, pending)
-            } else {
-                // API 21/22 (Android 5): setExactAndAllowWhileIdle 是 API 23+
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, epoch, pending)
+                val rc = RC_BEFORE_CLASS_BASE + course.id.toInt()
+                if (!seenCourseIds.add(rc)) return@forEach
+
+                alarmPort.setExact(
+                    requestCode = rc,
+                    epochMs = epoch,
+                    extras = mapOf(
+                        "courseName" to course.courseName,
+                        "room" to course.room,
+                        "teacher" to course.teacher,
+                        "startTime" to String.format("%02d:%02d", h, m),
+                        "notifyEpoch" to epoch,
+                        "classEpoch" to classStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    )
+                )
             }
         }
     }
@@ -368,6 +383,91 @@ class CourseNotificationScheduler(private val context: Context) {
 
     private suspend fun resolveCurrentTable(): TimeTableEntity? {
         return com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()
+    }
+}
+
+// ==================== 可注入端口(JVM 单测接缝) ====================
+
+/** 课前闹钟环境值 — prefs/时钟读取接缝。 */
+internal interface BeforeClassEnv {
+    fun isBeforeClassEnabled(): Boolean
+    fun beforeClassMinutes(): Int
+    fun nowEpochMs(): Long
+    fun todayDate(): LocalDate
+}
+
+/** 课前闹钟数据源 — 课表/课程查询接缝。 */
+internal interface BeforeClassDataSource {
+    suspend fun resolveCurrentTable(): TimeTableEntity?
+    suspend fun coursesForDay(tableId: Long, dayOfWeek: Int): List<CourseEntity>
+    suspend fun allCourseIds(): List<Long>
+    fun effectiveDayOfWeek(tableId: Long?, date: LocalDate): Int
+}
+
+/** 课前闹钟落地端口 — AlarmManager/PendingIntent 接缝; extras 语义与旧 Intent extras 一致。 */
+internal interface BeforeClassAlarmPort {
+    fun setExact(requestCode: Int, epochMs: Long, extras: Map<String, Any?>)
+    fun cancel(requestCode: Int)
+}
+
+internal class AndroidBeforeClassEnv(private val ctx: Context) : BeforeClassEnv {
+    override fun isBeforeClassEnabled(): Boolean = AppPrefs.isBeforeClassEnabled(ctx)
+    override fun beforeClassMinutes(): Int = AppPrefs.getBeforeClassMinutes(ctx)
+    override fun nowEpochMs(): Long = System.currentTimeMillis()
+    override fun todayDate(): LocalDate = LocalDate.now()
+}
+
+internal class AndroidBeforeClassDataSource(private val ctx: Context) : BeforeClassDataSource {
+    override suspend fun resolveCurrentTable(): TimeTableEntity? =
+        com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()
+
+    override suspend fun coursesForDay(tableId: Long, dayOfWeek: Int): List<CourseEntity> =
+        SleepyApp.get().repository.getCoursesByDayOnce(tableId, dayOfWeek)
+
+    override suspend fun allCourseIds(): List<Long> {
+        val repo = SleepyApp.get().repository
+        return repo.getAllTables().flatMap { repo.getCourses(it.id) }.map { it.id }
+    }
+
+    override fun effectiveDayOfWeek(tableId: Long?, date: LocalDate): Int =
+        com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(ctx, tableId, date)
+}
+
+internal class AndroidBeforeClassAlarmPort(private val ctx: Context) : BeforeClassAlarmPort {
+    private val alarmManager: AlarmManager
+        get() = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    override fun setExact(requestCode: Int, epochMs: Long, extras: Map<String, Any?>) {
+        val intent = Intent(ctx, BeforeClassNotifyReceiver::class.java).apply {
+            extras.forEach { (key, value) ->
+                when (value) {
+                    is String -> putExtra(key, value)
+                    is Long -> putExtra(key, value)
+                }
+            }
+        }
+        val pending = PendingIntent.getBroadcast(
+            ctx, requestCode, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // Use exact alarm for precision, fall back to inexact on Android 12+ without grant
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            // setExact 无权限会抛 SecurityException → 兜底非精确 set, 通知不丢只准度降级
+            runCatching { alarmManager.setExact(AlarmManager.RTC_WAKEUP, epochMs, pending) }
+                .onFailure { alarmManager.set(AlarmManager.RTC_WAKEUP, epochMs, pending) }
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, epochMs, pending)
+        }
+    }
+
+    override fun cancel(requestCode: Int) {
+        try {
+            val pending = PendingIntent.getBroadcast(
+                ctx, requestCode, Intent(ctx, BeforeClassNotifyReceiver::class.java),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            pending?.let { alarmManager.cancel(it) }
+        } catch (_: Exception) {}
     }
 }
 
