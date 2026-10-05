@@ -1,11 +1,7 @@
 package com.lingion.sleepy.ui.component
 
-import androidx.compose.foundation.layout.Arrangement
-import kotlin.math.max
-import kotlin.math.min
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -23,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.max
+import kotlin.math.min
 import com.lingion.sleepy.ui.theme.SleepyTextStyle
 import com.lingion.sleepy.util.AppPrefs
 import com.lingion.sleepy.util.PeriodHeaderFormatter
@@ -104,6 +102,65 @@ internal fun threeLineWidthDp(
     return with(density) { maxGroup.toDp() } + (2f * PERIOD_HEADER_CARD_PAD_DP * scale).dp
 }
 
+/**
+ * 老式表头列所需宽度(dp): 用户 2026-10-03 第二轮定稿 — dash 轴几何。
+ * 列内所有行的 dash (时间串 "08:00-09:35" 中间 "-") 落在同一 X, 标签同轴居中;
+ * 列宽 = 轴左最大延伸 + 轴右最大延伸 + pad×2 ("最宽的那一行, 余量也流出来")。
+ * 与 PeriodHeaderCellContent legacy 分支共享同一字号, 测量与渲染同源。
+ */
+internal fun legacyLineWidthDp(
+    slots: List<TimeSlot>,
+    headerStyle: String,
+    scale: Float,
+    measurer: androidx.compose.ui.text.TextMeasurer,
+    density: androidx.compose.ui.unit.Density,
+    showX: Boolean = false,
+): androidx.compose.ui.unit.Dp {
+    val timeStyle = headerTimeStyle(scale)
+    val labelStyle = headerLabelStyle(scale)
+    val rows = slots.filter { !it.isPlaceholder }.map { slot ->
+        val label = if (showX && slot.nodeStart == slot.nodeEnd) {
+            PeriodHeaderFormatter.fullLabel(slot.nodeStart, headerStyle)
+        } else {
+            PeriodHeaderFormatter.range(slot.nodeStart, slot.nodeEnd, headerStyle)
+        }
+        LegacyDashRowInk(
+            labelPx = measurer.measure(label, labelStyle).size.width.toFloat(),
+            timeLeftPx = measurer.measure(slot.displayStart, timeStyle).size.width.toFloat(),
+            dashPx = measurer.measure("-", timeStyle).size.width.toFloat(),
+            timeRightPx = measurer.measure(slot.displayEnd, timeStyle).size.width.toFloat(),
+        )
+    }
+    val geometry = legacyDashColumnPx(rows, padPx = 0f)
+    // + 卡片内边距 ×2 (PERIOD_HEADER_CARD_PAD_DP, 预览/网格/widget 同一常量), 乘 scale
+    return with(density) { geometry.columnWidthPx.toDp() } + (2f * PERIOD_HEADER_CARD_PAD_DP * scale).dp
+}
+
+/** 老式表头单行墨迹: 标签整宽 + 时间串三段 (start / dash / end, px 实测, 含行高)。 */
+internal fun legacyRowInk(
+    slot: TimeSlot,
+    label: String,
+    measurer: androidx.compose.ui.text.TextMeasurer,
+    scale: Float,
+): LegacyDashRowInk {
+    val timeStyle = headerTimeStyle(scale)
+    val labelStyle = headerLabelStyle(scale)
+    val labelM = measurer.measure(label, labelStyle)
+    val startM = measurer.measure(slot.displayStart, timeStyle)
+    val dashM = measurer.measure("-", timeStyle)
+    val endM = measurer.measure(slot.displayEnd, timeStyle)
+    return LegacyDashRowInk(
+        labelPx = labelM.size.width.toFloat(),
+        timeLeftPx = startM.size.width.toFloat(),
+        dashPx = dashM.size.width.toFloat(),
+        timeRightPx = endM.size.width.toFloat(),
+        // 行高取两行 union 用的实测值: label=标签行高, time=start 行高
+        // (dash/end 与 start 同字号同行, 行高一致; 单值代表整行)
+        labelHeightPx = labelM.size.height.toFloat(),
+        timeHeightPx = startM.size.height.toFloat(),
+    )
+}
+
 /** Shared by the real grid header and the settings preview. */
 @Composable
 fun PeriodHeaderCellContent(
@@ -116,6 +173,7 @@ fun PeriodHeaderCellContent(
     showXOverride: Boolean? = null,
     sharedFont: PeriodHeaderAdaptiveFont? = null,
     sharedPlacement: PeriodHeaderPlacement? = null,
+    sharedLegacyAxis: androidx.compose.ui.unit.Dp? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -128,11 +186,11 @@ fun PeriodHeaderCellContent(
     val timeStyle = headerTimeStyle(scale)
     val labelStyle = headerLabelStyle(scale)
 
-    // 三行模式: 内边距由卡片层统一负责 (SingleTimeHeadCell 3dp / 预览补 3dp),
-    // 这里不再叠加 — 双重 3dp 曾把墨迹矩形挤出卡片贴边 (margin 归零, 2026-09-27)。
-    // 旧版模式维持原根部 3dp 行为不变。
-    val contentModifier = if (layout == "three_line") modifier.fillMaxSize()
-    else modifier.fillMaxSize().padding((3f * scale).dp)
+    // 内边距由卡片层统一负责 (SingleTimeHeadCell 3dp / 预览补 3dp),
+    // 这里不再叠加 — 双重 3dp 曾把墨迹矩形挤出卡片贴边 (margin 归零, 2026-09-27);
+    // legacy 侧 2026-10-04 对齐三行式同口径: legacyLineWidthDp 返回值已含
+    // 2×pad, 卡片层 padding 就是唯一一层, 双层扣 6dp 即 legacy 墨迹溢出的根因。
+    val contentModifier = modifier.fillMaxSize()
     BoxWithConstraints(modifier = contentModifier) {
         if (layout == "three_line") {
             // 三行式悬挂 (hanging 模型):
@@ -263,28 +321,97 @@ fun PeriodHeaderCellContent(
                 }
             }
         } else {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            // Legacy 两行 (用户 2026-10-03 定稿 + 2026-10-03 续 union 垂直):
+            //   ① dash 轴对齐 + 完整时间串容纳 (上轮已修: 列宽按 start+dash+end 算);
+            //   ② 两行墨迹是一个整体矩形 — 卡片对这个整体做水平 + 垂直居中,
+            //      不是每行各自居中 (上轮 Arrangement.Center 居中粗放, 高不够
+            //      时两行互相挤叠的根因);
+            //   ③ 垂直永不重叠: 每行高度 = 该行字体行高;
+            //   ④ 高度不够 → 两行同比例缩小, 缩字优先于重叠 (minScale 钳底)。
+            //   sharedLegacyAxis 由网格侧按全列最紧约束解一次; 垂直解每卡就地做 —
+            //   字号基线/行高/卡高三条输入全列同源, 解出的 fontScale 天然一致。
+            val density = LocalDensity.current
+            val measurer = rememberTextMeasurer()
+            val rowInk = legacyRowInk(slot, label, measurer, scale)
+            val axisX = sharedLegacyAxis ?: with(density) {
+                maxOf(rowInk.labelPx / 2f, rowInk.timeLeftPx).toDp()
+            }
+            val vertical = legacyColumnVerticalFit(
+                rows = listOf(rowInk),
+                cardContentHeightPx = with(density) { maxHeight.toPx() },
+                // 用户原话 2026-10-04 (行间距不对): label 与 time 之间恒留 2dp×scale
+                // 语义间距, 缩字不压行距 — gap 优先被吞, 吞完才缩字。
+                rowGapPx = with(density) { (2f * scale).dp.toPx() },
+            )
+            // 字号按 fontScale 联动 — legacy 基准字号 (label 12sp/time 11sp, 与
+            // headerTimeStyle/headerLabelStyle 同源), 缩字时整体乘 fontScale:
+            // 行高与字号同比缩, 垂直解的 labelH/timeH 与真实渲染行高一致。
+            val baseFont = PeriodHeaderAdaptiveFont(
+                timeSize = PeriodHeaderAdaptiveFont.BASE_TIME_SP,
+                labelSize = PeriodHeaderAdaptiveFont.BASE_LABEL_SP,
+            )
+            val effectiveScale = scale * vertical.fontScale
+            val labelStyleScaled = adaptiveHeaderLabelStyle(effectiveScale, baseFont)
+            val timeStyleScaled = adaptiveHeaderTimeStyle(effectiveScale, baseFont)
+            val labelLeftDp = with(density) { (axisX.toPx() - rowInk.labelPx / 2f).toDp() }
+            // dash 字形中心坐轴 (与模型同口径): 串左缘 = 轴 − timeLeftPx − dashPx/2
+            // (2026-10-04 设备实锤漏 dashPx/2, dash 全列偏右半字宽)。
+            val timeLeftDp = with(density) {
+                (axisX.toPx() - rowInk.timeLeftPx - rowInk.dashPx / 2f).toDp()
+            }
+            val labelTopDp = with(density) { vertical.labelTopPx.toDp() }
+            val timeTopDp = with(density) { vertical.timeTopPx.toDp() }
+            // 两行都按 vertical 解绝对定位 (offset), 外层必须是 Box —
+            // 用 Column 会先按文字盒流式堆叠 (label 盒高 39px) 再叠 offset,
+            // time 行被凭空推下一个 label 高 (2026-10-04 设备实锤: 行距多 39px)。
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 第一行: 标签, 以 dash 轴水平居中 + union 包络垂直顶定位
                 Text(
                     text = label,
-                    style = labelStyle,
+                    style = labelStyleScaled,
                     color = colors.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Visible,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.offset(x = labelLeftDp, y = labelTopDp),
                 )
-                Text(
-                    text = slot.timeString,
-                    style = timeStyle,
-                    color = colors.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Visible,
-                )
+                // 第二行: 时间串, dash 在 axisX 上; 用一个 Box 让 start/dash/end 共享同一基线,
+                // 整体左缘 = timeLeftDp, 各子段按实测宽顺序排布 (不重叠, 不截断).
+                Box(modifier = Modifier.offset(x = timeLeftDp, y = timeTopDp)) {
+                    val startW = with(density) { rowInk.timeLeftPx.toDp() }
+                    val dashW = with(density) { rowInk.dashPx.toDp() }
+                    Text(
+                        text = slot.displayStart,
+                        style = timeStyleScaled,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.align(Alignment.CenterStart).width(startW),
+                    )
+                    Text(
+                        text = "-",
+                        style = timeStyleScaled,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.align(Alignment.CenterStart).offset(x = startW).width(dashW),
+                    )
+                    Text(
+                        text = slot.displayEnd,
+                        style = timeStyleScaled,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.align(Alignment.CenterStart).offset(x = startW + dashW),
+                    )
+                }
             }
         }
     }

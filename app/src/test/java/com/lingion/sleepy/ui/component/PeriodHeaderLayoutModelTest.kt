@@ -1,6 +1,7 @@
 package com.lingion.sleepy.ui.component
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -230,6 +231,219 @@ class PeriodHeaderAdaptiveFontTest {
     @Test
     fun legacy_column_width_is_the_widest_measured_row() {
         assertEquals(52f, legacyColumnWidthDp(listOf(48f, 52f, 45f)), 0.001f)
+    }
+
+}
+
+/**
+ * 用户 2026-10-03 第二轮定稿 (老式表头 dash 对齐):
+ *   - 对齐轴 = 时间串 "08:00-09:35" 中间那个 "-" 的中点 (非字符串整体中点 —
+ *     start/end 宽度不等, 串居中≠dash对齐, 上轮"更不齐"的根因);
+ *   - 整列所有行的 dash 落在同一 X; 标签也以该轴居中;
+ *   - 列宽 = 左右两侧最大延伸 + pad×2 — 最宽行的墨迹两侧同样流出 pad 余量。
+ */
+class LegacyDashColumnGeometryTest {
+
+    private val pad = 3f
+
+    // A: 对称短行; B: 长标签 + 右半长
+    // 显式传 dashPx=0 (默认), 让 rowB 的"完整时间串"=start+end=20+45=65; 真实渲染
+    // dashPx>0 由 legacyRowInk 测得, 见 column_width_accommodates_full_time_string_*
+    private val rowA = LegacyDashRowInk(labelPx = 16f, timeLeftPx = 30f, dashPx = 0f, timeRightPx = 30f)
+    private val rowB = LegacyDashRowInk(labelPx = 80f, timeLeftPx = 20f, dashPx = 0f, timeRightPx = 45f)
+    private val rows = listOf(rowA, rowB)
+
+    @Test
+    fun every_row_dash_falls_on_shared_dash_center() {
+        val g = legacyDashColumnPx(rows, pad)
+        for ((i, row) in rows.withIndex()) {
+            // 渲染事实 (2026-10-04 设备实锤): dash Text 盒以 startW 为偏移起点,
+            // dash 字形中心 = timeLeft + timeLeftPx + dashPx/2 (盒左缘 + 半 dash 宽)。
+            // 旧断言把 dash 盒左缘当轴心 → 实机 dash 全列偏右 dashPx/2 ≈ 4px。
+            assertEquals(
+                "行$i dash 中心应落在共享轴上",
+                g.dashCenterX, g.placements[i].timeLeft + row.timeLeftPx + row.dashPx / 2f, 0.001f,
+            )
+        }
+    }
+
+    @Test
+    fun label_centers_on_shared_dash_axis() {
+        val g = legacyDashColumnPx(rows, pad)
+        for ((i, row) in rows.withIndex()) {
+            assertEquals(
+                "行$i 标签应以 dash 轴居中",
+                g.dashCenterX, g.placements[i].labelLeft + row.labelPx / 2f, 0.001f,
+            )
+        }
+    }
+
+    @Test
+    fun widest_row_keeps_padding_margin_on_both_sides() {
+        val g = legacyDashColumnPx(rows, pad)
+        // 左侧最大延伸 = max(80/2, 30, 20) = 40 → dash 轴 = pad + 40
+        assertEquals(pad + 40f, g.dashCenterX, 0.001f)
+        // 渲染事实: dash 坐在轴上, 时间串左缘 = 轴 − timeLeftPx →
+        // 轴右侧只需要 max(label/2, dashPx + timeRightPx)。
+        // 旧断言用整串宽 timeLeft+dash+right 当右延伸 = timeLeftPx 双算,
+        // 卡片凭空宽出一个"开始时间"宽 (2026-10-04 设备实锤右侧空白 25dp)。
+        // 右侧 = max(40, 0+45) = 45 → 列宽 = 40 + 45 + 2*pad = 91
+        assertEquals(40f + 45f + 2f * pad, g.columnWidthPx, 0.001f)
+        // 用户原话: "要让最宽的那一行，余量也流出来" — B 行左墨迹缘=pad, 右墨迹缘=列宽-pad
+        assertEquals(pad, g.placements[1].labelLeft, 0.001f)
+        assertEquals(
+            g.columnWidthPx - pad,
+            g.dashCenterX + rowB.dashPx + rowB.timeRightPx,
+            0.001f,
+        )
+    }
+
+    @Test
+    fun all_ink_stays_inside_column() {
+        val g = legacyDashColumnPx(rows, pad)
+        for ((i, row) in rows.withIndex()) {
+            val p = g.placements[i]
+            assertTrue("行$i 标签越左", p.labelLeft >= -0.001f)
+            assertTrue("行$i 时间串越左", p.timeLeft >= -0.001f)
+            assertTrue("行$i 标签越右", p.labelLeft + row.labelPx <= g.columnWidthPx + 0.001f)
+            assertTrue(
+                "行$i 时间串越右",
+                p.timeLeft + row.timeLeftPx + row.timeRightPx <= g.columnWidthPx + 0.001f,
+            )
+        }
+    }
+
+    @Test
+    fun empty_column_returns_zero_geometry() {
+        val g = legacyDashColumnPx(emptyList(), pad)
+        assertEquals(0f, g.columnWidthPx, 0.001f)
+        assertTrue(g.placements.isEmpty())
+    }
+
+    // 上轮(2026-10-03)真翻车: timeString 被拆成 (start, end) 传给模型,
+    // 中间那个 "-" 字符本身的宽度丢了 → 列宽 < 完整时间串, 渲染时尾部被 .clip 截掉.
+    // 修: 模型必须收三段 (start, dash, end), 用完整串宽做右延伸.
+    @Test
+    fun column_width_accommodates_full_time_string_including_dash() {
+        val rows = listOf(
+            LegacyDashRowInk(labelPx = 16f, timeLeftPx = 30f, dashPx = 6f, timeRightPx = 30f),
+            LegacyDashRowInk(labelPx = 60f, timeLeftPx = 32f, dashPx = 6f, timeRightPx = 45f),
+        )
+        val g = legacyDashColumnPx(rows, pad)
+        // 渲染事实 (2026-10-04 设备实锤 dash 比标签中心偏右 dashPx/2):
+        // dash 字形中心 = timeLeft + timeLeftPx + dashPx/2, 与标签中心同轴 →
+        // 左延伸 = max(label/2, timeLeft + dashPx/2) = max(30, 33, 35) = 35;
+        // 右延伸 = max(label/2, dashPx/2 + timeRight) = max(30, 48) = 48;
+        // 列宽 = 35 + 48 + 2*pad = 95
+        assertEquals(pad + 35f, g.dashCenterX, 0.001f)
+        assertEquals(35f + 48f + 2f * pad, g.columnWidthPx, 0.001f)
+        // 每行 dash 字形中心都落在共享轴上
+        for ((i, row) in rows.withIndex()) {
+            val p = g.placements[i]
+            assertEquals(
+                "行$i dash 字形中心应=共享轴",
+                g.dashCenterX, p.timeLeft + row.timeLeftPx + row.dashPx / 2f, 0.001f,
+            )
+        }
+        // 第 2 行时间串完整右缘应 <= 列宽 (含 pad)
+        val p = g.placements[1]
+        val fullTimeRight = p.timeLeft + rows[1].timeLeftPx + rows[1].dashPx + rows[1].timeRightPx
+        assertTrue("完整时间串右缘必须不越列: $fullTimeRight vs ${g.columnWidthPx}",
+            fullTimeRight <= g.columnWidthPx + 0.001f)
+    }
+}
+
+/**
+ * 用户 2026-10-03 定稿续 (union 包络垂直):
+ *   ① 两行墨迹是一个整体矩形 — 卡片对这个整体做水平 + 垂直居中,
+ *      不是每行各自居中;
+ *   ② 垂直永不重叠 — 每行高度 ≥ 该行字体行高;
+ *   ③ 高度不够 → 两行同比例缩小, 不许压缩行距或让文字重叠。
+ */
+class LegacyDashVerticalFitTest {
+
+    // 实测行高: label 14sp×density / time 13sp×density 的典型形状
+    private val row = LegacyDashRowInk(
+        labelPx = 20f, timeLeftPx = 30f, dashPx = 6f, timeRightPx = 30f,
+        labelHeightPx = 14f, timeHeightPx = 13f,
+    )
+
+    @Test
+    fun tall_card_centers_union_vertically() {
+        // 卡高 54 → union 27 → 上下余量 (54-27)/2 = 13.5
+        val fit = legacyVerticalFit(row, cardContentHeightPx = 54f)
+        assertEquals(13.5f, fit.labelTopPx, 0.001f)
+        assertEquals(13.5f + 14f, fit.timeTopPx, 0.001f)
+        assertEquals(1f, fit.fontScale, 0.001f)
+    }
+
+    @Test
+    fun short_card_shrinks_both_lines_by_same_factor() {
+        // 卡高 20 < union 27 → scale = 20/27 = 0.74
+        val fit = legacyVerticalFit(row, cardContentHeightPx = 20f)
+        assertEquals(0f, fit.labelTopPx, 0.001f)  // 顶对齐
+        assertEquals(14f * (20f / 27f), fit.timeTopPx, 0.001f)  // labelTop + scaled labelH
+        assertEquals(20f / 27f, fit.fontScale, 0.01f)
+    }
+
+    @Test
+    fun column_uses_widest_row_for_scale() {
+        // 列级: 第 2 行 label 更宽
+        val rows = listOf(
+            LegacyDashRowInk(16f, 30f, 6f, 30f, 14f, 13f),
+            LegacyDashRowInk(80f, 30f, 6f, 30f, 14f, 13f),  // 最宽
+        )
+        // max labelH = 14, max timeH = 13 → union = 27
+        val col = legacyColumnVerticalFit(rows, cardContentHeightPx = 27f)
+        assertEquals(1f, col.fontScale, 0.001f)  // 刚好 fit
+        assertEquals(0f, col.labelTopPx, 0.001f)  // 刚好居中
+    }
+
+    @Test
+    fun column_shrinks_to_tightest_row() {
+        val rows = listOf(
+            LegacyDashRowInk(16f, 30f, 6f, 30f, 14f, 13f),
+            LegacyDashRowInk(80f, 30f, 6f, 30f, 14f, 13f),
+        )
+        // card 20 < union 27 → scale = 20/27
+        val col = legacyColumnVerticalFit(rows, cardContentHeightPx = 20f)
+        assertEquals(20f / 27f, col.fontScale, 0.01f)
+    }
+
+    // 行间语义间距 (用户原话 2026-10-04: 行间距不对) —
+    // label 与 time 之间恒留一个 gap (px), 缩字不压行距,
+    // 高度不够时 gap 优先被吃掉 (gap ≤ 缩字前的总余量)。
+    @Test
+    fun row_gap_holds_when_card_fits() {
+        // cardH 54, union 27, gap 4 → 可用 = 54-27-4 = 23, 上下均分 = 11.5
+        val col = legacyColumnVerticalFit(
+            listOf(row), cardContentHeightPx = 54f, rowGapPx = 4f,
+        )
+        assertEquals(1f, col.fontScale, 0.001f)
+        assertEquals(11.5f, col.labelTopPx, 0.001f)
+        assertEquals(11.5f + 14f + 4f, col.timeTopPx, 0.001f)
+    }
+
+    @Test
+    fun row_gap_shrinks_before_text_when_card_tight() {
+        // cardH 30, union 27, gap 4 → 余量 -1: gap 被吞 1px 剩 3,
+        // 字号仍 1.0; 居中余量 (30-27-3)/2 = 0 → labelTop=0。
+        val col = legacyColumnVerticalFit(
+            listOf(row), cardContentHeightPx = 30f, rowGapPx = 4f,
+        )
+        assertEquals(1f, col.fontScale, 0.001f)
+        assertEquals(0f, col.labelTopPx, 0.001f)
+        assertEquals(0f + 14f + 3f, col.timeTopPx, 0.001f)
+    }
+
+    @Test
+    fun row_gap_zero_when_card_too_short_even_after_gap_shrink() {
+        // cardH 20, union 27, gap 4 → 余量 -11 → 先吞 gap 至 0, 再触发缩字
+        // 等效缩字按 union=27, 卡 20 → scale = 20/27 (用户定稿不压行距)
+        val col = legacyColumnVerticalFit(
+            listOf(row), cardContentHeightPx = 20f, rowGapPx = 4f,
+        )
+        assertEquals(20f / 27f, col.fontScale, 0.001f)
     }
 }
 

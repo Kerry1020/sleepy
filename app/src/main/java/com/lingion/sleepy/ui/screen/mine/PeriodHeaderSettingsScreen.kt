@@ -49,6 +49,7 @@ import com.lingion.sleepy.ui.component.PeriodHeaderAdaptiveFont
 import com.lingion.sleepy.ui.component.PeriodHeaderCellContent
 import com.lingion.sleepy.ui.component.SegmentedSwitcher
 import com.lingion.sleepy.ui.component.TimeSlot
+import com.lingion.sleepy.ui.component.legacyLineWidthDp
 import com.lingion.sleepy.ui.component.threeLineWidthDp
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.util.AppPrefs
@@ -179,16 +180,28 @@ private fun HeaderStylePreviews(
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     // 每种样式按自己的文字包络定宽; 最长样式有最长卡片, 禁截断.
+    // legacy 布局同样按实测 (标签/时间串取大) — 与三行式同一精神, 禁硬钉 68dp。
     val styleWidths = styles.map { style ->
-        threeLineWidthDp(
-            slots = listOf(previewSlot),
-            headerStyle = style.first,
-            scale = 1f,
-            measurer = measurer,
-            density = density,
-            hangingUnits = hangingUnits,
-            showX = showX,
-        )
+        if (layout == "three_line") {
+            threeLineWidthDp(
+                slots = listOf(previewSlot),
+                headerStyle = style.first,
+                scale = 1f,
+                measurer = measurer,
+                density = density,
+                hangingUnits = hangingUnits,
+                showX = showX,
+            )
+        } else {
+            legacyLineWidthDp(
+                slots = listOf(previewSlot),
+                headerStyle = style.first,
+                scale = 1f,
+                measurer = measurer,
+                density = density,
+                showX = showX,
+            )
+        }
     }
     // 字号统一 = 同一算法、同一输入 (52dp 卡高 → 高度驱动, 可读区间钳制):
     // 预览与网格共用 forPreview/forColumn 的同一 compute 核心, 圈圈/罗马/汉字全同字号。
@@ -199,7 +212,10 @@ private fun HeaderStylePreviews(
             cardHeightSp = 52f,
         )
     } else null
-    val contentWidths = styleWidths.map { if (layout == "three_line") it.coerceAtLeast(46.dp) else 68.dp }
+    val contentWidths = styleWidths.map {
+        // legacy 与三行式同一防挤压下限 (46dp = 网格 d(46f) 的 scale=1 基准)
+        it.coerceAtLeast(46.dp)
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.appearance_header_preview), style = MaterialTheme.typography.titleSmall)
         FlowRow(

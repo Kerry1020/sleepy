@@ -248,7 +248,18 @@ fun CardsGridView(
             // 需要 3×开始时间宽度的完整轨道, 交给 threeLineWidthDp 按实测回传。
             .coerceAtLeast(d(46f))
     } else {
-        d(68f)
+        // 用户令 (老式表头同三行式统一): 列宽 = dash 轴几何
+        // (所有行 dash 同一 X, 列宽含最宽行两侧余量), 不再硬钉 68dp。
+        legacyLineWidthDp(
+            renderSlots,
+            headerStyle,
+            scale,
+            headerTextMeasurer,
+            LocalDensity.current,
+            headerShowX,
+        )
+            // 下限与三行式同一防挤压口径
+            .coerceAtLeast(d(46f))
     }
     val gapH = d(4f)
     val gapW = d(5f)
@@ -375,6 +386,32 @@ fun CardsGridView(
                     cardHeightSp = headerContentHeightSp,
                     rows = rows,
                 )
+            }
+            // 用户令 2026-10-03: legacy 列级 dash 轴 (dp, 相对卡内容框左缘) —
+            // 几何与 legacyLineWidthDp 同一解 (pad 已在列宽里, 轴本身不含 pad);
+            // 网格所有行同一轴, 预览单卡未传走行内退化。
+            val legacyAxis = if (headerLayout == "three_line") null else {
+                val timeStyle = headerTimeStyle(scale)
+                val labelStyle = headerLabelStyle(scale)
+                val rows = renderSlots.filter { !it.isPlaceholder }.map { slot ->
+                    val label = if (headerShowX && slot.nodeStart == slot.nodeEnd) {
+                        PeriodHeaderFormatter.fullLabel(slot.nodeStart, headerStyle)
+                    } else {
+                        PeriodHeaderFormatter.range(slot.nodeStart, slot.nodeEnd, headerStyle)
+                    }
+                    LegacyDashRowInk(
+                        labelPx = headerTextMeasurer.measure(label, labelStyle).size.width.toFloat(),
+                        timeLeftPx = headerTextMeasurer.measure(slot.displayStart, timeStyle).size.width.toFloat(),
+                        dashPx = headerTextMeasurer.measure("-", timeStyle).size.width.toFloat(),
+                        timeRightPx = headerTextMeasurer.measure(slot.displayEnd, timeStyle).size.width.toFloat(),
+                    )
+                }
+                with(LocalDensity.current) {
+                    // 偏移现在以卡片内容框 (SingleTimeHeadCell padding 之内) 为原点 —
+                    // PeriodHeaderCellContent 根 padding 已拆 (双重 pad 修复, 2026-10-04),
+                    // 此处不再 +padDp, 否则全列墨迹右偏一个 pad (设备实锤右溢 7px)。
+                    legacyDashColumnPx(rows, padPx = 0f).dashCenterX.toDp()
+                }
             }
             // 用户令 2026-09-30: 整列统一卡宽 — 所有行卡片 = timeW (整列最宽包络),
             // 窄行文字由列级中点对齐 (PeriodHeaderCellContent sharedPlacement),
@@ -510,6 +547,7 @@ fun CardsGridView(
                                 sharedPlacement = columnPlacements?.getOrNull(
                                     renderSlots.subList(0, i).count { !it.isPlaceholder }
                                 ),
+                                sharedLegacyAxis = legacyAxis,
                             )
                             // 透明占位：保证行宽和表头一致
                             for (day in sortedDays) {
@@ -724,7 +762,7 @@ private fun Modifier.verticalResizeGesture(
 private const val PLACEHOLDER_TEXT_REQUIRED_DP = 19f
 
 @Composable
-private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, visibleWidth: androidx.compose.ui.unit.Dp? = null, cornerRatio: Float = 1f, textFits: Boolean = true, onToggleExpand: (() -> Unit)? = null, sharedFont: PeriodHeaderAdaptiveFont? = null, sharedPlacement: PeriodHeaderPlacement? = null) {
+private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modifier = Modifier, visibleWidth: androidx.compose.ui.unit.Dp? = null, cornerRatio: Float = 1f, textFits: Boolean = true, onToggleExpand: (() -> Unit)? = null, sharedFont: PeriodHeaderAdaptiveFont? = null, sharedPlacement: PeriodHeaderPlacement? = null, sharedLegacyAxis: androidx.compose.ui.unit.Dp? = null) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
     val headerLayout = AppPrefs.getPeriodHeaderLayout(context)
@@ -773,6 +811,7 @@ private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modi
                     scale = scale,
                     sharedFont = sharedFont,
                     sharedPlacement = sharedPlacement,
+                    sharedLegacyAxis = sharedLegacyAxis,
                 )
             }
         }

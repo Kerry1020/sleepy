@@ -229,6 +229,167 @@ data class PeriodHeaderAdaptiveFont(val timeSize: Float, val labelSize: Float) {
 internal fun legacyColumnWidthDp(rowWidths: List<Float>): Float = rowWidths.maxOrNull() ?: 0f
 
 /**
+ * 老式表头 (legacy 两行: 标签 / 时间串) 的 dash 对齐几何模型。
+ *
+ * 用户 2026-10-03 第二轮定稿:
+ *   - 对齐轴 = 时间串中间 "-" 的中点。串居中 ≠ dash 对齐 (start/end 宽度不等,
+ *     dash 不在串中心) — 第一轮"字符串整体居中"即因此越对越歪;
+ *   - 整列所有行的 dash 落在同一 X; 标签同以该轴居中;
+ *   - 列宽 = 轴左侧最大延伸 + 轴右侧最大延伸 + pad×2 —
+ *     最宽行的墨迹两侧同样流出 pad 余量 (用户原话: "最宽的那一行, 余量也流出来")。
+ *
+ * 输入行墨迹: [labelPx] 标签整宽; [timeLeftPx] start 宽; [dashPx] 中间 "-" 宽;
+ * [timeRightPx] end 宽; [labelHeightPx] 标签行高; [timeHeightPx] 时间行高。实测 px,
+ * 高度 0 = 未测 (垂直解按宽度退化估值, 见 legacyVerticalFit)。
+ */
+data class LegacyDashRowInk(
+    val labelPx: Float,
+    val timeLeftPx: Float,
+    val dashPx: Float = 0f,
+    val timeRightPx: Float,
+    val labelHeightPx: Float = 0f,
+    val timeHeightPx: Float = 0f,
+)
+
+/** 单行最终排布: 标签左缘 / 时间串左缘 (px, 相对列左缘)。 */
+data class LegacyDashPlacement(val labelLeft: Float, val timeLeft: Float)
+
+/** 整列统一几何: 列宽 / 共享 dash 轴 X / 每行排布。 */
+data class LegacyDashColumn(
+    val columnWidthPx: Float,
+    val dashCenterX: Float,
+    val placements: List<LegacyDashPlacement>,
+)
+
+internal fun legacyDashColumnPx(rows: List<LegacyDashRowInk>, padPx: Float): LegacyDashColumn {
+    if (rows.isEmpty()) {
+        return LegacyDashColumn(0f, 0f, emptyList())
+    }
+    // 轴 = dash **字形中心** (非盒左缘) — 渲染时 dash Text 盒左缘在
+    // timeLeft + timeLeftPx 处, 字形中心还要加 dashPx/2 (2026-10-04 设备实锤
+    // dash 全列偏右 dashPx/2 ≈ 4px, 根因 = 把盒左缘当轴心)。
+    // 时间串左缘 = 轴 − timeLeftPx − dashPx/2; 串右缘 = 轴 + dashPx/2 + timeRightPx。
+    val leftExtent = rows.maxOf { maxOf(it.labelPx / 2f, it.timeLeftPx + it.dashPx / 2f) }
+    val rightExtent = rows.maxOf { maxOf(it.labelPx / 2f, it.dashPx / 2f + it.timeRightPx) }
+    val dashCenter = padPx + leftExtent
+    val width = leftExtent + rightExtent + 2f * padPx
+    val placements = rows.map {
+        LegacyDashPlacement(
+            labelLeft = dashCenter - it.labelPx / 2f,
+            timeLeft = dashCenter - it.timeLeftPx - it.dashPx / 2f,
+        )
+    }
+    return LegacyDashColumn(width, dashCenter, placements)
+}
+
+/**
+ * 老式表头 union 包络垂直解 (用户 2026-10-03 定稿续):
+ *   - 两行 (标签 + 时间串) 的墨迹是一个**整体矩形** (整体矩形 = 两行墨迹的
+ *     最上/最下端围出), 卡片自适应这个**整体矩形**做水平 + 垂直居中
+ *     (不是每行各自居中);
+ *   - 垂直永不重叠: 每行高度 = 该行字体行高 (用户原话: "每行高度必须 ≥ 该行字体行高");
+ *   - 高度不够时**两行同比例缩小** (用户原话: "高度实在不够时缩小两行字体"),
+ *     不许压缩行距或让文字重叠 — 缩字优先于重叠;
+ *   - dash 轴对齐保留为整体内部的水平排布规则。
+ *
+ * 输入: 行墨迹 (labelHeightPx/timeHeightPx 0 = 按宽度退化估值)
+ *       + 卡片内容区高 px + 字号缩放下限 (单行 < 该值 → 触底不再缩).
+ *
+ * 输出: (labelTopPx, timeTopPx) (相对卡顶) + fontScale (与 render 时 lineHeight×
+ *       scale 联动, 全行同缩放).
+ */
+data class LegacyDashVerticalFit(
+    val labelTopPx: Float,
+    val timeTopPx: Float,
+    val fontScale: Float,
+)
+
+/** 整列同一字号缩放(全列共用) — 取列内最紧行约束, 与 PeriodHeaderAdaptiveFont.forColumn 同口径. */
+data class LegacyDashColumnVertical(
+    val fontScale: Float,
+    val labelTopPx: Float,
+    val timeTopPx: Float,
+)
+
+/**
+ * 单行 union 包络垂直解。
+ *
+ * 算法:
+ *   - union = labelH + timeH (两行不重叠, 行间零间距 — legacy 模式历史上就没间距)
+ *   - cardH ≥ union → fontScale = 1, 整体居中:
+ *     labelTop = (cardH - union)/2, timeTop = labelTop + labelH
+ *   - cardH < union → fontScale = cardH / union, 钳 [minScale, 1];
+ *     union 顶贴卡顶 (union > 卡已无居中意义, 溢出由卡高接住, 缩字优先)
+ */
+internal fun legacyVerticalFit(
+    row: LegacyDashRowInk,
+    cardContentHeightPx: Float,
+    minScale: Float = 0.6f,
+): LegacyDashVerticalFit {
+    val labelH = if (row.labelHeightPx > 0f) row.labelHeightPx else row.labelPx
+    val timeH = if (row.timeHeightPx > 0f) row.timeHeightPx
+    else row.timeLeftPx + row.dashPx + row.timeRightPx
+    val union = labelH + timeH
+    if (union <= 0f || cardContentHeightPx <= 0f) {
+        return LegacyDashVerticalFit(0f, 0f, 1f)
+    }
+    return if (cardContentHeightPx >= union) {
+        val top = (cardContentHeightPx - union) / 2f
+        LegacyDashVerticalFit(labelTopPx = top, timeTopPx = top + labelH, fontScale = 1f)
+    } else {
+        val scale = (cardContentHeightPx / union).coerceIn(minScale, 1f)
+        val scaledLabel = labelH * scale
+        // union 顶贴卡顶, 字号缩小后真实行高 = labelH*scale, timeTop 接上, 底部溢出由 minScale 接住
+        LegacyDashVerticalFit(labelTopPx = 0f, timeTopPx = scaledLabel, fontScale = scale)
+    }
+}
+
+/**
+ * 整列同一字号缩放(列级 union = max(labelH) + max(timeH)):
+ *   - fontScale = cardH < union ? min(cardH/union, 1) : 1; 钳 [minScale, 1]
+ *   - labelTop / timeTop 与单行解同口径
+ *
+ * 单卡预览/网格列/widget 三链共用本函数, 一致性优先。
+ */
+internal fun legacyColumnVerticalFit(
+    rows: List<LegacyDashRowInk>,
+    cardContentHeightPx: Float,
+    minScale: Float = 0.6f,
+    rowGapPx: Float = 0f,
+): LegacyDashColumnVertical {
+    if (rows.isEmpty() || cardContentHeightPx <= 0f) {
+        return LegacyDashColumnVertical(1f, 0f, 0f)
+    }
+    val labelH = rows.maxOf { if (it.labelHeightPx > 0f) it.labelHeightPx else it.labelPx }
+    val timeH = rows.maxOf {
+        if (it.timeHeightPx > 0f) it.timeHeightPx
+        else it.timeLeftPx + it.dashPx + it.timeRightPx
+    }
+    // 用户原话 2026-10-04 (行间距不对): label 与 time 之间恒留一个 gap (px)。
+    // 缩字不压行距; 卡不够时 gap 优先被吞 (gap ≤ 总余量), 余量耗尽才缩字。
+    val gap = rowGapPx.coerceAtLeast(0f)
+    val union = labelH + timeH + gap
+    val slack = cardContentHeightPx - union
+    val (scale, effectiveGap) = if (slack >= 0f) {
+        1f to gap
+    } else if (slack > -gap) {
+        // 负余量小于原 gap → 吞掉 gap 至 0, 不缩字
+        1f to (gap + slack)
+    } else {
+        // 连 gap 都吃完了, 还得缩字 — 按 (labelH + timeH) 缩, gap 归零
+        val rest = cardContentHeightPx / (labelH + timeH)
+        rest.coerceIn(minScale, 1f) to 0f
+    }
+    val scaledLabel = labelH * scale
+    val top = ((cardContentHeightPx - (labelH + timeH) * scale - effectiveGap) / 2f).coerceAtLeast(0f)
+    return LegacyDashColumnVertical(
+        fontScale = scale,
+        labelTopPx = top,
+        timeTopPx = top + scaledLabel + effectiveGap,
+    )
+}
+
+/**
  * 由卡片宽度 + 行高推导卡片高度(Compose / Widget 共享, 保证垂直节奏一致)。
  * 三行垂直均分, timeSize + labelSize + timeSize = 三行行高, 上下各加 1dp 内边距。
  */
