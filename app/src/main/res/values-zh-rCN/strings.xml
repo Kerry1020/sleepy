@@ -968,4 +968,6 @@
     <string name="jw_fetch_empty">本学期暂无课程,请确认是否选对学期</string>
     <string name="irregular_time_format">非常规开始/结束时间格式应为 HH:mm</string>
     <string name="irregular_time_order">非常规开始时间必须早于结束时间</string>
+    <string name="reminder_class_dnd_title">上课自动勿扰</string>
+    <string name="reminder_class_dnd_sub">上课时段自动开启勿扰, 下课自动恢复</string>
 </resources>

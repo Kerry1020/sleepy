@@ -974,4 +974,6 @@
     <string name="jw_import_exit_continue">繼續匯入</string>
     <string name="jw_import_exit_keep_draft">保留草稿</string>
     <string name="jw_import_exit_delete_draft">刪除草稿</string>
+    <string name="reminder_class_dnd_title">上課自動勿擾</string>
+    <string name="reminder_class_dnd_sub">上課時段自動開啟勿擾, 下課自動恢復</string>
 </resources>
