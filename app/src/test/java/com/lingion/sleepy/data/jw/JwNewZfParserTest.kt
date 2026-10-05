@@ -111,6 +111,18 @@ class JwNewZfParserTest {
     }
 
     @Test
+    fun `json kblist hzu real capture parses jc suffix and odd weeks`() {
+        val src = readFixture("kblist_hzu_huizhou_20261004.json")
+        val courses = JwNewZfParser(src).generateCourseList()
+
+        assertTrue("惠州学院真实课表不应解析为空", courses.isNotEmpty())
+        assertEquals("面向对象程序设计", courses.first().name)
+        assertEquals(8, courses.first().startNode)
+        assertEquals(9, courses.first().endNode)
+        assertTrue("应保留单/双周课信息", courses.any { it.type == 1 || it.type == 2 })
+    }
+
+    @Test
     fun `json kblist bitmap and extremes parses 32bit`() {
         val src = readFixture("kblist_bitmap_and_extremes.json")
         val courses = JwNewZfParser(src).generateCourseList()

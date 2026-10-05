@@ -82,6 +82,8 @@ class JwImportViewModelBridgeTest {
         assertTrue(js.contains("SESSION_EXPIRED"))
         assertTrue(js.contains("NOT_ON_TIMETABLE"))
         assertTrue(js.contains("parseZfNewBridgeResult") || js.contains("format:'zf_new'"))
+        assertTrue("必须消费页面已选中的默认学期", js.contains("selected") && js.contains("页面未提供可用学期"))
+        assertTrue("不得调用未实现的学期选择 bridge", !js.contains("onNeedTermSelection"))
         // 2026-09 新版正方裸 /kbcx/ (广东医科等): pathPrefix 推导后 API 不再硬编 /jwglxt
         assertTrue("apiPath 必须通过 pathPrefix 拼接, 不能硬编 /jwglxt/kbcx",
             js.contains("pathPrefix + '/kbcx/xskbcx_cxXsgrkb.html"))
