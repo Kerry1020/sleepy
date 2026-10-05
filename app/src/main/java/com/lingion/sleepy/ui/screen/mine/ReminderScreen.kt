@@ -666,6 +666,19 @@ fun ReminderScreen(onBack: () -> Unit) {
                             )
                             if (fluidEnabled) {
                                 SubDivider()
+                                // 手环/手表兼容 — Android 16 实况通知会卡穿戴同步, 开启后降级普通卡片
+                                var wearableCompat by remember { mutableStateOf(AppPrefs.isFluidWearableCompat(context)) }
+                                ReminderToggleRow(
+                                    title = stringResource(R.string.reminder_wearable_compat_title),
+                                    subtitle = stringResource(R.string.reminder_wearable_compat_sub),
+                                    checked = wearableCompat,
+                                    onCheckedChange = {
+                                        wearableCompat = it
+                                        AppPrefs.setFluidWearableCompat(context, it)
+                                        SleepyApp.get().notificationScheduler.scheduleAll()
+                                    }
+                                )
+                                SubDivider()
                                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
                                     Text(
                                         text = stringResource(R.string.reminder_fluid_fields),
