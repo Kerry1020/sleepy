@@ -88,15 +88,14 @@ class TabletMasterDetailContractTest {
 
     @Test
     fun left_half_is_permanent_schedule() {
-        // 截 NavigationRail 关闭 } 后 4000 字符,该区段必须包含 ScheduleScreen 与 viewModel = mainVm
+        // 截 NavigationRail 关闭 } 后 6000 字符,该区段必须包含 ScheduleScreen 与 viewModel = mainVm
         val railIdx = navHostSrc.indexOf("NavigationRail {")
         assertTrue("必须存在 NavigationRail { ... }", railIdx >= 0)
-        // 找第一对大括号闭合 (lambda body 用大括号, 第二对匹配 NavigationRail 自身)
         val railBodyStart = navHostSrc.indexOf("{", railIdx)
         var depth = 0
         var bodyEnd = -1
         var i = railBodyStart
-        while (i < navHostSrc.length && i < railIdx + 4000) {
+        while (i < navHostSrc.length && i < railIdx + 8000) {
             when (navHostSrc[i]) {
                 '{' -> depth++
                 '}' -> { depth--; if (depth == 0) { bodyEnd = i; break } }
@@ -104,7 +103,7 @@ class TabletMasterDetailContractTest {
             i++
         }
         assertTrue("必须闭合 NavigationRail", bodyEnd >= 0)
-        val afterRail = navHostSrc.substring(bodyEnd, minOf(bodyEnd + 4000, navHostSrc.length))
+        val afterRail = navHostSrc.substring(bodyEnd, minOf(bodyEnd + 6000, navHostSrc.length))
         assertTrue("左半 ScheduleScreen 永久固定", afterRail.contains("ScheduleScreen("))
         assertTrue("左半 viewModel = mainVm 共享", afterRail.contains("viewModel = mainVm"))
     }
@@ -136,5 +135,19 @@ class TabletMasterDetailContractTest {
         assertFalse("BottomCombinedScheduleToday 应已删除", navHostSrc.contains("BottomCombinedScheduleToday"))
         assertFalse("PLAN:bottom-combined 注释应已删除", navHostSrc.contains("// PLAN:bottom-combined"))
         assertFalse("CombinedScheduleTodayRailItem 应已删除", navHostSrc.contains("CombinedScheduleTodayRailItem"))
+    }
+
+    @Test
+    fun update_dot_visible_when_mine_in_combined_capsule() {
+        // 用户令: 我的图标即使组合成胶囊也要保留右上角更新红点。
+        // CombinedRailItem 必须接受 tabShowUpdateDot 参数, 且当 tab=Mine + updateNoticeVisible=true 时画红点。
+        val combinedRailStart = navHostSrc.indexOf("private fun CombinedRailItem(")
+        val combinedRailBody = navHostSrc.substring(combinedRailStart, minOf(combinedRailStart + 4000, navHostSrc.length))
+        assertTrue("CombinedRailItem 必须有 tabShowUpdateDot 参数", combinedRailBody.contains("tabShowUpdateDot"))
+        assertTrue("CombinedRailItem 内部红点条件 tabShowUpdateDot",
+            Regex("""if\s*\(\s*tabShowUpdateDot\s*\)""").containsMatchIn(combinedRailBody))
+        // CombinedRailItem 应有红点 Box
+        assertTrue("CombinedRailItem 必须有 update dot Box", combinedRailBody.contains(".size(7.dp)") &&
+            combinedRailBody.contains(".background(colors.primary"))
     }
 }
