@@ -576,6 +576,8 @@ private fun MainRoute(
                     RightHalfContent(
                         currentTab = effectiveRightTab,
                         mainVm = mainVm,
+                        navigator = navigator,
+                        ctx = ctxForExit,
                         onTabletEditCourse = onTabletEditCourse,
                         onTabletGoImport = onTabletGoImport,
                         onTabletManualAdd = onTabletManualAdd,
@@ -770,18 +772,34 @@ private fun PlainRailItem(
 
 /**
  * 右半边内容 — AnimatedContent 包 3 个子页 (Today / Manage / Mine)。
- * 200ms 渐隐渐显。
+ * 200ms 渐隐渐显。子页面跳转回调全部接到 navigator (避免空 lambda 让按钮"点不动")。
  */
 @Composable
 private fun RightHalfContent(
     currentTab: Tab,
     mainVm: ScheduleViewModel,
+    navigator: SleepyNavigator,
+    ctx: android.content.Context,
     onTabletEditCourse: (CourseEntity) -> Unit,
     onTabletGoImport: () -> Unit,
     onTabletManualAdd: () -> Unit,
     onCreateNewTable: () -> Unit,
     onNavigateManageTab: () -> Unit,
 ) {
+    // 导入草稿来源 — 与 MainTabs (Compact) 同源
+    val draftEntities by com.lingion.sleepy.SleepyApp.get().importDraftRepository
+        .observeAll().collectAsState(initial = emptyList())
+    val drafts: List<com.lingion.sleepy.ui.screen.imports.ImportDraft> =
+        draftEntities.mapNotNull { entity ->
+            val snapshot = com.lingion.sleepy.data.jw.JwImportDraftCodec.fromJson(entity.payloadJson)
+                ?: return@mapNotNull null
+            com.lingion.sleepy.ui.screen.imports.ImportDraft(
+                id = entity.id,
+                name = snapshot.tableName.ifBlank { snapshot.school.name },
+                details = "${snapshot.courses.size} ${stringResource(com.lingion.sleepy.R.string.import_courses)}",
+            )
+        }
+    val draftScope = androidx.compose.runtime.rememberCoroutineScope()
     AnimatedContent(
         targetState = currentTab,
         transitionSpec = {
@@ -795,14 +813,51 @@ private fun RightHalfContent(
                 viewModel = mainVm,
             )
             Tab.Manage -> ManagementPage(
-                onJwImportRequested = onTabletGoImport,
+                autoShowImportSheet = com.lingion.sleepy.MainActivity.autoShowImportOnceState.value
+                    || com.lingion.sleepy.MainActivity.pendingImportText != null,
+                onJwImportRequested = {
+                    ctx.startActivity(android.content.Intent(
+                        ctx,
+                        com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java
+                    ))
+                },
                 onCreateNewTableRequested = onCreateNewTable,
+                onCreateNewPeriodTableRequested = { newId -> navigator.createPeriodTableAndEdit(newId) },
                 onManualAdd = onTabletManualAdd,
-                onEditCurrentTable = {},
-                onImported = {},
+                onEditCurrentTable = { navigator.openEditTable() },
+                onExportRequested = { navigator.openExport() },
+                onOpenAllTables = { navigator.openAllTables() },
+                drafts = drafts,
+                onRestoreDraft = { id ->
+                    ctx.startActivity(
+                        android.content.Intent(
+                            ctx,
+                            com.lingion.sleepy.ui.screen.imports.JwImportActivity::class.java
+                        ).putExtra(
+                            com.lingion.sleepy.ui.screen.imports.JwImportActivity.EXTRA_DRAFT_ID,
+                            id
+                        )
+                    )
+                },
+                onDeleteDraft = { id ->
+                    draftScope.launch {
+                        com.lingion.sleepy.SleepyApp.get().importDraftRepository.delete(id)
+                    }
+                },
+                onImported = { /* 留在管理页, 摘要卡就地刷新 */ },
                 viewModel = mainVm,
             )
-            Tab.Mine -> MineScreen(viewModel = mainVm)
+            Tab.Mine -> MineScreen(
+                viewModel = mainVm,
+                onOpenAllTables = { navigator.openAllTables() },
+                onOpenCourseList = { navigator.openCourseList() },
+                onOpenPeriodTables = { navigator.openPeriodTables() },
+                onOpenAppearance = { navigator.openAppearance() },
+                onOpenGeneral = { navigator.openGeneral() },
+                onOpenExport = { navigator.openExport() },
+                onOpenReminder = { navigator.openReminder() },
+                onOpenAbout = { navigator.openAbout() },
+            )
             else -> CompactTodayPane(
                 onEditCourse = onTabletEditCourse,
                 viewModel = mainVm,
