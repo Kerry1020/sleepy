@@ -423,7 +423,10 @@ private fun MainRoute(
     if (!isCompact) {
         // 平板宽屏 Master-Detail (PLAN:wide-merged):
         // 左 50% = ScheduleScreen 永久固定;右 50% = Today/Manage/Mine (跟用户切 rail 项);
-        // NavigationRail 严格 3 项 Schedule+X 跑道胶囊(无 label)。
+        // Rail: 当前选中的 tab 跟 Schedule 组合成跑道胶囊(高亮),其它两个普通单图标。
+        // 默认 currentTab = Tab.Schedule (Compact 分支默认),宽屏派生为 Tab.Today
+        // 让右半默认显示今日、slot 1 胶囊默认高亮,两侧一致。
+        val effectiveRightTab: Tab = if (currentTab == Tab.Schedule) Tab.Today else currentTab
         val onTabletEditCourse: (CourseEntity) -> Unit = { course ->
             navigator.session.beginEditCourse(course)
             navigator.openAddCourse(course.id, editing = true)
@@ -441,24 +444,90 @@ private fun MainRoute(
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             NavigationRail {
-                CombinedRailItem(
-                    selected = currentTab == Tab.Today,
-                    scheduleIcon = Tab.Schedule.icon,
-                    tabIcon = Tab.Today.icon,
-                    onClick = { setCurrentTab(Tab.Today) },
-                )
-                CombinedRailItem(
-                    selected = currentTab == Tab.Manage,
-                    scheduleIcon = Tab.Schedule.icon,
-                    tabIcon = Tab.Manage.icon,
-                    onClick = { setCurrentTab(Tab.Manage) },
-                )
-                CombinedRailItem(
-                    selected = currentTab == Tab.Mine,
-                    scheduleIcon = Tab.Schedule.icon,
-                    tabIcon = Tab.Mine.icon,
-                    onClick = { setCurrentTab(Tab.Mine) },
-                )
+                // 当前选中的 tab 跟 Schedule 组合成跑道胶囊(强高亮 primaryContainer);
+                // 其它两个 tab 是普通 NavigationRailItem 单图标(标准 selected 态)。
+                when (effectiveRightTab) {
+                    Tab.Today -> {
+                        CombinedRailItem(
+                            selected = true,
+                            scheduleIcon = Tab.Schedule.icon,
+                            tabIcon = Tab.Today.icon,
+                            onClick = { setCurrentTab(Tab.Today) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Manage,
+                            showUpdateDot = updateNoticeVisible && Tab.Manage == Tab.Mine,
+                            onClick = { setCurrentTab(Tab.Manage) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Mine,
+                            showUpdateDot = updateNoticeVisible && Tab.Mine == Tab.Mine,
+                            onClick = { setCurrentTab(Tab.Mine) },
+                        )
+                    }
+                    Tab.Manage -> {
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Today,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Today) },
+                        )
+                        CombinedRailItem(
+                            selected = true,
+                            scheduleIcon = Tab.Schedule.icon,
+                            tabIcon = Tab.Manage.icon,
+                            onClick = { setCurrentTab(Tab.Manage) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Mine,
+                            showUpdateDot = updateNoticeVisible && Tab.Mine == Tab.Mine,
+                            onClick = { setCurrentTab(Tab.Mine) },
+                        )
+                    }
+                    Tab.Mine -> {
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Today,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Today) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Manage,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Manage) },
+                        )
+                        CombinedRailItem(
+                            selected = true,
+                            scheduleIcon = Tab.Schedule.icon,
+                            tabIcon = Tab.Mine.icon,
+                            onClick = { setCurrentTab(Tab.Mine) },
+                        )
+                    }
+                    else -> {
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Today,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Today) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Manage,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Manage) },
+                        )
+                        PlainRailItem(
+                            selected = false,
+                            tab = Tab.Mine,
+                            showUpdateDot = false,
+                            onClick = { setCurrentTab(Tab.Mine) },
+                        )
+                    }
+                }
             }
             Row(
                 modifier = Modifier
@@ -501,7 +570,7 @@ private fun MainRoute(
                         .background(colors.surfaceContainerLow)
                 ) {
                     RightHalfContent(
-                        currentTab = currentTab,
+                        currentTab = effectiveRightTab,
                         mainVm = mainVm,
                         onTabletEditCourse = onTabletEditCourse,
                         onTabletGoImport = onTabletGoImport,
@@ -618,7 +687,8 @@ private fun NavigationTabIcon(tab: Tab, showUpdateDot: Boolean) {
 
 /**
  * Master-Detail 跑道胶囊导航项 — Schedule + 任意 tab 图标组合,无 label。
- * 56dp 宽 × 64dp 高;上下两半各塞图标,中线分隔;选中整组高亮。
+ * 56dp 宽 × 64dp 高;上下两半各塞图标,中线分隔;选中整组**强高亮**(primaryContainer)。
+ * 自研容器,绕开 NavigationRailItem 默认 24dp 图标槽位。
  */
 @Composable
 private fun CombinedRailItem(
@@ -628,11 +698,12 @@ private fun CombinedRailItem(
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val containerColor = if (selected) colors.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent
-    val iconColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
+    val containerColor = if (selected) colors.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
+    val iconColor = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant
     Column(
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
@@ -644,9 +715,7 @@ private fun CombinedRailItem(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable(onClick = onClick),
+                modifier = Modifier.size(28.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(22.dp))
@@ -657,15 +726,32 @@ private fun CombinedRailItem(
                 color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
             )
             Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable(onClick = onClick),
+                modifier = Modifier.size(28.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(tabIcon, contentDescription = "从 tab", tint = iconColor, modifier = Modifier.size(22.dp))
             }
         }
     }
+}
+
+/**
+ * Master-Detail 普通 rail 项 — 单图标 + 标准 NavigationRailItem 风格。
+ * 用于"当前选中胶囊"以外的另两个 tab。
+ */
+@Composable
+private fun PlainRailItem(
+    selected: Boolean,
+    tab: Tab,
+    showUpdateDot: Boolean,
+    onClick: () -> Unit,
+) {
+    NavigationRailItem(
+        selected = selected,
+        onClick = onClick,
+        icon = { NavigationTabIcon(tab, showUpdateDot = showUpdateDot) },
+        label = { Text(stringResource(tab.labelRes)) },
+    )
 }
 
 /**
