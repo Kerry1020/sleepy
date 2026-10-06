@@ -1,16 +1,20 @@
 package com.lingion.sleepy.ui.nav
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
@@ -41,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -429,14 +434,17 @@ private fun MainRoute(
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             NavigationRail {
-                // 课表+今日 合并为单一导航项 (wideMergedScheduleToday),
-                // 双栏同屏永远显示, 高亮条件 = currentTab ∈ {Schedule, Today}
+                // 课表+今日 合并为单一跑道型组合图标 (CombinedScheduleTodayRailItem),
+                // 上下两半各塞 Schedule/Today 图标, 中间一根细线分隔;
+                // 选中态整组高亮(胶囊跑道底 secondaryContainer)。其它 tab 各自独立项。
                 val mergedSelected = currentTab == Tab.Schedule || currentTab == Tab.Today
-                NavigationRailItem(
+                CombinedScheduleTodayRailItem(
                     selected = mergedSelected,
-                    onClick = { setCurrentTab(Tab.Schedule) },
-                    icon = { NavigationTabIcon(Tab.Schedule, showUpdateDot = false) },
-                    label = { Text(stringResource(R.string.tab_schedule_today)) },
+                    label = stringResource(R.string.tab_schedule_today),
+                    scheduleIcon = Tab.Schedule.icon,
+                    todayIcon = Tab.Today.icon,
+                    onScheduleClick = { setCurrentTab(Tab.Schedule) },
+                    onTodayClick = { setCurrentTab(Tab.Today) },
                 )
                 Tab.entries.filter { it != Tab.Schedule && it != Tab.Today }.forEach { tab ->
                     NavigationRailItem(
@@ -495,6 +503,19 @@ private fun MainRoute(
             }
         }
     } else if (navDock) {
+        // PLAN:bottom-combined — 底部 NavBar 同样用组合图标(左右排列)。
+        // 当前 navDock=true 是悬浮 Dock,与底部 NavBar 互斥;此处保留占位以便将来切换到
+        // 底部 NavigationBar 形态时,直接复用 BottomCombinedScheduleToday(orientation=horizontal)。
+        val _bottomCombinedAnchor: @Composable () -> Unit = {
+            BottomCombinedScheduleToday(
+                selected = currentTab == Tab.Schedule || currentTab == Tab.Today,
+                label = stringResource(R.string.tab_schedule_today),
+                scheduleIcon = Tab.Schedule.icon,
+                todayIcon = Tab.Today.icon,
+                onScheduleClick = { setCurrentTab(Tab.Schedule) },
+                onTodayClick = { setCurrentTab(Tab.Today) },
+            )
+        }
         // Compact + 悬浮 Dock: 官方无此形态 → 保留自研 PillNavigationBar(dock=true)
         var dockExtraDp by remember { mutableStateOf(NavDockSpec.capsuleHeight + NavDockSpec.bottomFloat) }
         var dockOverlayPx by remember { mutableStateOf(0) }
@@ -595,5 +616,115 @@ private fun NavigationTabIcon(tab: Tab, showUpdateDot: Boolean) {
                 .size(7.dp)
                 .background(colors.primary, androidx.compose.foundation.shape.CircleShape)
         )
+    }
+}
+
+/**
+ * 平板宽屏组合导航项 — 课表 + 今日 共享一个跑道型(stadium)高亮胶囊。
+ * 上下两半各塞一个图标,中间一根细线分隔;
+ * 整个胶囊是单一 NavigationRailItem,选中态整组高亮。
+ * 自研容器,绕过 NavigationRailItem 默认 24dp 图标槽位。
+ */
+@Composable
+private fun CombinedScheduleTodayRailItem(
+    selected: Boolean,
+    label: String,
+    scheduleIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    todayIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    onScheduleClick: () -> Unit,
+    onTodayClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val containerColor = if (selected) colors.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent
+    val iconColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .width(72.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(containerColor)
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // 上半: Schedule 图标 + 命中区
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.5f)
+                .clickable(onClick = onScheduleClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(24.dp))
+        }
+        // 中线分隔 — 0.5dp 横线,跨整个胶囊宽
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            thickness = 0.5.dp,
+            color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
+        )
+        // 下半: Today 图标 + 命中区
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.5f)
+                .clickable(onClick = onTodayClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(todayIcon, contentDescription = "今日", tint = iconColor, modifier = Modifier.size(24.dp))
+        }
+    }
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+}
+
+/**
+ * 底部 NavBar 组合导航项(横向跑道) — 状态栏在底部时使用。
+ * 左右两半各塞一个图标,中间一根竖向分隔线。保留占位以便将来切换底部形态时直接启用。
+ */
+@Composable
+private fun BottomCombinedScheduleToday(
+    selected: Boolean,
+    label: String,
+    scheduleIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    todayIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    onScheduleClick: () -> Unit,
+    onTodayClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val containerColor = if (selected) colors.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent
+    val iconColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .height(48.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(containerColor)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .clickable(onClick = onScheduleClick)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(24.dp))
+        }
+        VerticalDivider(
+            modifier = Modifier.padding(vertical = 12.dp),
+            thickness = 0.5.dp,
+            color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
+        )
+        Box(
+            modifier = Modifier
+                .clickable(onClick = onTodayClick)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(todayIcon, contentDescription = "今日", tint = iconColor, modifier = Modifier.size(24.dp))
+        }
     }
 }
