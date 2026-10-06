@@ -32,7 +32,6 @@
     <string name="tab_schedule">Schedule</string>
     <string name="tab_today">Today</string>
     <string name="tab_mine">Me</string>
-    <string name="tab_schedule_today">Schedule · Today</string>
     <string name="tab_manage">Manage</string>
 
     <string name="schedule_empty">No schedule yet</string>

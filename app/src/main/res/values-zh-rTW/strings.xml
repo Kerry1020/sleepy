@@ -32,7 +32,6 @@
     <string name="tab_schedule">課表</string>
     <string name="tab_today">今日</string>
     <string name="tab_mine">我的</string>
-    <string name="tab_schedule_today">課表 · 今日</string>
     <string name="tab_manage">課表管理</string>
 
     <string name="schedule_empty">還沒有課表</string>

@@ -33,7 +33,6 @@
     <string name="tab_schedule">课表</string>
     <string name="tab_today">今日</string>
     <string name="tab_mine">我的</string>
-    <string name="tab_schedule_today">课表 · 今日</string>
     <string name="tab_manage">课表管理</string>
 
     <!-- Schedule screen -->
