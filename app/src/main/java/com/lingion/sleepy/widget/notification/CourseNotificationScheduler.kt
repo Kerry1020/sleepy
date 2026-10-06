@@ -722,3 +722,4 @@ private fun getCourseStartTime(course: CourseEntity, table: TimeTableEntity): St
     val node = nodes.find { it.node == course.startNode } ?: return ""
     return String.format("%02d:%02d", node.start.hour, node.start.minute)
 }
+
