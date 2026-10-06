@@ -352,3 +352,4 @@ object VendorLiveCardRenderer {
         builder.setExtras(samsungExtras)
     }
 }
+
