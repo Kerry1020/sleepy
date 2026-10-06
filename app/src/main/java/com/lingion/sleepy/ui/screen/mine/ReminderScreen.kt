@@ -675,6 +675,11 @@ fun ReminderScreen(onBack: () -> Unit) {
                                     onCheckedChange = {
                                         wearableCompat = it
                                         AppPrefs.setFluidWearableCompat(context, it)
+                                        // 切开关立刻清旧流体云通知 — 否则旧 promoted-ongoing 卡片
+                                        // 残留在通知栏, 用户感知"切了没生效", 要等下次闹钟触发或手动滑掉
+                                        androidx.core.app.NotificationManagerCompat.from(context).cancel(
+                                            com.lingion.sleepy.widget.notification.CourseNotificationScheduler.NOTIFY_BEFORE_CLASS_BASE
+                                        )
                                         SleepyApp.get().notificationScheduler.scheduleAll()
                                     }
                                 )
