@@ -91,12 +91,14 @@ class CourseNotificationScheduler private constructor(
 
     fun scheduleAll() {
         createChannels()
-        // 整段放入 IO 协程：cancelAll 现为 suspend，需在协程内先取消再重排，
-        //   保证「先取消后重排」的顺序不被打散（避免取消与重排的竞态），
-        //   同时把查库挪出主线程，消除 runBlocking 导致的 ANR 风险。
+        // 整段放入 IO 协程: 把查库挪出主线程, 消除 runBlocking 导致的 ANR 风险。
+        // 不再此处调 cancelAll() — scheduleNext7DaysExactAlarms (经 scheduleBeforeClassDaily
+        // 触发) 内部第一行就是"先 cancel 窗口内旧槽再 setExact", race 安全且 idempotent。
+        // 取消外层 cancelAll 同时节省 allCourseIds() 重复查询。
+        // 注: 窗口外 (day > 7) 的旧课前闹钟不在 scheduleNext7DaysExactAlarms 清扫范围,
+        // 但 PR 99 把窗口扩到 7 天后, 窗口外本不该有遗留闹钟 — 极个别 case 由
+        // cancelCourseAlarms (ScheduleRepository.deleteTable 删表场景) 兜底。
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            cancelAll()
-
             val prefs = context.applicationContext
             if (!AppPrefs.isReminderEnabled(prefs)) return@launch
 
