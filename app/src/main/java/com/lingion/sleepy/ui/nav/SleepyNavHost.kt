@@ -621,8 +621,8 @@ private fun NavigationTabIcon(tab: Tab, showUpdateDot: Boolean) {
 
 /**
  * 平板宽屏组合导航项 — 课表 + 今日 共享一个跑道型(stadium)高亮胶囊。
- * 上下两半各塞一个图标,中间一根细线分隔;
- * 整个胶囊是单一 NavigationRailItem,选中态整组高亮。
+ * 胶囊只包裹两图标(刚好包住,不高不低不胖不瘦),上下两半各塞一个图标,中间一根细线分隔;
+ * 选中态整组高亮,label 跟随在下方。
  * 自研容器,绕过 NavigationRailItem 默认 24dp 图标槽位。
  */
 @Composable
@@ -639,44 +639,48 @@ private fun CombinedScheduleTodayRailItem(
     val iconColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
     Column(
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .width(72.dp)
-            .clip(RoundedCornerShape(percent = 50))
-            .background(containerColor)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 上半: Schedule 图标 + 命中区
-        Box(
+        // 胶囊:宽 56dp,高 64dp — 刚好包住两 24dp 图标 + 4dp 内边距 + 0.5dp 中线
+        Column(
             modifier = Modifier
-                .fillMaxSize(0.5f)
-                .clickable(onClick = onScheduleClick),
-            contentAlignment = Alignment.Center,
+                .width(56.dp)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(containerColor)
+                .padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(24.dp))
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable(onClick = onScheduleClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(22.dp))
+            }
+            // 中线分隔 — 0.5dp 横线,跨胶囊宽
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 10.dp),
+                thickness = 0.5.dp,
+                color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
+            )
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable(onClick = onTodayClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(todayIcon, contentDescription = "今日", tint = iconColor, modifier = Modifier.size(22.dp))
+            }
         }
-        // 中线分隔 — 0.5dp 横线,跨整个胶囊宽
-        HorizontalDivider(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            thickness = 0.5.dp,
-            color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
         )
-        // 下半: Today 图标 + 命中区
-        Box(
-            modifier = Modifier
-                .fillMaxSize(0.5f)
-                .clickable(onClick = onTodayClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(todayIcon, contentDescription = "今日", tint = iconColor, modifier = Modifier.size(24.dp))
-        }
     }
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
-        modifier = Modifier.padding(top = 4.dp),
-    )
 }
 
 /**
