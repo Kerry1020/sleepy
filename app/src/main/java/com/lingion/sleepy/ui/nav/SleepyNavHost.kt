@@ -5,9 +5,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -76,6 +80,7 @@ import com.lingion.sleepy.ui.screen.schedule.ScheduleScreen
 import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.screen.schedule.ViewMode
 import com.lingion.sleepy.ui.screen.today.TodayScreen
+import com.lingion.sleepy.ui.screen.today.CompactTodayPane
 import com.lingion.sleepy.ui.screen.widget.WidgetEditScreen
 import com.lingion.sleepy.ui.screen.widget.WidgetManagementScreen
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -404,14 +409,36 @@ private fun MainRoute(
     val isCompact = sizeClass == null || sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
 
     if (!isCompact) {
+        // 平板宽屏: Master-Detail 双栏 (PLAN:wide-merged)
+        // 左=课表(ScheduleScreen)包在圆角卡片内, 右=今日(CompactTodayPane),
+        // 双栏合并为同一导航项"wideMergedScheduleToday"高亮, 与 Manage/Mine 各自单栏共存。
+        val onTabletEditCourse: (CourseEntity) -> Unit = { course ->
+            navigator.session.beginEditCourse(course)
+            navigator.openAddCourse(course.id, editing = true)
+        }
+        val onTabletGoImport: () -> Unit = {
+            com.lingion.sleepy.MainActivity.autoShowImportOnceState.value = true
+            setCurrentTab(Tab.Manage)
+        }
+        val onTabletManualAdd: () -> Unit = { navigator.openAddCourse() }
+        val colors = MaterialTheme.colorScheme
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(colors.background)
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             NavigationRail {
-                Tab.entries.forEach { tab ->
+                // 课表+今日 合并为单一导航项 (wideMergedScheduleToday),
+                // 双栏同屏永远显示, 高亮条件 = currentTab ∈ {Schedule, Today}
+                val mergedSelected = currentTab == Tab.Schedule || currentTab == Tab.Today
+                NavigationRailItem(
+                    selected = mergedSelected,
+                    onClick = { setCurrentTab(Tab.Schedule) },
+                    icon = { NavigationTabIcon(Tab.Schedule, showUpdateDot = false) },
+                    label = { Text(stringResource(R.string.tab_schedule_today)) },
+                )
+                Tab.entries.filter { it != Tab.Schedule && it != Tab.Today }.forEach { tab ->
                     NavigationRailItem(
                         selected = currentTab == tab,
                         onClick = { setCurrentTab(tab) },
@@ -420,19 +447,51 @@ private fun MainRoute(
                     )
                 }
             }
-            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
-                MainTabs(
-                    currentTab = currentTab,
-                    setCurrentTab = setCurrentTab,
-                    navigator = navigator,
-                    mainVm = mainVm,
-                    mainScope = mainScope,
-                    viewMode = scheduleViewMode,
-                    onViewModeChange = onScheduleViewModeChange,
-                    onCreateNewTable = onCreateNewTable,
-                    holder = holder,
-                    updateNoticeVisible = updateNoticeVisible,
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 左: 课表卡片 (scheduleCard)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.surfaceContainerLow)
+                ) {
+                    ScheduleScreen(
+                        viewMode = scheduleViewMode,
+                        onViewModeChange = onScheduleViewModeChange,
+                        onGoImport = onTabletGoImport,
+                        onManualAdd = onTabletManualAdd,
+                        onCreateTable = onCreateNewTable,
+                        onEditCourse = onTabletEditCourse,
+                        viewModel = mainVm,
+                    )
+                }
+                // 双栏暗色分隔 — 12dp 沟槽(背景=background)形成 dark gap
+                Box(
+                    modifier = Modifier
+                        .width(12.dp)
+                        .fillMaxSize()
+                        .background(colors.background)
                 )
+                // 右: 今日面板 (CompactTodayPane)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.surfaceContainerLow)
+                ) {
+                    CompactTodayPane(
+                        onEditCourse = onTabletEditCourse,
+                        viewModel = mainVm,
+                    )
+                }
             }
         }
     } else if (navDock) {

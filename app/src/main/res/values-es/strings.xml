@@ -32,6 +32,7 @@
     <string name="tab_schedule">Horario</string>
     <string name="tab_today">Hoy</string>
     <string name="tab_mine">Ajustes</string>
+    <string name="tab_schedule_today">Horario · Hoy</string>
     <string name="tab_manage">Gestionar</string>
 
     <string name="schedule_empty">No hay horario todavía</string>
