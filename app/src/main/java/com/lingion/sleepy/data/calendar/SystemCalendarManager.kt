@@ -511,3 +511,4 @@ object SystemCalendarManager {
         specs.filter { it.wantsAlarm }.groupBy { it.date }
             .mapValues { (_, rows) -> rows.minWith(compareBy<EventSpec>({ it.start }, { it.course.id })).key }
 }
+
