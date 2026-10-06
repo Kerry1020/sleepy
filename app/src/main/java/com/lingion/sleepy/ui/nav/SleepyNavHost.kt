@@ -39,6 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -86,6 +91,8 @@ import com.lingion.sleepy.ui.screen.schedule.ScheduleViewModel
 import com.lingion.sleepy.ui.screen.schedule.ViewMode
 import com.lingion.sleepy.ui.screen.today.TodayScreen
 import com.lingion.sleepy.ui.screen.today.CompactTodayPane
+import com.lingion.sleepy.ui.screen.manage.ManagementPage
+import com.lingion.sleepy.ui.screen.mine.MineScreen
 import com.lingion.sleepy.ui.screen.widget.WidgetEditScreen
 import com.lingion.sleepy.ui.screen.widget.WidgetManagementScreen
 import com.lingion.sleepy.ui.theme.SleepyTheme
@@ -414,9 +421,9 @@ private fun MainRoute(
     val isCompact = sizeClass == null || sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
 
     if (!isCompact) {
-        // 平板宽屏: Master-Detail 双栏 (PLAN:wide-merged)
-        // 左=课表(ScheduleScreen)包在圆角卡片内, 右=今日(CompactTodayPane),
-        // 双栏合并为同一导航项"wideMergedScheduleToday"高亮, 与 Manage/Mine 各自单栏共存。
+        // 平板宽屏 Master-Detail (PLAN:wide-merged):
+        // 左 50% = ScheduleScreen 永久固定;右 50% = Today/Manage/Mine (跟用户切 rail 项);
+        // NavigationRail 严格 3 项 Schedule+X 跑道胶囊(无 label)。
         val onTabletEditCourse: (CourseEntity) -> Unit = { course ->
             navigator.session.beginEditCourse(course)
             navigator.openAddCourse(course.id, editing = true)
@@ -434,26 +441,24 @@ private fun MainRoute(
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             NavigationRail {
-                // 课表+今日 合并为单一跑道型组合图标 (CombinedScheduleTodayRailItem),
-                // 上下两半各塞 Schedule/Today 图标, 中间一根细线分隔;
-                // 选中态整组高亮(胶囊跑道底 secondaryContainer)。其它 tab 各自独立项。
-                val mergedSelected = currentTab == Tab.Schedule || currentTab == Tab.Today
-                CombinedScheduleTodayRailItem(
-                    selected = mergedSelected,
-                    label = stringResource(R.string.tab_schedule_today),
+                CombinedRailItem(
+                    selected = currentTab == Tab.Today,
                     scheduleIcon = Tab.Schedule.icon,
-                    todayIcon = Tab.Today.icon,
-                    onScheduleClick = { setCurrentTab(Tab.Schedule) },
-                    onTodayClick = { setCurrentTab(Tab.Today) },
+                    tabIcon = Tab.Today.icon,
+                    onClick = { setCurrentTab(Tab.Today) },
                 )
-                Tab.entries.filter { it != Tab.Schedule && it != Tab.Today }.forEach { tab ->
-                    NavigationRailItem(
-                        selected = currentTab == tab,
-                        onClick = { setCurrentTab(tab) },
-                        icon = { NavigationTabIcon(tab, showUpdateDot = updateNoticeVisible && tab == Tab.Mine) },
-                        label = { Text(stringResource(tab.labelRes)) },
-                    )
-                }
+                CombinedRailItem(
+                    selected = currentTab == Tab.Manage,
+                    scheduleIcon = Tab.Schedule.icon,
+                    tabIcon = Tab.Manage.icon,
+                    onClick = { setCurrentTab(Tab.Manage) },
+                )
+                CombinedRailItem(
+                    selected = currentTab == Tab.Mine,
+                    scheduleIcon = Tab.Schedule.icon,
+                    tabIcon = Tab.Mine.icon,
+                    onClick = { setCurrentTab(Tab.Mine) },
+                )
             }
             Row(
                 modifier = Modifier
@@ -462,7 +467,7 @@ private fun MainRoute(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 左: 课表卡片 (scheduleCard)
+                // 左: 课表永久固定 (地球毁灭也不变)
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -480,14 +485,14 @@ private fun MainRoute(
                         viewModel = mainVm,
                     )
                 }
-                // 双栏暗色分隔 — 12dp 沟槽(背景=background)形成 dark gap
+                // 暗色 gap — 12dp 沟槽 (背景 = background)
                 Box(
                     modifier = Modifier
                         .width(12.dp)
                         .fillMaxSize()
                         .background(colors.background)
                 )
-                // 右: 今日面板 (CompactTodayPane)
+                // 右: AnimatedContent 切换 Today/Manage/Mine
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -495,9 +500,14 @@ private fun MainRoute(
                         .clip(RoundedCornerShape(16.dp))
                         .background(colors.surfaceContainerLow)
                 ) {
-                    CompactTodayPane(
-                        onEditCourse = onTabletEditCourse,
-                        viewModel = mainVm,
+                    RightHalfContent(
+                        currentTab = currentTab,
+                        mainVm = mainVm,
+                        onTabletEditCourse = onTabletEditCourse,
+                        onTabletGoImport = onTabletGoImport,
+                        onTabletManualAdd = onTabletManualAdd,
+                        onCreateNewTable = onCreateNewTable,
+                        onNavigateManageTab = { setCurrentTab(Tab.Manage) },
                     )
                 }
             }
@@ -603,6 +613,101 @@ private fun NavigationTabIcon(tab: Tab, showUpdateDot: Boolean) {
                 .size(7.dp)
                 .background(colors.primary, androidx.compose.foundation.shape.CircleShape)
         )
+    }
+}
+
+/**
+ * Master-Detail 跑道胶囊导航项 — Schedule + 任意 tab 图标组合,无 label。
+ * 56dp 宽 × 64dp 高;上下两半各塞图标,中线分隔;选中整组高亮。
+ */
+@Composable
+private fun CombinedRailItem(
+    selected: Boolean,
+    scheduleIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    tabIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val containerColor = if (selected) colors.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent
+    val iconColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            modifier = Modifier
+                .width(56.dp)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(containerColor)
+                .padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(scheduleIcon, contentDescription = "课表", tint = iconColor, modifier = Modifier.size(22.dp))
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 10.dp),
+                thickness = 0.5.dp,
+                color = colors.onSurfaceVariant.copy(alpha = SleepyTheme.Alpha.hairline),
+            )
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(tabIcon, contentDescription = "从 tab", tint = iconColor, modifier = Modifier.size(22.dp))
+            }
+        }
+    }
+}
+
+/**
+ * 右半边内容 — AnimatedContent 包 3 个子页 (Today / Manage / Mine)。
+ * 200ms 渐隐渐显。
+ */
+@Composable
+private fun RightHalfContent(
+    currentTab: Tab,
+    mainVm: ScheduleViewModel,
+    onTabletEditCourse: (CourseEntity) -> Unit,
+    onTabletGoImport: () -> Unit,
+    onTabletManualAdd: () -> Unit,
+    onCreateNewTable: () -> Unit,
+    onNavigateManageTab: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = currentTab,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
+        },
+        label = "right-half-tab-switch",
+    ) { tab ->
+        when (tab) {
+            Tab.Today -> CompactTodayPane(
+                onEditCourse = onTabletEditCourse,
+                viewModel = mainVm,
+            )
+            Tab.Manage -> ManagementPage(
+                onJwImportRequested = onTabletGoImport,
+                onCreateNewTableRequested = onCreateNewTable,
+                onManualAdd = onTabletManualAdd,
+                onEditCurrentTable = {},
+                onImported = {},
+                viewModel = mainVm,
+            )
+            Tab.Mine -> MineScreen(viewModel = mainVm)
+            else -> CompactTodayPane(
+                onEditCourse = onTabletEditCourse,
+                viewModel = mainVm,
+            )
+        }
     }
 }
 
