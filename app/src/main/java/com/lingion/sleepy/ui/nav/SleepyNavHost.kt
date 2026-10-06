@@ -452,18 +452,19 @@ private fun MainRoute(
                             selected = true,
                             scheduleIcon = Tab.Schedule.icon,
                             tabIcon = Tab.Today.icon,
+                            tabShowUpdateDot = false,
                             onClick = { setCurrentTab(Tab.Today) },
                         )
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Manage,
-                            showUpdateDot = updateNoticeVisible && Tab.Manage == Tab.Mine,
+                            showUpdateDot = false,
                             onClick = { setCurrentTab(Tab.Manage) },
                         )
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = updateNoticeVisible && Tab.Mine == Tab.Mine,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -478,12 +479,13 @@ private fun MainRoute(
                             selected = true,
                             scheduleIcon = Tab.Schedule.icon,
                             tabIcon = Tab.Manage.icon,
+                            tabShowUpdateDot = false,
                             onClick = { setCurrentTab(Tab.Manage) },
                         )
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = updateNoticeVisible && Tab.Mine == Tab.Mine,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -504,6 +506,7 @@ private fun MainRoute(
                             selected = true,
                             scheduleIcon = Tab.Schedule.icon,
                             tabIcon = Tab.Mine.icon,
+                            tabShowUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -523,7 +526,7 @@ private fun MainRoute(
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = false,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -689,12 +692,14 @@ private fun NavigationTabIcon(tab: Tab, showUpdateDot: Boolean) {
  * Master-Detail 跑道胶囊导航项 — Schedule + 任意 tab 图标组合,无 label。
  * 56dp 宽 × 64dp 高;上下两半各塞图标,中线分隔;选中整组**强高亮**(primaryContainer)。
  * 自研容器,绕开 NavigationRailItem 默认 24dp 图标槽位。
+ * `tabShowUpdateDot` = true 时在"从 tab"图标右上角画 7dp 红点(原 NavigationTabIcon 风格)。
  */
 @Composable
 private fun CombinedRailItem(
     selected: Boolean,
     scheduleIcon: androidx.compose.ui.graphics.vector.ImageVector,
     tabIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    tabShowUpdateDot: Boolean = false,
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -730,6 +735,14 @@ private fun CombinedRailItem(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(tabIcon, contentDescription = "从 tab", tint = iconColor, modifier = Modifier.size(22.dp))
+                if (tabShowUpdateDot) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(7.dp)
+                            .background(colors.primary, androidx.compose.foundation.shape.CircleShape)
+                    )
+                }
             }
         }
     }
