@@ -396,11 +396,7 @@ private fun MainRoute(
     updateNoticeVisible: Boolean,
     pillBarState: PillBarState,
 ) {
-    // 调试期强制显示更新红点 (dev-only): 方便实拍/验证 Mine 在胶囊 + 普通两种形态下红点位置正确。
-    // 仅 debug build 生效 (BuildConfig.DEBUG), release 自动为 false 不污染正式版。
-    val effectiveUpdateDotVisible = updateNoticeVisible ||
-        (com.lingion.sleepy.BuildConfig.DEBUG && true)
-    val navItems = Tab.entries.map { PillNavItemSpec(it.icon, stringResource(it.labelRes), badge = effectiveUpdateDotVisible && it == Tab.Mine) }
+    val navItems = Tab.entries.map { PillNavItemSpec(it.icon, stringResource(it.labelRes), badge = updateNoticeVisible && it == Tab.Mine) }
     val holder: SaveableStateHolder = rememberSaveableStateHolder()
     // 双击退出只在课表页生效;其它 tab 第一次返回回课表页。
     val ctxForExit = LocalContext.current
@@ -430,6 +426,10 @@ private fun MainRoute(
         // Rail: 当前选中的 tab 跟 Schedule 组合成跑道胶囊(高亮),其它两个普通单图标。
         // 默认 currentTab = Tab.Schedule (Compact 分支默认),宽屏派生为 Tab.Today
         // 让右半默认显示今日、slot 1 胶囊默认高亮,两侧一致。
+        // dev-only: debug 包强制红点 (验证 Mine 胶囊/普通两种形态); release = updateNoticeVisible 等价,
+        // 手机/Compact 分支(包括 debug dock=PillNavigationBar)完全不受影响,只看真实 updateNoticeVisible。
+        val effectiveUpdateDotVisible = updateNoticeVisible ||
+            (com.lingion.sleepy.BuildConfig.DEBUG && true)
         val effectiveRightTab: Tab = if (currentTab == Tab.Schedule) Tab.Today else currentTab
         val onTabletEditCourse: (CourseEntity) -> Unit = { course ->
             navigator.session.beginEditCourse(course)
