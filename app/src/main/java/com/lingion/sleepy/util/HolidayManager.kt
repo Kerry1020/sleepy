@@ -76,6 +76,26 @@ object HolidayManager {
         return date.dayOfWeek.value == 6 || date.dayOfWeek.value == 7
     }
 
+    /** 纯决策核: 日期在法定节假日集合内且该日未被调休映射 → 应跳过课程类提醒。 */
+    internal fun decideSkipPublicHoliday(
+        date: LocalDate,
+        holidays: Set<LocalDate>,
+        dateHasTransfer: Boolean,
+    ): Boolean = date in holidays && !dateHasTransfer
+
+    /** Cache-only holiday decision for scheduler/recovery paths; never performs network I/O. */
+    fun isPublicHolidayCached(ctx: Context, date: LocalDate, tableId: Long? = null): Boolean {
+        if (!AppPrefs.isHolidayGreyHoliday(ctx)) return false
+        val networkEntries = entriesCache[date.year] ?: diskCache(ctx, date.year) ?: emptyList()
+        val ranges = AppPrefs.getHolidayRanges(ctx)
+        val merged = HolidayRangeOps.mergeSegments(networkEntries, ranges)
+        val (holidays, _) = HolidayRangeOps.toSets(merged.active)
+        val hasTransfer = tableId != null &&
+            HolidayRangeOps.HolidayTransferOps.transferFor(date, AppPrefs.getHolidayTransfers(ctx, tableId)) != null
+        return decideSkipPublicHoliday(date, holidays, hasTransfer)
+    }
+
+
     /** 判断某日期是否应该灰显（根据用户设置，含用户范围化覆盖）。
      *  [tableId] 给定时同时查该表调休映射: 命中映射的放假日那天要上课, 永不灰 (issue#44)。 */
     suspend fun shouldGrey(ctx: Context, date: LocalDate, tableId: Long? = null): Boolean {

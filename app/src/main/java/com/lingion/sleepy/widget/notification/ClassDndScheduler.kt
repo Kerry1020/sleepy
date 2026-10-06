@@ -56,6 +56,10 @@ class ClassDndScheduler(private val context: Context) {
         @Volatile
         internal var savedFilter: Int = NotificationManager.INTERRUPTION_FILTER_ALL
 
+        private const val DND_STATE_FILE = "sleepy_class_dnd_state"
+        private const val KEY_DND_OWNED = "entered_by_app"
+        private const val KEY_DND_SAVED_FILTER = "saved_filter"
+
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         private val rebuildLock = Mutex()
 
@@ -160,6 +164,10 @@ class ClassDndScheduler(private val context: Context) {
             if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
                 != DateUtils.SemesterStatus.IN_RANGE
             ) return@flatMap emptyList()
+            // 法定节假日不上课 → 无 DND 边界 (调休补班日不在 holidays 内, 正常排)
+            if (com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(context, date, table.id)) {
+                return@flatMap emptyList()
+            }
             val week = DateUtils.currentWeek(table.startDate, date)
             val dow = com.lingion.sleepy.widget.HolidayTransferHelper
                 .effectiveDayOfWeek(context, table.id, date)
@@ -205,14 +213,38 @@ class ClassDndScheduler(private val context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         if (!nm.isNotificationPolicyAccessGranted) return
         if (enter) {
+            if (isDndOwned(context)) return
             val current = nm.currentInterruptionFilter
             if (current != NotificationManager.INTERRUPTION_FILTER_ALL) return
             savedFilter = current
+            saveDndState(context, owned = true, saved = current)
             nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
-        } else if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_PRIORITY
+        } else if (isDndOwned(context) &&
+            nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_PRIORITY
         ) {
-            nm.setInterruptionFilter(savedFilter)
+            nm.setInterruptionFilter(loadSavedFilter(context))
+            saveDndState(context, owned = false, saved = NotificationManager.INTERRUPTION_FILTER_ALL)
+        } else if (isDndOwned(context)) {
+            // The user changed DND manually; clear ownership without overwriting it.
+            saveDndState(context, owned = false, saved = NotificationManager.INTERRUPTION_FILTER_ALL)
         }
+    }
+
+    private fun dndPrefs(context: Context) =
+        context.applicationContext.getSharedPreferences(DND_STATE_FILE, Context.MODE_PRIVATE)
+
+    private fun isDndOwned(context: Context): Boolean =
+        dndPrefs(context).getBoolean(KEY_DND_OWNED, false)
+
+    private fun loadSavedFilter(context: Context): Int =
+        dndPrefs(context).getInt(KEY_DND_SAVED_FILTER, savedFilter)
+
+    private fun saveDndState(context: Context, owned: Boolean, saved: Int) {
+        savedFilter = saved
+        dndPrefs(context).edit()
+            .putBoolean(KEY_DND_OWNED, owned)
+            .putInt(KEY_DND_SAVED_FILTER, saved)
+            .apply()
     }
 }
 

@@ -247,11 +247,12 @@ class CourseNotificationScheduler private constructor(
         val today = env.todayDate()
         val nodes = TimeTableUtils.parseNodes(table.timeJson)
 
-        // 1) 枚举窗口内的天, 收集课程行(仅学期内的天)
+        // 1) 枚举窗口内的天, 收集课程行(仅学期内且非法定节假日的天)
         val days = (0 until BEFORE_CLASS_WINDOW_DAYS).map { offset ->
             val date = today.plusDays(offset.toLong())
             if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
                     != DateUtils.SemesterStatus.IN_RANGE
+                || dataSource.isPublicHoliday(table.id, date)
             ) {
                 return@map date to emptyList()
             }
@@ -325,6 +326,8 @@ class CourseNotificationScheduler private constructor(
         val minutes = AppPrefs.getBeforeClassMinutes(app)
         val today = LocalDate.now()
         val table = resolveCurrentTable() ?: return
+        // 法定节假日不弹流体云 (调休补班日照常)
+        if (com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(app, today, table.id)) return
         val dow = com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(app, table.id, today)
         val week = DateUtils.currentWeek(table.startDate, today)
         // 防呆: 学期范围外不触发流体云(钳制周数会误匹配第 1 周的课)
@@ -435,6 +438,7 @@ internal interface BeforeClassDataSource {
     suspend fun coursesForDay(tableId: Long, dayOfWeek: Int): List<CourseEntity>
     suspend fun allCourseIds(): List<Long>
     fun effectiveDayOfWeek(tableId: Long?, date: LocalDate): Int
+    fun isPublicHoliday(tableId: Long, date: LocalDate): Boolean
 }
 
 /** 课前闹钟落地端口 — AlarmManager/PendingIntent 接缝; extras 语义与旧 Intent extras 一致。 */
@@ -479,6 +483,9 @@ internal class AndroidBeforeClassDataSource(private val ctx: Context) : BeforeCl
 
     override fun effectiveDayOfWeek(tableId: Long?, date: LocalDate): Int =
         com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(ctx, tableId, date)
+
+    override fun isPublicHoliday(tableId: Long, date: LocalDate): Boolean =
+        com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(ctx, date, tableId)
 }
 
 internal class AndroidBeforeClassAlarmPort(private val ctx: Context) : BeforeClassAlarmPort {
@@ -568,7 +575,12 @@ private suspend fun sendScheduleSummary(
     )
     val dayOfMonth = targetDate.dayOfMonth
 
-    val courses = if (table == null) {
+    // 法定节假日 (且非该表调休上课日) → 按无课处理: 摘要/预告不再谎报当天课表。
+    // 调休补班日不在 holidays 集内, 不受影响; 网络数据缺失时 isPublicHoliday=false 保守保留提醒。
+    val holidaySkip = table != null && com.lingion.sleepy.util.HolidayManager
+        .isPublicHolidayCached(context.applicationContext, targetDate, table.id)
+
+    val courses = if (table == null || holidaySkip) {
         emptyList()
     } else {
         val week = DateUtils.currentWeek(table.startDate, targetDate)

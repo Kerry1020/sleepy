@@ -55,11 +55,13 @@ class CourseNotificationSchedulerTest {
         var table: TimeTableEntity?,
         var byDay: Map<Int, List<CourseEntity>>,
         private val dayMapping: (LocalDate) -> Int = { it.dayOfWeek.value },
+        private val holidayDates: Set<LocalDate> = emptySet(),
     ) : BeforeClassDataSource {
         override suspend fun resolveCurrentTable() = table
         override suspend fun coursesForDay(tableId: Long, dayOfWeek: Int) = byDay[dayOfWeek].orEmpty()
         override suspend fun allCourseIds() = byDay.values.flatten().map { it.id }
         override fun effectiveDayOfWeek(tableId: Long?, date: LocalDate) = dayMapping(date)
+        override fun isPublicHoliday(tableId: Long, date: LocalDate) = date in holidayDates
     }
 
     private fun table(
@@ -227,6 +229,23 @@ class CourseNotificationSchedulerTest {
         val port = FakeAlarmPort()
         scheduler(port, FakeEnv(enabled = false), src).scheduleNext7DaysExactAlarms()
         assertTrue(port.armed.isEmpty())
+    }
+
+    @Test
+    fun `窗口内法定节假日跳过当天但保留后续课程`() = runBlocking {
+        val holiday = fixedToday.plusDays(2)
+        val src = FakeDataSource(
+            table(),
+            mapOf(
+                5 to listOf(course(7, day = 5, startNode = 1)),
+                6 to listOf(course(8, day = 6, startNode = 1)),
+            ),
+            holidayDates = setOf(holiday)
+        )
+        val port = FakeAlarmPort()
+        scheduler(port, FakeEnv(now = nineAm), src).scheduleNext7DaysExactAlarms()
+        val expected = fixedToday.plusDays(3).atTime(7, 50).atZone(zone).toInstant().toEpochMilli()
+        assertEquals(mapOf(100 + 8 to expected), port.armed)
     }
 
     @Test
