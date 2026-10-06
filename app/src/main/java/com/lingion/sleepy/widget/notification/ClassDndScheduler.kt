@@ -220,3 +220,4 @@ class ClassDndReceiver : BroadcastReceiver() {
         ClassDndScheduler.launchRebuildFromReceiver(context.applicationContext)
     }
 }
+
