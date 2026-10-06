@@ -1,5 +1,6 @@
 package com.lingion.sleepy
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -7,8 +8,10 @@ import java.io.File
 
 /**
  * 锁定平板 Master-Detail 双栏布局必须保住的不变量。
- * 契约: 宽屏(!isCompact)时,课表页与今日页同屏并存,导航合并为合项高亮,
- * 课表在圆角卡片内,双栏间有暗色分隔。测试面全部用字符串扫描,不实例化 NavHost。
+ * 契约: 宽屏(!isCompact)时,左 50% 永远 ScheduleScreen;
+ * 右 50% 跟用户选中的 rail 项切换 Today/Manage/Mine;
+ * NavigationRail 严格 3 项,每项都是 Schedule+X 跑道胶囊 (无 label)。
+ * 测试面全部用字符串扫描,不实例化 NavHost。
  */
 class TabletMasterDetailContractTest {
 
@@ -29,7 +32,7 @@ class TabletMasterDetailContractTest {
         assertTrue("NavigationRail 之后应有 Row 双栏布局", rowAfterRail > railSection)
         val rowBody = navHostSrc.substring(
             rowAfterRail,
-            minOf(rowAfterRail + 4000, navHostSrc.length),
+            minOf(rowAfterRail + 8000, navHostSrc.length),
         )
         assertTrue("宽屏 Row 内必须有 ScheduleScreen 调用", rowBody.contains("ScheduleScreen("))
     }
@@ -47,14 +50,6 @@ class TabletMasterDetailContractTest {
     }
 
     @Test
-    fun combined_nav_label_in_wide_rail() {
-        assertTrue(
-            "NavHost 应有合并课表+今日的导航项(合约: wideMergedScheduleToday)",
-            navHostSrc.contains("wideMergedScheduleToday"),
-        )
-    }
-
-    @Test
     fun panes_have_dark_gap() {
         val hasGap = navHostSrc.contains("surfaceContainerLow") ||
             navHostSrc.contains("HorizontalDivider(") ||
@@ -65,67 +60,70 @@ class TabletMasterDetailContractTest {
     @Test
     fun schedule_pane_in_rounded_card() {
         val hasCard = navHostSrc.contains("scheduleCard") ||
-            (
-                navHostSrc.contains("clip(") && navHostSrc.contains("RoundedCornerShape")
-                )
+            (navHostSrc.contains("clip(") && navHostSrc.contains("RoundedCornerShape"))
         assertTrue("课表面板应有圆角卡片容器(scheduleCard)", hasCard)
     }
 
     @Test
     fun compact_phone_branches_untouched() {
-        assertFalse(
-            "手机 dock 分支禁被误删",
-            navHostSrc.contains("// PLAN:wide-merged"),
-        )
+        assertFalse("手机 dock 分支禁被误删", navHostSrc.contains("// PLAN:wide-merged"))
         assertTrue("手机 dock(PillNavigationBar)必须保留", navHostSrc.contains("PillNavigationBar"))
         assertTrue("手机底栏(NavigationBar)必须保留", navHostSrc.contains("NavigationBar("))
     }
 
     @Test
-    fun combined_stadium_icon_in_wide_rail() {
-        // 宽屏 NavigationRail 用自研组合容器(非 NavigationRailItem 默认), 含跑道选中态
+    fun rail_has_exactly_three_combined_capsules() {
+        val count = Regex("""CombinedRailItem\(""").findAll(navHostSrc).count()
+        assertEquals("Rail 严格 3 个胶囊", 3, count)
+    }
+
+    @Test
+    fun left_half_is_permanent_schedule() {
+        val railIdx = navHostSrc.indexOf("NavigationRail")
+        assertTrue("必须存在 NavigationRail", railIdx >= 0)
+        val railOpen = navHostSrc.indexOf("{", railIdx)
+        var depth = 0
+        var railEnd = -1
+        var i = railOpen
+        while (i < navHostSrc.length && i < railIdx + 8000) {
+            when (navHostSrc[i]) {
+                '{' -> depth++
+                '}' -> { depth--; if (depth == 0) { railEnd = i; break } }
+            }
+            i++
+        }
+        assertTrue("必须闭合 NavigationRail", railEnd >= 0)
+        val afterRail = navHostSrc.substring(railEnd, minOf(railEnd + 8000, navHostSrc.length))
+        assertTrue("左半 ScheduleScreen 永久固定", afterRail.contains("ScheduleScreen("))
+        assertTrue("左半 viewModel = mainVm 共享", afterRail.contains("viewModel = mainVm"))
+    }
+
+    @Test
+    fun right_half_animated_content() {
+        assertTrue("右半边用 AnimatedContent", navHostSrc.contains("AnimatedContent("))
         assertTrue(
-            "宽屏应自研 CombinedScheduleTodayRailItem(绕开 NavigationRailItem 默认槽位)",
-            navHostSrc.contains("CombinedScheduleTodayRailItem")
-        )
-        // RoundedCornerShape(50) 是 50% percent 的单参重载 — 跑道形态
-        assertTrue(
-            "组合容器应有 StadiumShape(跑道型: 两半圆+中间矩形) = RoundedCornerShape(50)",
-            Regex("""RoundedCornerShape\(\s*50\s*[,)]""").containsMatchIn(navHostSrc) ||
-                Regex("""RoundedCornerShape\(percent\s*=\s*50\)""").containsMatchIn(navHostSrc)
-        )
-        assertTrue(
-            "组合容器应有中线/中分隔(HorizontalDivider 或中线 Spacer)",
-            navHostSrc.contains("HorizontalDivider") ||
-                navHostSrc.contains("Divider(thickness") ||
-                (navHostSrc.contains("Spacer") && navHostSrc.contains("height(0.5.dp)"))
-        )
-        assertTrue(
-            "组合容器应有 Schedule 图标 + Today 图标两槽位",
-            navHostSrc.contains("Tab.Schedule.icon") && navHostSrc.contains("Tab.Today.icon")
+            "右半边 fadeIn+togetherWith+fadeOut 200ms",
+            Regex("""fadeIn\(.*tween\(200\).*togetherWith.*fadeOut\(.*tween\(200""")
+                .containsMatchIn(navHostSrc),
         )
     }
 
     @Test
-    fun combined_stadium_adapts_orientation() {
-        // 组合图标按 orientation 自适应: 左侧/右侧 NavRail 上下排, 底部 NavBar 左右排。
-        // 锁存在性: 顶部(rail)调用 CombinedScheduleTodayRailItem(上下排), 底部(navBar)锚点
-        // 保留 BottomCombinedScheduleToday(左右排)。两个组件都存在即满足"按方向自适应"。
-        val hasVertical = navHostSrc.contains("CombinedScheduleTodayRailItem(")
-        val hasHorizontal = navHostSrc.contains("BottomCombinedScheduleToday(")
-        assertTrue(
-            "组合容器应同时提供上下排(rail)和左右排(bottom)两个版本",
-            hasVertical && hasHorizontal
+    fun no_label_on_combined_capsule() {
+        val start = navHostSrc.indexOf("private fun CombinedRailItem(")
+        assertTrue("CombinedRailItem 必须存在", start >= 0)
+        val body = navHostSrc.substring(start, minOf(start + 4000, navHostSrc.length))
+        assertFalse(
+            "胶囊内部不应有 Text(text = label) 调用",
+            Regex("""Text\(\s*text\s*=\s*label""").containsMatchIn(body),
         )
     }
 
     @Test
-    fun bottom_rail_branch_present_for_future_use() {
-        // 用户令: 状态栏在底部时也用组合图标(左右排列)。本版本保留占位常量以备后续启用。
-        assertTrue(
-            "NavHost 应保留底部组合 NavBar 分支锚点(BottomCombinedScheduleToday)",
-            navHostSrc.contains("BottomCombinedScheduleToday") ||
-                navHostSrc.contains("// PLAN:bottom-combined")
-        )
+    fun deleted_legacy_anchors() {
+        assertFalse("tab_schedule_today 字符串应已删除", navHostSrc.contains("tab_schedule_today"))
+        assertFalse("BottomCombinedScheduleToday 应已删除", navHostSrc.contains("BottomCombinedScheduleToday"))
+        assertFalse("PLAN:bottom-combined 注释应已删除", navHostSrc.contains("// PLAN:bottom-combined"))
+        assertFalse("CombinedScheduleTodayRailItem 应已删除", navHostSrc.contains("CombinedScheduleTodayRailItem"))
     }
 }
