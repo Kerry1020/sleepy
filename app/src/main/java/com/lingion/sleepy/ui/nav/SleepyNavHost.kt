@@ -426,10 +426,7 @@ private fun MainRoute(
         // Rail: 当前选中的 tab 跟 Schedule 组合成跑道胶囊(高亮),其它两个普通单图标。
         // 默认 currentTab = Tab.Schedule (Compact 分支默认),宽屏派生为 Tab.Today
         // 让右半默认显示今日、slot 1 胶囊默认高亮,两侧一致。
-        // dev-only: debug 包强制红点 (验证 Mine 胶囊/普通两种形态); release = updateNoticeVisible 等价,
-        // 手机/Compact 分支(包括 debug dock=PillNavigationBar)完全不受影响,只看真实 updateNoticeVisible。
-        val effectiveUpdateDotVisible = updateNoticeVisible ||
-            (com.lingion.sleepy.BuildConfig.DEBUG && true)
+        // 红点显示条件 = 真实 updateNoticeVisible (云端有新 release + 用户未 dismiss)。
         val effectiveRightTab: Tab = if (currentTab == Tab.Schedule) Tab.Today else currentTab
         val onTabletEditCourse: (CourseEntity) -> Unit = { course ->
             navigator.session.beginEditCourse(course)
@@ -468,7 +465,7 @@ private fun MainRoute(
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = effectiveUpdateDotVisible,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -489,7 +486,7 @@ private fun MainRoute(
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = effectiveUpdateDotVisible,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -510,7 +507,7 @@ private fun MainRoute(
                             selected = true,
                             scheduleIcon = Tab.Schedule.icon,
                             tabIcon = Tab.Mine.icon,
-                            tabShowUpdateDot = effectiveUpdateDotVisible,
+                            tabShowUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
@@ -530,7 +527,7 @@ private fun MainRoute(
                         PlainRailItem(
                             selected = false,
                             tab = Tab.Mine,
-                            showUpdateDot = effectiveUpdateDotVisible,
+                            showUpdateDot = updateNoticeVisible,
                             onClick = { setCurrentTab(Tab.Mine) },
                         )
                     }
