@@ -73,27 +73,30 @@ class TabletMasterDetailContractTest {
 
     @Test
     fun rail_has_exactly_three_combined_capsules() {
-        val count = Regex("""CombinedRailItem\(""").findAll(navHostSrc).count()
+        // 匹配 "CombinedRailItem(" 调用形式 (排除函数定义 "private fun CombinedRailItem(")
+        val count = Regex("""\bCombinedRailItem\(\s*\w+\s*=""").findAll(navHostSrc).count()
         assertEquals("Rail 严格 3 个胶囊", 3, count)
     }
 
     @Test
     fun left_half_is_permanent_schedule() {
-        val railIdx = navHostSrc.indexOf("NavigationRail")
-        assertTrue("必须存在 NavigationRail", railIdx >= 0)
-        val railOpen = navHostSrc.indexOf("{", railIdx)
+        // 截 NavigationRail 关闭 } 后 4000 字符,该区段必须包含 ScheduleScreen 与 viewModel = mainVm
+        val railIdx = navHostSrc.indexOf("NavigationRail {")
+        assertTrue("必须存在 NavigationRail { ... }", railIdx >= 0)
+        // 找第一对大括号闭合 (lambda body 用大括号, 第二对匹配 NavigationRail 自身)
+        val railBodyStart = navHostSrc.indexOf("{", railIdx)
         var depth = 0
-        var railEnd = -1
-        var i = railOpen
-        while (i < navHostSrc.length && i < railIdx + 8000) {
+        var bodyEnd = -1
+        var i = railBodyStart
+        while (i < navHostSrc.length && i < railIdx + 4000) {
             when (navHostSrc[i]) {
                 '{' -> depth++
-                '}' -> { depth--; if (depth == 0) { railEnd = i; break } }
+                '}' -> { depth--; if (depth == 0) { bodyEnd = i; break } }
             }
             i++
         }
-        assertTrue("必须闭合 NavigationRail", railEnd >= 0)
-        val afterRail = navHostSrc.substring(railEnd, minOf(railEnd + 8000, navHostSrc.length))
+        assertTrue("必须闭合 NavigationRail", bodyEnd >= 0)
+        val afterRail = navHostSrc.substring(bodyEnd, minOf(bodyEnd + 4000, navHostSrc.length))
         assertTrue("左半 ScheduleScreen 永久固定", afterRail.contains("ScheduleScreen("))
         assertTrue("左半 viewModel = mainVm 共享", afterRail.contains("viewModel = mainVm"))
     }
