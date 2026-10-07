@@ -15,7 +15,10 @@ class ReminderPreferenceContractTest {
     )
 
     private fun readAppPrefsSource(): String =
-        File("app/src/main/java/com/lingion/sleepy/util/AppPrefs.kt").readText()
+        File(
+            System.getProperty("sleepy.test.root") ?: ".",
+            "app/src/main/java/com/lingion/sleepy/util/AppPrefs.kt",
+        ).readText()
 
     private fun extractFunctionBody(source: String, functionName: String): String {
         val declarationStart = source.indexOf("fun $functionName(")
@@ -38,8 +41,10 @@ class ReminderPreferenceContractTest {
         }
 
         check(equalsStart >= 0) { "Missing expression body: $functionName" }
-        val expressionEnd = source.indexOf('\n', equalsStart).takeIf { it >= 0 } ?: source.length
-        return source.substring(equalsStart + 1, expressionEnd)
+        val expressionStart = (equalsStart + 1 until source.length)
+            .firstOrNull { !source[it].isWhitespace() } ?: source.length
+        val expressionEnd = source.indexOf('\n', expressionStart).takeIf { it >= 0 } ?: source.length
+        return source.substring(expressionStart, expressionEnd)
     }
 
     private fun normalized(body: String): String = body.replace(Regex("\\s+"), " ").trim()

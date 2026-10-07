@@ -6,8 +6,13 @@ import org.junit.Test
 import java.io.File
 
 class HolidayReminderPolicyAdapterTest {
+    private fun source(path: String): String = File(
+        System.getProperty("sleepy.test.root") ?: ".",
+        "app/src/main/java/com/lingion/sleepy/util/$path",
+    ).readText()
+
     private val adapterSource: String
-        get() = File("app/src/main/java/com/lingion/sleepy/util/HolidayReminderPolicyAdapter.kt").readText()
+        get() = source("HolidayReminderPolicyAdapter.kt")
 
     @Test
     fun `adapter reads reminder preferences rather than grey holiday preferences`() {
@@ -32,7 +37,7 @@ class HolidayReminderPolicyAdapterTest {
     @Test
     fun `adapter reads effective entries merged by manager without merging twice`() {
         val source = adapterSource
-        val managerSource = File("app/src/main/java/com/lingion/sleepy/util/HolidayManager.kt").readText()
+        val managerSource = source("HolidayManager.kt")
 
         assertTrue(managerSource.contains("HolidayRangeOps.mergeSegments(entries, AppPrefs.getHolidayRanges(ctx))"))
         assertTrue(source.contains("yearData.entries.asSequence()"))
