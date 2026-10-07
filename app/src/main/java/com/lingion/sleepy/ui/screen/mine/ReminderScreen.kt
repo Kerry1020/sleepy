@@ -517,57 +517,58 @@ fun ReminderScreen(onBack: () -> Unit, onOpenHoliday: () -> Unit = {}) {
                                 color = colors.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                             )
-                        }
-                        SubDivider()
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_date_rules_public_holiday),
-                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
-                            checked = publicHolidayReminder,
-                            enabled = dateRulesEnabled,
-                            onCheckedChange = {
-                                publicHolidayReminder = it
-                                AppPrefs.setHolidayReminderPublicHolidayEnabled(context, it)
-                                ReminderRescheduler.request()
+                        } else {
+                            SubDivider()
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_date_rules_public_holiday),
+                                subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                                checked = publicHolidayReminder,
+                                enabled = dateRulesEnabled,
+                                onCheckedChange = {
+                                    publicHolidayReminder = it
+                                    AppPrefs.setHolidayReminderPublicHolidayEnabled(context, it)
+                                    ReminderRescheduler.request()
+                                }
+                            )
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_date_rules_transfer_holiday),
+                                subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                                checked = transferHolidayReminder,
+                                enabled = dateRulesEnabled,
+                                onCheckedChange = {
+                                    transferHolidayReminder = it
+                                    AppPrefs.setHolidayReminderTransferHolidayEnabled(context, it)
+                                    ReminderRescheduler.request()
+                                }
+                            )
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_date_rules_makeup_workday),
+                                subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                                checked = makeupWorkdayReminder,
+                                enabled = dateRulesEnabled,
+                                onCheckedChange = {
+                                    makeupWorkdayReminder = it
+                                    AppPrefs.setHolidayReminderMakeupWorkdayEnabled(context, it)
+                                    ReminderRescheduler.request()
+                                }
+                            )
+                            ReminderToggleRow(
+                                title = stringResource(R.string.reminder_date_rules_ordinary_weekend),
+                                subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                                checked = ordinaryWeekendReminder,
+                                enabled = dateRulesEnabled,
+                                onCheckedChange = {
+                                    ordinaryWeekendReminder = it
+                                    AppPrefs.setHolidayReminderOrdinaryWeekendEnabled(context, it)
+                                    ReminderRescheduler.request()
+                                }
+                            )
+                            FilledTonalButton(
+                                onClick = onOpenHoliday,
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                            ) {
+                                Text(stringResource(R.string.reminder_date_rules_advanced_button))
                             }
-                        )
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_date_rules_transfer_holiday),
-                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
-                            checked = transferHolidayReminder,
-                            enabled = dateRulesEnabled,
-                            onCheckedChange = {
-                                transferHolidayReminder = it
-                                AppPrefs.setHolidayReminderTransferHolidayEnabled(context, it)
-                                ReminderRescheduler.request()
-                            }
-                        )
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_date_rules_makeup_workday),
-                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
-                            checked = makeupWorkdayReminder,
-                            enabled = dateRulesEnabled,
-                            onCheckedChange = {
-                                makeupWorkdayReminder = it
-                                AppPrefs.setHolidayReminderMakeupWorkdayEnabled(context, it)
-                                ReminderRescheduler.request()
-                            }
-                        )
-                        ReminderToggleRow(
-                            title = stringResource(R.string.reminder_date_rules_ordinary_weekend),
-                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
-                            checked = ordinaryWeekendReminder,
-                            enabled = dateRulesEnabled,
-                            onCheckedChange = {
-                                ordinaryWeekendReminder = it
-                                AppPrefs.setHolidayReminderOrdinaryWeekendEnabled(context, it)
-                                ReminderRescheduler.request()
-                            }
-                        )
-                        FilledTonalButton(
-                            onClick = onOpenHoliday,
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                        ) {
-                            Text(stringResource(R.string.reminder_date_rules_advanced_button))
                         }
                     }
                 }
