@@ -71,6 +71,27 @@ class CourseNotificationScheduler private constructor(
         }
 
     companion object {
+        fun ensureNotificationChannels(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            val appContext = context.applicationContext
+            val nm = appContext.getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannel(NotificationChannel(
+                CHANNEL_DAILY,
+                appContext.getString(R.string.notif_channel_daily),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply { description = appContext.getString(R.string.notif_channel_daily_desc) })
+            nm.createNotificationChannel(NotificationChannel(
+                CHANNEL_BEFORE_CLASS,
+                appContext.getString(R.string.notif_channel_before_class),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply { description = appContext.getString(R.string.notif_channel_before_class_desc) })
+            nm.createNotificationChannel(NotificationChannel(
+                CHANNEL_FLUID,
+                appContext.getString(R.string.notif_channel_fluid),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply { description = appContext.getString(R.string.notif_channel_fluid_desc) })
+        }
+
         const val CHANNEL_DAILY = "sleepy_daily"
         const val CHANNEL_BEFORE_CLASS = "sleepy_before_class"
         const val CHANNEL_FLUID = "sleepy_fluid_v2"
@@ -94,7 +115,7 @@ class CourseNotificationScheduler private constructor(
     }
 
     fun scheduleAll() {
-        createChannels()
+        ensureNotificationChannels(context)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             val prefs = context.applicationContext
             val beforeClassOn = scheduleLock.withLock {
@@ -390,26 +411,6 @@ class CourseNotificationScheduler private constructor(
         }
     }
     // ==================== Helpers ====================
-
-    private fun createChannels() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(
-            CHANNEL_DAILY,
-            context.getString(R.string.notif_channel_daily),
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply { description = context.getString(R.string.notif_channel_daily_desc) })
-        nm.createNotificationChannel(NotificationChannel(
-            CHANNEL_BEFORE_CLASS,
-            context.getString(R.string.notif_channel_before_class),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply { description = context.getString(R.string.notif_channel_before_class_desc) })
-        nm.createNotificationChannel(NotificationChannel(
-            CHANNEL_FLUID,
-            context.getString(R.string.notif_channel_fluid),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply { description = context.getString(R.string.notif_channel_fluid_desc) })
-    }
 
     // buildPendingIntInfo 死函数已删（实际全部走下方 buildPendingIntent）
 

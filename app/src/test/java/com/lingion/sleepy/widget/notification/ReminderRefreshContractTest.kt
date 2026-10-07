@@ -13,9 +13,8 @@ class ReminderRefreshContractTest {
         assertTrue(app.contains("notificationScheduler.scheduleAll()"))
         assertTrue(app.contains("classDndScheduler.reconcileReminderRules()"))
         assertTrue(app.contains("notificationScheduler.reconcileActiveFluidCloud()"))
-        // FluidCloudService.requestStop 在 CourseNotificationScheduler 中被调用
         val scheduler = source("app/src/main/java/com/lingion/sleepy/widget/notification/CourseNotificationScheduler.kt")
-        assertTrue(scheduler.contains("FluidCloudService.requestStop"))
+        assertTrue(scheduler.contains("FluidCloudService.requestStop(app)"))
     }
 
     @Test
@@ -26,6 +25,18 @@ class ReminderRefreshContractTest {
         assertTrue(service.contains("NOTIFY_BEFORE_CLASS_BASE"))
         assertTrue(service.contains("STOP_FOREGROUND_REMOVE"))
         assertTrue(service.contains("stopSelf()"))
+    }
+
+    @Test
+    fun fluid_cloud_creates_notification_channels_before_starting_foreground() {
+        val service = source("app/src/main/java/com/lingion/sleepy/widget/notification/FluidCloudService.kt")
+        val ensureChannels = service.indexOf("CourseNotificationScheduler.ensureNotificationChannels(this)")
+        val firstForegroundCall = service.indexOf("startForeground(")
+        assertTrue(ensureChannels >= 0 && firstForegroundCall > ensureChannels)
+
+        val scheduler = source("app/src/main/java/com/lingion/sleepy/widget/notification/CourseNotificationScheduler.kt")
+        assertTrue(scheduler.contains("fun ensureNotificationChannels(context: Context)"))
+        assertTrue(scheduler.contains("ensureNotificationChannels(context)"))
     }
 
     @Test

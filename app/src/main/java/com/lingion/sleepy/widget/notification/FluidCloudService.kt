@@ -41,6 +41,7 @@ class FluidCloudService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        CourseNotificationScheduler.ensureNotificationChannels(this)
         if (intent?.action == ACTION_STOP) {
             stopCloudNotification()
             return START_NOT_STICKY

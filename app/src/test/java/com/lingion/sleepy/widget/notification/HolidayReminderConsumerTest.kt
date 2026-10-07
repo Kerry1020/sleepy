@@ -5,6 +5,8 @@ import org.junit.Test
 import java.io.File
 
 class HolidayReminderConsumerTest {
+    private fun normalized(text: String): String = text.replace(Regex("\\s+"), " ").trim()
+
     private fun source(): String = File(
         System.getProperty("sleepy.test.root") ?: ".",
         "app/src/main/java/com/lingion/sleepy/widget/notification/CourseNotificationScheduler.kt"
@@ -71,10 +73,11 @@ class HolidayReminderConsumerTest {
     fun stale_before_class_alarm_is_suppressed_without_a_resolved_table() {
         val receiver = source().substringAfter("class BeforeClassNotifyReceiver")
             .substringBefore("\n    private fun handle")
-        val unresolvedGuard = receiver.indexOf(
-            "com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()?.id\n                    ?: return@launch"
+        val normalizedReceiver = normalized(receiver)
+        val unresolvedGuard = normalizedReceiver.indexOf(
+            "com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()?.id ?: return@launch"
         )
-        val handleCall = receiver.indexOf("handle(context, intent)")
+        val handleCall = normalizedReceiver.indexOf("handle(context, intent)")
 
         assertTrue(unresolvedGuard >= 0)
         assertTrue(handleCall > unresolvedGuard)
@@ -85,16 +88,18 @@ class HolidayReminderConsumerTest {
         val course = source()
         val reconcile = course.substringAfter("suspend fun reconcileActiveFluidCloud()")
             .substringBefore("suspend fun ensureActiveFluidCloud()")
-        val ensure = course.substringAfter("suspend fun ensureActiveFluidCloud(): Boolean {")
+        val ensure = course.substringAfter("suspend fun ensureActiveFluidCloud(): Boolean")
             .substringBefore("// ==================== Helpers")
 
         assertTrue(reconcile.contains("if (!ensureActiveFluidCloud())"))
         assertTrue(reconcile.contains("FluidCloudService.requestStop(app)"))
         assertTrue(ensure.contains("val table = resolveCurrentTable() ?: return false"))
-        assertTrue(ensure.contains(".allowReminder\n        ) return false"))
+        assertTrue(normalized(ensure).contains(".allowReminder ) return false"))
         assertTrue(ensure.contains("!= DateUtils.SemesterStatus.IN_RANGE) return false"))
         assertTrue(ensure.contains("} ?: return false"))
-        assertTrue(ensure.contains("\n            true\n") || ensure.contains("return try {"))
+        val normalizedEnsure = normalized(ensure)
+        assertTrue(normalizedEnsure.contains("startForegroundService(app, svc)"))
+        assertTrue(normalizedEnsure.contains("true } catch (t: Throwable)"))
         assertTrue(ensure.contains("catch (t: Throwable)"))
         assertTrue(ensure.contains("return false"))
     }
@@ -110,8 +115,8 @@ class HolidayReminderConsumerTest {
         val applyDnd = dnd.substringAfter("fun applyDnd(enter: Boolean)")
             .substringBefore("private fun dndPrefs")
 
-        assertTrue(rebuild.contains(
-            "if (isCurrentlyInClass(intervals, now)) applyDnd(enter = true)\n        else applyDnd(enter = false)"
+        assertTrue(normalized(rebuild).contains(
+            "if (isCurrentlyInClass(intervals, now)) applyDnd(enter = true) else applyDnd(enter = false)"
         ))
         assertTrue(applyDnd.contains("isDndOwned(context)"))
         assertTrue(applyDnd.contains("currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_PRIORITY"))
