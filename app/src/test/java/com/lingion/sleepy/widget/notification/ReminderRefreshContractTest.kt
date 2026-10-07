@@ -28,6 +28,18 @@ class ReminderRefreshContractTest {
     }
 
     @Test
+    fun fluid_cloud_creates_notification_channels_before_starting_foreground() {
+        val service = source("app/src/main/java/com/lingion/sleepy/widget/notification/FluidCloudService.kt")
+        val ensureChannels = service.indexOf("CourseNotificationScheduler.ensureNotificationChannels(this)")
+        val firstForegroundCall = service.indexOf("startForeground(")
+        assertTrue(ensureChannels >= 0 && firstForegroundCall > ensureChannels)
+
+        val scheduler = source("app/src/main/java/com/lingion/sleepy/widget/notification/CourseNotificationScheduler.kt")
+        assertTrue(scheduler.contains("fun ensureNotificationChannels(context: Context)"))
+        assertTrue(scheduler.contains("ensureNotificationChannels(context)"))
+    }
+
+    @Test
     fun dnd_exposes_refresh_reconciliation_entry_point() {
         val dnd = source("app/src/main/java/com/lingion/sleepy/widget/notification/ClassDndScheduler.kt")
         assertTrue(dnd.contains("fun reconcileReminderRules()"))
