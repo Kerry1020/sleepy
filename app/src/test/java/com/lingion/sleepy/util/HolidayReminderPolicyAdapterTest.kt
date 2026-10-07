@@ -7,7 +7,11 @@ import java.io.File
 
 class HolidayReminderPolicyAdapterTest {
     private val adapterSource: String
-        get() = File("app/src/main/java/com/lingion/sleepy/util/HolidayReminderPolicyAdapter.kt").readText()
+        get() = sequenceOf(
+            System.getProperty("sleepy.test.root")?.let { File(it, "app/src/main/java/com/lingion/sleepy/util/HolidayReminderPolicyAdapter.kt") },
+            File("app/src/main/java/com/lingion/sleepy/util/HolidayReminderPolicyAdapter.kt"),
+            File("src/main/java/com/lingion/sleepy/util/HolidayReminderPolicyAdapter.kt")
+        ).firstOrNull { it?.isFile == true }?.readText() ?: error("Cannot find HolidayReminderPolicyAdapter.kt")
 
     @Test
     fun `adapter reads reminder preferences rather than grey holiday preferences`() {
@@ -32,7 +36,11 @@ class HolidayReminderPolicyAdapterTest {
     @Test
     fun `adapter reads effective entries merged by manager without merging twice`() {
         val source = adapterSource
-        val managerSource = File("app/src/main/java/com/lingion/sleepy/util/HolidayManager.kt").readText()
+        val managerSource = sequenceOf(
+            System.getProperty("sleepy.test.root")?.let { File(it, "app/src/main/java/com/lingion/sleepy/util/HolidayManager.kt") },
+            File("app/src/main/java/com/lingion/sleepy/util/HolidayManager.kt"),
+            File("src/main/java/com/lingion/sleepy/util/HolidayManager.kt")
+        ).firstOrNull { it?.isFile == true }?.readText() ?: error("Cannot find HolidayManager.kt")
 
         assertTrue(managerSource.contains("HolidayRangeOps.mergeSegments(entries, AppPrefs.getHolidayRanges(ctx))"))
         assertTrue(source.contains("yearData.entries.asSequence()"))

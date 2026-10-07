@@ -14,16 +14,22 @@ class ReminderPreferenceContractTest {
         val default: String,
     )
 
-    private fun readAppPrefsSource(): String =
-        File("app/src/main/java/com/lingion/sleepy/util/AppPrefs.kt").readText()
+    private fun readAppPrefsSource(): String = sequenceOf(
+        System.getProperty("sleepy.test.root")?.let { File(it, "app/src/main/java/com/lingion/sleepy/util/AppPrefs.kt") },
+        File("app/src/main/java/com/lingion/sleepy/util/AppPrefs.kt"),
+        File("src/main/java/com/lingion/sleepy/util/AppPrefs.kt")
+    ).firstOrNull { it?.isFile == true }?.readText() ?: error("Cannot find AppPrefs.kt")
 
     private fun extractFunctionBody(source: String, functionName: String): String {
         val declarationStart = source.indexOf("fun $functionName(")
         check(declarationStart >= 0) { "Missing function: $functionName" }
-        val braceStart = source.indexOf('{', declarationStart)
-        val equalsStart = source.indexOf('=', declarationStart)
 
-        if (braceStart >= 0 && (equalsStart < 0 || braceStart < equalsStart)) {
+        // 找函数开始的 { 或 =
+        val braceStart = source.indexOf('{', declarationStart)
+        val equalsPos = source.indexOf('=', declarationStart)
+
+        // 情况1: 有 { 且在 = 前面 = 块函数体
+        if (braceStart >= 0 && (equalsPos < 0 || braceStart < equalsPos)) {
             var depth = 0
             for (index in braceStart until source.length) {
                 when (source[index]) {
@@ -37,9 +43,27 @@ class ReminderPreferenceContractTest {
             error("Unbalanced braces in: $functionName")
         }
 
-        check(equalsStart >= 0) { "Missing expression body: $functionName" }
-        val expressionEnd = source.indexOf('\n', equalsStart).takeIf { it >= 0 } ?: source.length
-        return source.substring(equalsStart + 1, expressionEnd)
+        // 情况2: expression body (fun x() = expression)
+        // 提取 = 后面到函数体结束的所有内容
+        if (equalsPos >= 0) {
+            // 找到 = 后的下一行开始
+            var start = equalsPos + 1
+            while (start < source.length && (source[start] == ' ' || source[start] == '\n' || source[start] == '\r' || source[start] == '\t')) {
+                start++
+            }
+            // 找到这一行（多行expression body）的结束
+            var lineEnd = start
+            while (lineEnd < source.length && source[lineEnd] != '\n' && source[lineEnd] != '\r') {
+                lineEnd++
+            }
+            // 去掉行尾空格
+            while (lineEnd > start && (source[lineEnd - 1] == ' ' || source[lineEnd - 1] == '\t')) {
+                lineEnd--
+            }
+            return source.substring(start, lineEnd)
+        }
+
+        error("Cannot extract body for: $functionName")
     }
 
     private fun normalized(body: String): String = body.replace(Regex("\\s+"), " ").trim()

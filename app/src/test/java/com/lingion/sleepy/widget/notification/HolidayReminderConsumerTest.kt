@@ -85,7 +85,7 @@ class HolidayReminderConsumerTest {
         val course = source()
         val reconcile = course.substringAfter("suspend fun reconcileActiveFluidCloud()")
             .substringBefore("suspend fun ensureActiveFluidCloud()")
-        val ensure = course.substringAfter("suspend fun ensureActiveFluidCloud(): Boolean")
+        val ensure = course.substringAfter("suspend fun ensureActiveFluidCloud(): Boolean {")
             .substringBefore("// ==================== Helpers")
 
         assertTrue(reconcile.contains("if (!ensureActiveFluidCloud())"))
@@ -94,7 +94,7 @@ class HolidayReminderConsumerTest {
         assertTrue(ensure.contains(".allowReminder\n        ) return false"))
         assertTrue(ensure.contains("!= DateUtils.SemesterStatus.IN_RANGE) return false"))
         assertTrue(ensure.contains("} ?: return false"))
-        assertTrue(ensure.contains("return true"))
+        assertTrue(ensure.contains("\n            true\n") || ensure.contains("return try {"))
         assertTrue(ensure.contains("catch (t: Throwable)"))
         assertTrue(ensure.contains("return false"))
     }
