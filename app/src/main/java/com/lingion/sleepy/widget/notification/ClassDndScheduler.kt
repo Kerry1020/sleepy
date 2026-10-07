@@ -127,11 +127,17 @@ class ClassDndScheduler(private val context: Context) {
         val intervals = buildIntervals(table)
         val now = LocalDateTime.now()
         if (isCurrentlyInClass(intervals, now)) applyDnd(enter = true)
+        else applyDnd(enter = false)
         val b = nextBoundaries(intervals, now)
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         b.nextStart?.let { setExact(am, RC_START, it) }
             ?: setExact(am, RC_START, now.plusDays(WINDOW_DAYS))
         b.nextEnd?.let { setExact(am, RC_END, it) } ?: cancelSlot(am, RC_END)
+    }
+
+    /** Reconcile alarms and current DND state after any reminder-rule change. */
+    fun reconcileReminderRules() {
+        syncFromPrefs()
     }
 
     /** 开关入口 (ReminderScreen/BootReceiver 调): 开 → 重排; 关 → 取消并恢复。 */
@@ -159,23 +165,26 @@ class ClassDndScheduler(private val context: Context) {
     private suspend fun buildIntervals(table: TimeTableEntity): List<Pair<LocalDateTime, LocalDateTime>> {
         val today = LocalDate.now()
         val nodes = TimeTableUtils.parseNodes(table.timeJson)
-        return (0 until WINDOW_DAYS).flatMap { offsetDays ->
-            val date = today.plusDays(offsetDays)
+        val result = mutableListOf<Pair<LocalDateTime, LocalDateTime>>()
+        for (offsetDays in 0 until WINDOW_DAYS) {
+            val date = today.plusDays(offsetDays.toLong())
             if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
                 != DateUtils.SemesterStatus.IN_RANGE
-            ) return@flatMap emptyList()
-            // 法定节假日不上课 → 无 DND 边界 (调休补班日不在 holidays 内, 正常排)
-            if (com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(context, date, table.id)) {
-                return@flatMap emptyList()
-            }
+            ) continue
+            // Use the reminder policy for the same date semantics as course notifications.
+            if (!com.lingion.sleepy.util.HolidayReminderPolicyAdapter
+                    .decide(context, date, table.id)
+                    .allowReminder
+            ) continue
             val week = DateUtils.currentWeek(table.startDate, date)
             val dow = com.lingion.sleepy.widget.HolidayTransferHelper
                 .effectiveDayOfWeek(context, table.id, date)
-            com.lingion.sleepy.SleepyApp.get().repository
+            result += com.lingion.sleepy.SleepyApp.get().repository
                 .getCoursesByDayOnce(table.id, dow)
                 .filter { it.inWeek(week) }
                 .mapNotNull { courseInterval(date, it, nodes) }
         }
+        return result
     }
 
     private fun setExact(am: AlarmManager, rc: Int, at: LocalDateTime) {

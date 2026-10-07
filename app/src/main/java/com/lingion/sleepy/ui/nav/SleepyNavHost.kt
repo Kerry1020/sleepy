@@ -291,7 +291,10 @@ internal fun SleepyNavHost(
         }
 
         entry<SleepyRoute.Reminder> {
-            ReminderScreen(onBack = { navigator.pop() })
+            ReminderScreen(
+                onBack = { navigator.pop() },
+                onOpenHoliday = { navigator.openHoliday() },
+            )
         }
 
         entry<SleepyRoute.About> {

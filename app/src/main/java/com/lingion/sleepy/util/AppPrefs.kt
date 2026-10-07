@@ -121,6 +121,13 @@ object AppPrefs {
     const val KEY_HOLIDAY_OVERRIDES = "holiday_overrides"           // JSON — 用户范围化覆盖(编辑/新增/删除节日段)
     const val KEY_CONFLICT_DEFAULT_TOP = "conflict_default_top"      // JSON {"day:startNode:step": layerRepId} — 冲突簇默认置顶图层; 默认空 = 全由 primaryComparator 决
 
+    // ===== 节假日提醒规则开关 =====
+    const val KEY_HOLIDAY_REMINDER_RULES_ENABLED = "holiday_reminder_rules_enabled"
+    const val KEY_HOLIDAY_REMINDER_PUBLIC_HOLIDAY = "holiday_reminder_public_holiday"
+    const val KEY_HOLIDAY_REMINDER_TRANSFER_HOLIDAY = "holiday_reminder_transfer_holiday"
+    const val KEY_HOLIDAY_REMINDER_MAKEUP_WORKDAY = "holiday_reminder_makeup_workday"
+    const val KEY_HOLIDAY_REMINDER_ORDINARY_WEEKEND = "holiday_reminder_ordinary_weekend"
+
     private fun sp(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
@@ -797,6 +804,48 @@ object AppPrefs {
 
     fun setHolidayIgnoreWorkday(ctx: Context, v: Boolean) {
         sp(ctx).edit().putBoolean(KEY_HOLIDAY_IGNORE_WORKDAY, v).apply()
+    }
+
+    // ===== 节假日提醒规则开关 =====
+
+    /** 节假日提醒规则总开关 — 默认 false */
+    fun isHolidayReminderRulesEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HOLIDAY_REMINDER_RULES_ENABLED, false)
+
+    fun setHolidayReminderRulesEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_HOLIDAY_REMINDER_RULES_ENABLED, v).apply()
+    }
+
+    /** 法定节假日提醒 — 默认 true */
+    fun isHolidayReminderPublicHolidayEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HOLIDAY_REMINDER_PUBLIC_HOLIDAY, true)
+
+    fun setHolidayReminderPublicHolidayEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_HOLIDAY_REMINDER_PUBLIC_HOLIDAY, v).apply()
+    }
+
+    /** 调休放假日提醒 — 默认 true */
+    fun isHolidayReminderTransferHolidayEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HOLIDAY_REMINDER_TRANSFER_HOLIDAY, true)
+
+    fun setHolidayReminderTransferHolidayEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_HOLIDAY_REMINDER_TRANSFER_HOLIDAY, v).apply()
+    }
+
+    /** 补班工作日提醒 — 默认 true */
+    fun isHolidayReminderMakeupWorkdayEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HOLIDAY_REMINDER_MAKEUP_WORKDAY, true)
+
+    fun setHolidayReminderMakeupWorkdayEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_HOLIDAY_REMINDER_MAKEUP_WORKDAY, v).apply()
+    }
+
+    /** 普通周末提醒 — 默认 true */
+    fun isHolidayReminderOrdinaryWeekendEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HOLIDAY_REMINDER_ORDINARY_WEEKEND, true)
+
+    fun setHolidayReminderOrdinaryWeekendEnabled(ctx: Context, v: Boolean) {
+        sp(ctx).edit().putBoolean(KEY_HOLIDAY_REMINDER_ORDINARY_WEEKEND, v).apply()
     }
 
     // ===== 节假日用户覆盖（范围化段）=====

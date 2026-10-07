@@ -120,8 +120,8 @@ class CourseNotificationScheduler private constructor(
                 resyncBeforeClassLocked()
                 true
             }
-            // 状态兜底：排 alarm 的同时立即检测是否已在某节课窗口内（补起流体云）
-            if (beforeClassOn) ensureActiveFluidCloud()
+            // Reconcile current Fluid Cloud state against the latest policy and preferences.
+            if (beforeClassOn) reconcileActiveFluidCloud()
         }
     }
 
@@ -247,18 +247,20 @@ class CourseNotificationScheduler private constructor(
         val today = env.todayDate()
         val nodes = TimeTableUtils.parseNodes(table.timeJson)
 
-        // 1) 枚举窗口内的天, 收集课程行(仅学期内且非法定节假日的天)
-        val days = (0 until BEFORE_CLASS_WINDOW_DAYS).map { offset ->
+        // 1) 枚举窗口内的天, 收集课程行(仅学期内且允许提醒的天)
+        val days = mutableListOf<Pair<LocalDate, List<CourseEntity>>>()
+        for (offset in 0 until BEFORE_CLASS_WINDOW_DAYS) {
             val date = today.plusDays(offset.toLong())
             if (DateUtils.semesterStatus(table.startDate, table.maxWeek, date)
                     != DateUtils.SemesterStatus.IN_RANGE
-                || dataSource.isPublicHoliday(table.id, date)
+                || !dataSource.allowsReminder(table.id, date)
             ) {
-                return@map date to emptyList()
+                days += date to emptyList()
+                continue
             }
             val week = DateUtils.currentWeek(table.startDate, date)
             val dow = dataSource.effectiveDayOfWeek(table.id, date)
-            date to dataSource.coursesForDay(table.id, dow).filter { it.inWeek(week) }
+            days += date to dataSource.coursesForDay(table.id, dow).filter { it.inWeek(week) }
         }
 
         // 2) 逐天收集未来槽位; 同 courseId 保留最早的未来触发
@@ -299,7 +301,9 @@ class CourseNotificationScheduler private constructor(
                     }.orEmpty()),
                     "startNode" to course.startNode,
                     "notifyEpoch" to epoch,
-                    "classEpoch" to classStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    "classEpoch" to classStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    "tableId" to table.id,
+                    "reminderDate" to date.toString()
                 )
             }
         }
@@ -319,19 +323,27 @@ class CourseNotificationScheduler private constructor(
      * 调用时机：app 回前台、app 启动、课程数据变更、WorkManager 周期兜底。
      * 解决"alarm 错过那一秒 / 用户在窗口内才打开 app → 流体云永远不起"的问题。
      */
-    suspend fun ensureActiveFluidCloud() {
+    suspend fun reconcileActiveFluidCloud() {
         val app = context.applicationContext
-        if (!AppPrefs.isReminderEnabled(app) || !AppPrefs.isBeforeClassEnabled(app)) return
-        if (!AppPrefs.isBeforeClassFluidEnabled(app)) return
+        if (!ensureActiveFluidCloud()) FluidCloudService.requestStop(app)
+    }
+
+    suspend fun ensureActiveFluidCloud(): Boolean {
+        val app = context.applicationContext
+        if (!AppPrefs.isReminderEnabled(app) || !AppPrefs.isBeforeClassEnabled(app)) return false
+        if (!AppPrefs.isBeforeClassFluidEnabled(app)) return false
         val minutes = AppPrefs.getBeforeClassMinutes(app)
         val today = LocalDate.now()
-        val table = resolveCurrentTable() ?: return
-        // 法定节假日不弹流体云 (调休补班日照常)
-        if (com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(app, today, table.id)) return
+        val table = resolveCurrentTable() ?: return false
+        // Current-date policy must also prevent stale/recovery launches after settings change.
+        if (!com.lingion.sleepy.util.HolidayReminderPolicyAdapter
+                .decide(app, today, table.id)
+                .allowReminder
+        ) return false
         val dow = com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(app, table.id, today)
         val week = DateUtils.currentWeek(table.startDate, today)
         // 防呆: 学期范围外不触发流体云(钳制周数会误匹配第 1 周的课)
-        if (DateUtils.semesterStatus(table.startDate, table.maxWeek, today) != DateUtils.SemesterStatus.IN_RANGE) return
+        if (DateUtils.semesterStatus(table.startDate, table.maxWeek, today) != DateUtils.SemesterStatus.IN_RANGE) return false
         val nodes = TimeTableUtils.parseNodes(table.timeJson)
         val now = System.currentTimeMillis()
 
@@ -347,7 +359,7 @@ class CourseNotificationScheduler private constructor(
                 val classStart = today.atTime(h, m).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val notifyEpoch = classStart - minutes * 60_000L
                 now in notifyEpoch..classStart  // 现在在窗口内
-            } ?: return
+            } ?: return false
 
         // 计算这节课的精确窗口，启动 FluidCloudService
         val st = if (hit.ownTime && hit.startTime.isNotBlank()) hit.startTime
@@ -368,11 +380,13 @@ class CourseNotificationScheduler private constructor(
             putExtra("notifyEpoch", notifyEpoch)
             putExtra("classEpoch", classStart)
         }
-        try {
+        return try {
             androidx.core.content.ContextCompat.startForegroundService(app, svc)
             android.util.Log.d("CourseScheduler", "ensureActiveFluidCloud: started for ${hit.courseName} notify=$notifyEpoch class=$classStart now=$now")
+            true
         } catch (t: Throwable) {
             android.util.Log.w("CourseScheduler", "ensureActiveFluidCloud start failed", t)
+            false
         }
     }
     // ==================== Helpers ====================
@@ -438,7 +452,9 @@ internal interface BeforeClassDataSource {
     suspend fun coursesForDay(tableId: Long, dayOfWeek: Int): List<CourseEntity>
     suspend fun allCourseIds(): List<Long>
     fun effectiveDayOfWeek(tableId: Long?, date: LocalDate): Int
+    /** Legacy holiday hook retained for source-compatible test fakes. */
     fun isPublicHoliday(tableId: Long, date: LocalDate): Boolean
+    suspend fun allowsReminder(tableId: Long, date: LocalDate): Boolean = !isPublicHoliday(tableId, date)
 }
 
 /** 课前闹钟落地端口 — AlarmManager/PendingIntent 接缝; extras 语义与旧 Intent extras 一致。 */
@@ -486,6 +502,11 @@ internal class AndroidBeforeClassDataSource(private val ctx: Context) : BeforeCl
 
     override fun isPublicHoliday(tableId: Long, date: LocalDate): Boolean =
         com.lingion.sleepy.util.HolidayManager.isPublicHolidayCached(ctx, date, tableId)
+
+    override suspend fun allowsReminder(tableId: Long, date: LocalDate): Boolean =
+        com.lingion.sleepy.util.HolidayReminderPolicyAdapter
+            .decide(ctx, date, tableId)
+            .allowReminder
 }
 
 internal class AndroidBeforeClassAlarmPort(private val ctx: Context) : BeforeClassAlarmPort {
@@ -570,17 +591,16 @@ private suspend fun sendScheduleSummary(
     isTomorrowPreview: Boolean
 ) {
     val table = com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()
+    if (table != null && !com.lingion.sleepy.util.HolidayReminderPolicyAdapter
+            .decide(context.applicationContext, targetDate, table.id)
+            .allowReminder
+    ) return
     val dow = com.lingion.sleepy.widget.HolidayTransferHelper.effectiveDayOfWeek(
         context.applicationContext, table?.id, targetDate
     )
     val dayOfMonth = targetDate.dayOfMonth
 
-    // 法定节假日 (且非该表调休上课日) → 按无课处理: 摘要/预告不再谎报当天课表。
-    // 调休补班日不在 holidays 集内, 不受影响; 网络数据缺失时 isPublicHoliday=false 保守保留提醒。
-    val holidaySkip = table != null && com.lingion.sleepy.util.HolidayManager
-        .isPublicHolidayCached(context.applicationContext, targetDate, table.id)
-
-    val courses = if (table == null || holidaySkip) {
+    val courses = if (table == null) {
         emptyList()
     } else {
         val week = DateUtils.currentWeek(table.startDate, targetDate)
@@ -667,7 +687,31 @@ class BeforeClassScheduleReceiver : BroadcastReceiver() {
  */
 class BeforeClassNotifyReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        android.util.Log.d("BeforeClassNotify", "entered extras=${intent.extras?.keySet()}")
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                val tableId = intent.getLongExtra("tableId", Long.MIN_VALUE)
+                    .takeUnless { it == Long.MIN_VALUE }
+                val date = intent.getStringExtra("reminderDate")
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: LocalDate.now()
+                val currentTableId =
+                    com.lingion.sleepy.widget.WidgetTableResolver.resolveCurrentTable()?.id
+                    ?: return@launch
+                val resolvedTableId = tableId ?: currentTableId
+                if (resolvedTableId != currentTableId) return@launch
+                if (!com.lingion.sleepy.util.HolidayReminderPolicyAdapter
+                        .decide(context.applicationContext, date, resolvedTableId)
+                        .allowReminder
+                ) return@launch
+                handle(context, intent)
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+
+    private fun handle(context: Context, intent: Intent) {
         if (!hasNotifPermission(context)) {
             android.util.Log.w("BeforeClassNotify", "POST_NOTIFICATIONS denied")
             return

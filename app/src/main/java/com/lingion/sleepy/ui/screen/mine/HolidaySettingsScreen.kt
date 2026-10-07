@@ -153,6 +153,7 @@ fun HolidaySettingsScreen(
         next.add(range)
         AppPrefs.setHolidayRanges(context, next)
         reload()
+        ReminderRescheduler.request()
     }
 
     /**
@@ -172,12 +173,14 @@ fun HolidaySettingsScreen(
         }
         AppPrefs.setHolidayRanges(context, next)
         reload()
+        ReminderRescheduler.request()
     }
 
     /** 恢复默认: 移除该 id 的覆盖(含 REMOVED 型), 网络段随之回来 */
     fun restoreRange(range: HolidayRange) {
         AppPrefs.setHolidayRanges(context, overrides.filter { it.id != range.id })
         reload()
+        ReminderRescheduler.request()
     }
 
     fun load(targetYear: Int, force: Boolean = false) {
@@ -194,6 +197,7 @@ fun HolidaySettingsScreen(
                 entries.isEmpty() && HolidayManager.isYearFetchFailed(targetYear) -> HolidayUiState.Failed
                 else -> HolidayUiState.Loaded(entries)
             }
+            if (force) ReminderRescheduler.request()
         }
     }
 
@@ -366,6 +370,11 @@ fun HolidaySettingsScreen(
                     Text(
                         text = if (tableId == null) stringResource(R.string.holiday_makeup_no_table)
                         else stringResource(R.string.holiday_makeup_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.holiday_mapping_explanation),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onSurfaceVariant
                     )

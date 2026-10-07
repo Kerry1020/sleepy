@@ -21,6 +21,11 @@ import java.time.format.DateTimeFormatter
 /** 带名称的节假日/补班日条目 */
 data class HolidayEntry(val date: LocalDate, val name: String, val type: String)
 
+data class HolidayYearData(
+    val entries: List<HolidayEntry>,
+    val available: Boolean,
+)
+
 object HolidayManager {
     /** API 条目类型: 法定节假日 / 补班日(周末但要上课) */
     const val TYPE_PUBLIC_HOLIDAY = "public_holiday"
@@ -140,14 +145,53 @@ object HolidayManager {
         return entries
     }
 
+    suspend fun getYearData(ctx: Context, year: Int): HolidayYearData {
+        val cacheEntries = entriesCache[year] ?: diskCache(ctx, year)
+        val entries = cacheEntries ?: getYearEntries(ctx, year)
+        if (cacheEntries != null) entriesCache[year] = cacheEntries
+        val effective = HolidayRangeOps.mergeSegments(entries, AppPrefs.getHolidayRanges(ctx)).active
+        val effectiveEntries = effective.flatMap { segment ->
+            generateSequence(segment.startDate) { previous ->
+                previous.plusDays(1).takeUnless { it.isAfter(segment.endDate) }
+            }.map { date -> HolidayEntry(date, segment.name, segment.type) }.toList()
+        }
+        return yearData(effectiveEntries, isYearFetchFailed(year), hasCachedData = cacheEntries != null)
+    }
+
+    internal fun yearData(
+        entries: List<HolidayEntry>,
+        fetchFailed: Boolean,
+        hasCachedData: Boolean,
+    ): HolidayYearData = HolidayYearData(
+        entries = entries,
+        // User overrides can classify specific dates, but cannot make an unavailable
+        // network year authoritative for every other date.
+        available = hasCachedData || !fetchFailed,
+    )
+
+    internal fun refreshedEntries(
+        cached: List<HolidayEntry>?,
+        fetched: List<HolidayEntry>,
+        fetchFailed: Boolean,
+    ): List<HolidayEntry> = if (fetchFailed) cached ?: fetched else fetched
+
     /** 某年数据是否因网络原因拉取失败 */
     fun isYearFetchFailed(year: Int): Boolean = yearFetchFailed[year] == true
 
-    /** 强制重新拉取某年条目(设置页"刷新"按钮用): 绕过内存+磁盘缓存 */
+    /** 强制重新拉取某年条目(设置页"刷新"按钮用): 绕过内存+磁盘缓存。 */
     suspend fun refreshYearEntries(ctx: Context, year: Int): List<HolidayEntry> {
-        entriesCache.remove(year)
+        val cached = entriesCache[year] ?: diskCache(ctx, year)
+        if (cached != null) entriesCache[year] = cached
         yearFetchFailed.remove(year)
-        return getYearEntries(ctx, year)
+
+        val fetched = fetchEntries(year)
+        val fetchFailed = isYearFetchFailed(year)
+        val result = refreshedEntries(cached, fetched, fetchFailed)
+        if (!fetchFailed) {
+            entriesCache[year] = fetched
+            writeDiskCache(ctx, year, fetched)
+        }
+        return result
     }
 
     /** 拉取并解析某年全部条目(带名称), 供二级页展示 */
@@ -173,6 +217,8 @@ object HolidayManager {
             if (entries.isEmpty() && !json.contains("\"dates\"")) {
                 // 返回体异常(非预期结构)视为失败
                 yearFetchFailed[year] = true
+            } else {
+                yearFetchFailed.remove(year)
             }
             entries
         } catch (_: Exception) {

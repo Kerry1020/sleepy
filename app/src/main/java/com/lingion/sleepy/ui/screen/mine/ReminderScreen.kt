@@ -238,13 +238,18 @@ private fun buildBeforeClassPreviewText(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReminderScreen(onBack: () -> Unit) {
+fun ReminderScreen(onBack: () -> Unit, onOpenHoliday: () -> Unit = {}) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
 
     var masterEnabled by remember { mutableStateOf(AppPrefs.isReminderEnabled(context)) }
+    var dateRulesEnabled by remember { mutableStateOf(AppPrefs.isHolidayReminderRulesEnabled(context)) }
+    var publicHolidayReminder by remember { mutableStateOf(AppPrefs.isHolidayReminderPublicHolidayEnabled(context)) }
+    var transferHolidayReminder by remember { mutableStateOf(AppPrefs.isHolidayReminderTransferHolidayEnabled(context)) }
+    var makeupWorkdayReminder by remember { mutableStateOf(AppPrefs.isHolidayReminderMakeupWorkdayEnabled(context)) }
+    var ordinaryWeekendReminder by remember { mutableStateOf(AppPrefs.isHolidayReminderOrdinaryWeekendEnabled(context)) }
     var dailyEnabled by remember { mutableStateOf(AppPrefs.isDailyReminderEnabled(context)) }
     var todayEnabled by remember { mutableStateOf(AppPrefs.isTodayReminderEnabled(context)) }
     var dailyTime by remember { mutableStateOf(AppPrefs.getDailyReminderTime(context)) }
@@ -467,6 +472,103 @@ fun ReminderScreen(onBack: () -> Unit) {
                                 checkedTrackColor = colors.primary
                             )
                         )
+                    }
+                }
+            }
+
+            // Date-based reminder rules remain independent from the general reminder master.
+            item {
+                ReminderCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.reminder_date_rules_title),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = colors.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.reminder_date_rules_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = dateRulesEnabled,
+                                onCheckedChange = {
+                                    dateRulesEnabled = it
+                                    AppPrefs.setHolidayReminderRulesEnabled(context, it)
+                                    ReminderRescheduler.request()
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = colors.onPrimary,
+                                    checkedTrackColor = colors.primary
+                                )
+                            )
+                        }
+                        if (!dateRulesEnabled) {
+                            Text(
+                                text = stringResource(R.string.reminder_date_rules_inactive),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                            )
+                        }
+                        SubDivider()
+                        ReminderToggleRow(
+                            title = stringResource(R.string.reminder_date_rules_public_holiday),
+                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                            checked = publicHolidayReminder,
+                            enabled = dateRulesEnabled,
+                            onCheckedChange = {
+                                publicHolidayReminder = it
+                                AppPrefs.setHolidayReminderPublicHolidayEnabled(context, it)
+                                ReminderRescheduler.request()
+                            }
+                        )
+                        ReminderToggleRow(
+                            title = stringResource(R.string.reminder_date_rules_transfer_holiday),
+                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                            checked = transferHolidayReminder,
+                            enabled = dateRulesEnabled,
+                            onCheckedChange = {
+                                transferHolidayReminder = it
+                                AppPrefs.setHolidayReminderTransferHolidayEnabled(context, it)
+                                ReminderRescheduler.request()
+                            }
+                        )
+                        ReminderToggleRow(
+                            title = stringResource(R.string.reminder_date_rules_makeup_workday),
+                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                            checked = makeupWorkdayReminder,
+                            enabled = dateRulesEnabled,
+                            onCheckedChange = {
+                                makeupWorkdayReminder = it
+                                AppPrefs.setHolidayReminderMakeupWorkdayEnabled(context, it)
+                                ReminderRescheduler.request()
+                            }
+                        )
+                        ReminderToggleRow(
+                            title = stringResource(R.string.reminder_date_rules_ordinary_weekend),
+                            subtitle = stringResource(R.string.reminder_date_rules_advanced_subtitle),
+                            checked = ordinaryWeekendReminder,
+                            enabled = dateRulesEnabled,
+                            onCheckedChange = {
+                                ordinaryWeekendReminder = it
+                                AppPrefs.setHolidayReminderOrdinaryWeekendEnabled(context, it)
+                                ReminderRescheduler.request()
+                            }
+                        )
+                        FilledTonalButton(
+                            onClick = onOpenHoliday,
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        ) {
+                            Text(stringResource(R.string.reminder_date_rules_advanced_button))
+                        }
                     }
                 }
             }
@@ -1030,6 +1132,7 @@ private fun ReminderToggleRow(
     subtitle: String,
     tag: String? = null,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
@@ -1060,6 +1163,7 @@ private fun ReminderToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = colors.onPrimary,
                 checkedTrackColor = colors.primary

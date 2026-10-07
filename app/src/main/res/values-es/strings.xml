@@ -809,6 +809,16 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="reminder_master_title">Activar recordatorios</string>
     <string name="reminder_pick_time">Elegir hora de recordatorio</string>
     <string name="reminder_title">Recordatorios</string>
+    <string name="reminder_date_rules_title">Recordatorios por fecha</string>
+    <string name="reminder_date_rules_subtitle">Desactivado, todas las fechas siguen enviando recordatorios. Activado, puedes configurar cada tipo. Afecta resúmenes diarios, avisos antes de clase, Nube Fluida y No molestar en clase.</string>
+    <string name="reminder_date_rules_inactive">No está activo. Todas las fechas siguen enviando recordatorios y tus opciones se conservan.</string>
+    <string name="reminder_date_rules_public_holiday">Recordatorios de festivos oficiales</string>
+    <string name="reminder_date_rules_transfer_holiday">Recordatorios de festivos asignados</string>
+    <string name="reminder_date_rules_makeup_workday">Recordatorios de días de recuperación</string>
+    <string name="reminder_date_rules_ordinary_weekend">Recordatorios de fines de semana normales</string>
+    <string name="reminder_date_rules_advanced_title">Ajustes avanzados de festivos</string>
+    <string name="reminder_date_rules_advanced_button">Abrir ajustes de festivos</string>
+    <string name="reminder_date_rules_advanced_subtitle">Solo se aplican al activarlos. Las asignaciones son por horario, el fin de semana no equivale a festivo oficial y afectan las cuatro vías de recordatorio.</string>
     <string name="school_count_supported">%1$d compatibles</string>
     <string name="school_count_total">%1$d en total</string>
     <string name="school_pinyin_hint">Admite iniciales de pinyin / abreviaturas de escuela (ej. hrbeu)</string>
@@ -845,6 +855,7 @@ Agradecimientos por universidad (una tarjeta por universidad, expandir para ver 
     <string name="settings_holiday_title">Atenuar cursos en festivos</string>
     <string name="holiday_makeup_title">Asignación de días de recuperación</string>
     <string name="holiday_makeup_subtitle">Se configura por horario. Los días de recuperación sin asignar conservan su propio horario; no se hacen suposiciones.</string>
+    <string name="holiday_mapping_explanation">Un festivo oficial sin configurar sigue siendo festivo legal. Las asignaciones solo se aplican al horario actual y los días de recuperación proceden de los datos. Una asignación afecta al origen de los cursos y a las cuatro vías de recordatorio: resumen diario, aviso previo, Fluid Cloud y DND automático. Los usuarios normales no necesitan asignarla salvo que su centro tenga una disposición especial.</string>
     <string name="holiday_makeup_unset">Ninguno</string>
     <string name="holiday_transfer_pick_other">Otra fecha…</string>
     <string name="holiday_transfer_edit_segment">Editar este periodo</string>

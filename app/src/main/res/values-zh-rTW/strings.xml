@@ -807,6 +807,16 @@
     <string name="reminder_master_title">開啟提醒</string>
     <string name="reminder_pick_time">選擇提醒時間</string>
     <string name="reminder_title">提醒</string>
+    <string name="reminder_date_rules_title">依日期設定提醒</string>
+    <string name="reminder_date_rules_subtitle">關閉時所有日期照常發送提醒；開啟後可分別設定日期類型，同時影響每日摘要、課前提醒、流體雲提醒與上課自動勿擾。</string>
+    <string name="reminder_date_rules_inactive">目前未生效。關閉時所有日期照常提醒，子選項會保留。</string>
+    <string name="reminder_date_rules_public_holiday">法定假日提醒</string>
+    <string name="reminder_date_rules_transfer_holiday">調休放假日提醒</string>
+    <string name="reminder_date_rules_makeup_workday">補班日提醒</string>
+    <string name="reminder_date_rules_ordinary_weekend">一般週末提醒</string>
+    <string name="reminder_date_rules_advanced_title">假日調休進階設定</string>
+    <string name="reminder_date_rules_advanced_button">開啟假日設定</string>
+    <string name="reminder_date_rules_advanced_subtitle">僅在開啟時生效。映射依目前課表區分，週末不等於法定假日，並影響四種提醒。</string>
     <string name="school_count_supported">已支援 %1$d</string>
     <string name="school_count_total">共 %1$d 所</string>
     <string name="school_pinyin_hint">支援拼音首字母 / 學校英文簡稱 (如 hrbeu)</string>
@@ -843,6 +853,7 @@
     <string name="settings_holiday_title">假日課程灰顯</string>
     <string name="holiday_makeup_title">補班日依哪天上課</string>
     <string name="holiday_makeup_subtitle">每張課表個別設定。未設定的補班日照常顯示當天課表，不會替你猜測。</string>
+    <string name="holiday_mapping_explanation">未設定的法定假日仍會按法定假日處理；對應只套用於目前課表，補班日以資料為準。對應會影響課程來源及四種提醒途徑（每日摘要、課前提醒、流體雲、自動勿擾）。一般使用者不需要設定，除非學校有特殊安排。</string>
     <string name="holiday_makeup_unset">無</string>
     <string name="holiday_transfer_pick_other">其他日期…</string>
     <string name="holiday_transfer_edit_segment">編輯本假期段</string>
