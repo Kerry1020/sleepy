@@ -158,8 +158,30 @@ class StringsKeyParityTest {
         "schedule_conflict_banner_modify"
     )
 
+    private val reminderDateRulesKeys = listOf(
+        "reminder_date_rules_title",
+        "reminder_date_rules_subtitle",
+        "reminder_date_rules_inactive",
+        "reminder_date_rules_public_holiday",
+        "reminder_date_rules_transfer_holiday",
+        "reminder_date_rules_makeup_workday",
+        "reminder_date_rules_ordinary_weekend",
+        "reminder_date_rules_advanced_title",
+        "reminder_date_rules_advanced_button",
+        "reminder_date_rules_advanced_subtitle"
+    )
+
     @Test
-    fun all_six_locale_dirs_exist() {
+    fun reminder_date_rules_keys_present_in_all_six_locales() {
+        for (locale in localeDirs) {
+            val text = File(basePath, "$locale/strings.xml").readText()
+            for (key in reminderDateRulesKeys) {
+                assertTrue("$locale missing $key", text.contains("name=\"$key\""))
+            }
+        }
+    }
+
+
         for (locale in localeDirs) {
             val dir = File(basePath, locale)
             assertTrue("Missing locale dir $locale", dir.isDirectory)
