@@ -107,7 +107,12 @@ object HolidayManager {
         val ranges = AppPrefs.getHolidayRanges(ctx)
         val networkEntries = getYearEntries(ctx, date.year)
         val merged = HolidayRangeOps.mergeSegments(networkEntries, ranges)
-        val (holidays, workdays) = HolidayRangeOps.toSets(merged.active)
+        val (holidays, networkWorkdays) = HolidayRangeOps.toSets(merged.active)
+        // 补班日集合 = 网络法定补班日 + 用户自定义补班日(映射的 targetDate)
+        val customWorkdays = if (tableId != null) {
+            AppPrefs.getHolidayTransfers(ctx, tableId).map { it.targetDate }.toSet()
+        } else emptySet()
+        val workdays = networkWorkdays + customWorkdays
         val workdaysForWeekend = if (AppPrefs.isHolidayGreyWeekend(ctx) && AppPrefs.isHolidayIgnoreWorkday(ctx)) {
             workdays
         } else emptySet()
