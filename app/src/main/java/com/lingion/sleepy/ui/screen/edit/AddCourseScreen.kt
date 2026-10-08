@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -253,6 +254,11 @@ fun AddCourseScreen(
         mutableStateListOf(initialMeetingBlock(editingCourse))
     }
 
+    // 用户从周/网格/今日视图点开某门课 → 编辑页要自动落到那颗胶囊所在时段卡。
+    // 同一门课可能挂 N 个时段(groupSlotsForEdit 切块), 默认顺序是 HashMap 迭代序 —
+    // 没有这一跳, 用户在 100+ 块里要手翻很久。
+    val listState = rememberLazyListState()
+
     // 编辑模式：查同 groupId 全部课程，按时段分组回填多个 block (issue#22 分组规则不变)
     LaunchedEffect(editingCourse?.groupId) {
         val eg = editingCourse
@@ -301,6 +307,19 @@ fun AddCourseScreen(
                     }
                 }
             }
+        }
+    }
+
+    // 用户点开课程胶囊 → editingCourse 即那颗胶囊, day+startNode 唯一确定一个时段卡。
+    // meetingBlocks 异步填充(group 加载完成时 size 跳变), 用 size 当 key 等待一次即可;
+    // targetIdx>0 才滚, 第一个块就是用户点的 → 已经在视线内, 滚反而抖动。
+    LaunchedEffect(editingCourse?.id, meetingBlocks.size) {
+        val eg = editingCourse ?: return@LaunchedEffect
+        val targetIdx = meetingBlocks.indexOfFirst { block ->
+            eg.day in block.days && eg.startNode == block.startNode
+        }
+        if (targetIdx > 0) {
+            listState.animateScrollToItem(targetIdx)
         }
     }
 
@@ -567,6 +586,7 @@ fun AddCourseScreen(
         containerColor = colors.background
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
