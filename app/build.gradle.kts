@@ -142,6 +142,7 @@ android {
             "UnusedBoxWithConstraintsScope",
             "ModifierParameter",
         )
+		lintConfig = file("${rootProject.projectDir}/app/lint.xml")
     }
 
     splits {
