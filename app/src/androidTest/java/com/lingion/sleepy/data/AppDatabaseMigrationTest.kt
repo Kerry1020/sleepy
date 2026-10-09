@@ -27,7 +27,7 @@ class AppDatabaseMigrationTest {
                     val table = entity.getString("tableName")
                     if (table == "calendar_import_records") continue
                     db.execSQL(entity.getString("createSql").replace("${'$'}{TABLE_NAME}", table))
-                    val indices = entity.getJSONArray("indices")
+                    val indices = entity.optJSONArray("indices") ?: continue
                     for (j in 0 until indices.length()) {
                         db.execSQL(indices.getJSONObject(j).getString("createSql").replace("${'$'}{TABLE_NAME}", table))
                     }

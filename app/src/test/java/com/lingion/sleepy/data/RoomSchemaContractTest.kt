@@ -10,14 +10,14 @@ import java.io.File
 class RoomSchemaContractTest {
     private val schema by lazy {
         val root = System.getProperty("sleepy.test.root") ?: error("sleepy.test.root is required")
-        val file = File(root, "app/schemas/com.lingion.sleepy.data.AppDatabase/10.json")
+        val file = File(root, "app/schemas/com.lingion.sleepy.data.AppDatabase/11.json")
         assertTrue("Room schema must be generated at $file", file.isFile)
         JSONObject(file.readText()).getJSONObject("database")
     }
 
     @Test
     fun exportedSchemaMatchesDatabaseVersionAndEntitySet() {
-        assertEquals(10, schema.getInt("version"))
+        assertEquals(11, schema.getInt("version"))
         val names = buildSet {
             val entities = schema.getJSONArray("entities")
             for (i in 0 until entities.length()) add(entities.getJSONObject(i).getString("tableName"))
@@ -44,6 +44,7 @@ class RoomSchemaContractTest {
         }
         assertTrue("v8 period table binding column must remain in schema", "periodTableId" in timeColumns)
         assertTrue("v9 bind snapshot column must remain in schema", "preBindSnapshotJson" in timeColumns)
+        assertTrue("v11 per-table reminder toggle column must remain in schema", "reminderEnabled" in timeColumns)
 
         val calendar = byName.getValue("calendar_import_records")
         val calendarColumns = buildSet {
@@ -59,7 +60,7 @@ class RoomSchemaContractTest {
 
     @Test
     fun migrationChainIsContinuousAndReachesExportedSchemaVersion() {
-        assertEquals(10, schema.getInt("version"))
+        assertEquals(11, schema.getInt("version"))
         assertEquals(3, ALL_MIGRATIONS.first().startVersion)
         ALL_MIGRATIONS.forEachIndexed { index, migration ->
             assertEquals(migration.startVersion + 1, migration.endVersion)
