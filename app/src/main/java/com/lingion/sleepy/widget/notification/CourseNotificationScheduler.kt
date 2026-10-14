@@ -109,9 +109,6 @@ class CourseNotificationScheduler private constructor(
         const val NOTIFY_DAILY = 1001
         const val NOTIFY_TOMORROW_DAILY = 1002
         const val NOTIFY_BEFORE_CLASS_BASE = 2000 // + courseId offset
-        // 每表独立提醒: 多表开启时每日/明日摘要按 tableId 分配独立 ID (base + tableId*2 (+1 明日))
-        const val NOTIFY_TABLE_SUMMARY_BASE = 5000
-
         // 进程级: 各 Receiver 会 new 自己的实例, 锁必须跨实例; Mutex 不可重入, 持锁路径只调 *Locked
         private val scheduleLock = Mutex()
     }
@@ -120,6 +117,7 @@ class CourseNotificationScheduler private constructor(
         ensureNotificationChannels(context)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             val prefs = context.applicationContext
+            cleanupLegacyDailySummaryNotifications(prefs)
             val beforeClassOn = scheduleLock.withLock {
                 cancelRecurringLocked()
                 if (!AppPrefs.isReminderEnabled(prefs)) {
@@ -634,6 +632,7 @@ private suspend fun sendScheduleSummary(
     isTomorrowPreview: Boolean
 ) {
     val app = context.applicationContext
+    cleanupLegacyDailySummaryNotifications(app)
     val dayOfMonth = targetDate.dayOfMonth
 
     // 每表独立提醒: 聚合所有开启提醒的课表; 若全部被节假日策略豁免则整体静默
@@ -649,8 +648,6 @@ private suspend fun sendScheduleSummary(
     }
     if (enabledTables.isNotEmpty() && activeTables.isEmpty()) return
 
-    data class TableSummary(val table: TimeTableEntity, val courses: List<CourseEntity>)
-
     val summaries = activeTables.map { table ->
         // 取课走反向查: 补班日=sourceDate 的课, 放假日=null(无课)
         val sourceDate = com.lingion.sleepy.widget.HolidayTransferHelper.courseDateForDate(app, table.id, targetDate)
@@ -662,11 +659,10 @@ private suspend fun sendScheduleSummary(
         } else {
             repo.getCoursesByDayOnce(table.id, sourceDate.dayOfWeek.value)
                 .filter { it.inWeek(week) }
-                .sortedBy { it.startNode }
         }
-        TableSummary(table, courses)
+        DailyTableCourses(table, courses)
     }
-    val posts = summaries.filter { it.courses.isNotEmpty() }
+    val summary = buildDailyScheduleSummary(summaries)
 
     val permissionGranted = ContextCompat.checkSelfPermission(
         context, Manifest.permission.POST_NOTIFICATIONS
@@ -687,7 +683,7 @@ private suspend fun sendScheduleSummary(
             .setAutoCancel(true)
             .build()
 
-    if (posts.isEmpty()) {
+    if (summary.entries.isEmpty()) {
         val title = context.getString(
             if (isTomorrowPreview) R.string.notif_tomorrow_title_no_course else R.string.notif_daily_title_no_course,
             dayOfMonth
@@ -707,33 +703,38 @@ private suspend fun sendScheduleSummary(
         return
     }
 
-    posts.forEach { (table, courses) ->
-        var title = context.getString(
+    // 单表: 保持原有格式; 多表: 合并为一条紧凑列表通知
+    if (!summary.isMultiTable) {
+        val title = context.getString(
             if (isTomorrowPreview) R.string.notif_tomorrow_title else R.string.notif_daily_title,
             dayOfMonth,
-            courses.size
+            summary.entries.size
         )
-        val first = courses.first()
-        val firstTime = getCourseStartTime(first, table)
+        val entry = summary.entries.first()
+        val first = entry.course
+        val firstTime = entry.startTimeText
         val firstRoom = first.room.ifBlank { context.getString(R.string.notif_room_unknown) }
-        var text = context.getString(R.string.notif_daily_text_first, first.courseName, firstTime, firstRoom)
-        // 多表同时提醒时用课表名区分来源
-        if (activeTables.size > 1) {
-            title = "${table.name} · $title"
-            text = "${table.name} · $text"
-        }
-        val baseId = if (posts.size == 1 && activeTables.size <= 1) {
-            if (isTomorrowPreview) {
-                CourseNotificationScheduler.NOTIFY_TOMORROW_DAILY
-            } else {
-                CourseNotificationScheduler.NOTIFY_DAILY
-            }
-        } else {
-            (CourseNotificationScheduler.NOTIFY_TABLE_SUMMARY_BASE + table.id * 2 +
-                if (isTomorrowPreview) 1L else 0L).toInt()
-        }
-        notify(baseId, build(title, text))
+        val text = context.getString(R.string.notif_daily_text_first, first.courseName, firstTime, firstRoom)
+        notify(
+            if (isTomorrowPreview) CourseNotificationScheduler.NOTIFY_TOMORROW_DAILY
+            else CourseNotificationScheduler.NOTIFY_DAILY,
+            build(title, text)
+        )
+        return
     }
+
+    // 多表合并: 标题显示总课程数, 正文为紧凑列表
+    val title = context.getString(
+        if (isTomorrowPreview) R.string.notif_tomorrow_title else R.string.notif_daily_title,
+        dayOfMonth,
+        summary.entries.size
+    )
+    val text = summary.compactText(context.getString(R.string.notif_room_unknown))
+    notify(
+        if (isTomorrowPreview) CourseNotificationScheduler.NOTIFY_TOMORROW_DAILY
+        else CourseNotificationScheduler.NOTIFY_DAILY,
+        build(title, text)
+    )
 }
 
 /**
@@ -900,10 +901,3 @@ private fun openAppIntent(context: Context): PendingIntent =
         context, 0, Intent(context, MainActivity::class.java),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
-
-private fun getCourseStartTime(course: CourseEntity, table: TimeTableEntity): String {
-    if (course.ownTime && course.startTime.isNotBlank()) return course.startTime
-    val nodes = TimeTableUtils.parseNodes(table.timeJson)
-    val node = nodes.find { it.node == course.startNode } ?: return ""
-    return String.format("%02d:%02d", node.start.hour, node.start.minute)
-}
