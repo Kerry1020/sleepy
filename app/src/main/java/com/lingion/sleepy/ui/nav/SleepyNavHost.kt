@@ -96,6 +96,8 @@ import com.lingion.sleepy.ui.screen.manage.ManagementPage
 import com.lingion.sleepy.ui.screen.mine.MineScreen
 import com.lingion.sleepy.ui.screen.widget.WidgetEditScreen
 import com.lingion.sleepy.ui.screen.widget.WidgetManagementScreen
+import com.lingion.sleepy.ui.screen.mine.WidgetSettingsScreen
+import com.lingion.sleepy.ui.screen.widget.WidgetGalleryScreen
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.util.AppPrefs
 import com.lingion.sleepy.data.entity.CourseEntity
@@ -290,7 +292,6 @@ internal fun SleepyNavHost(
             GeneralSettingsScreen(
                 onBack = { navigator.pop() },
                 onOpenHoliday = { navigator.openHoliday() },
-                onOpenWidgetManagement = { navigator.openWidgetManagement() },
                 navDock = navDock,
                 onNavDockChange = onNavDockChange,
             )
@@ -337,6 +338,20 @@ internal fun SleepyNavHost(
             WidgetManagementScreen(
                 onBack = { navigator.pop() },
                 onSelect = { widgetId -> navigator.openWidgetEdit(widgetId) },
+                onOpenWidgetGallery = { navigator.openWidgetGallery() },
+            )
+        }
+
+        entry<SleepyRoute.WidgetSettings> {
+            WidgetSettingsScreen(
+                onBack = { navigator.pop() },
+                onOpenWidgetManagement = { navigator.openWidgetManagement() },
+            )
+        }
+
+        entry<SleepyRoute.WidgetGallery> {
+            WidgetGalleryScreen(
+                onBack = { navigator.pop() },
             )
         }
 
@@ -863,6 +878,7 @@ private fun RightHalfContent(
                 onOpenPeriodTables = { navigator.openPeriodTables() },
                 onOpenAppearance = { navigator.openAppearance() },
                 onOpenGeneral = { navigator.openGeneral() },
+                onOpenWidgetSettings = { navigator.openWidgetSettings() },
                 onOpenExport = { navigator.openExport() },
                 onOpenReminder = { navigator.openReminder() },
                 onOpenAbout = { navigator.openAbout() },
