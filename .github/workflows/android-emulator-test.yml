@@ -56,10 +56,16 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera back none
-          disable-animation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
           profile: Nexus 6
           script: echo "AVD 创建完成"
+      - name: Build test filter arg
+        id: filt
+        env:
+          T: ${{ inputs.tests }}
+        run: |
+          [ -n "$T" ] && echo "extra=-Pandroid.testInstrumentationRunnerArguments.class=$T" >> "$GITHUB_OUTPUT" || true
       - name: Run androidTest
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -67,16 +73,10 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera back none
-          disable-animation: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
           profile: Nexus 6
-          script: |
-            if [ -n "${{ inputs.tests }}" ]; then
-              ./gradlew :app:connectedDebugAndroidTest \
-                -Pandroid.testInstrumentationRunnerArguments.class=${{ inputs.tests }} --stacktrace
-            else
-              ./gradlew :app:connectedDebugAndroidTest --stacktrace
-            fi
+          script: ./gradlew :app:connectedDebugAndroidTest ${{ steps.filt.outputs.extra }} --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
