@@ -1,5 +1,6 @@
 package com.lingion.sleepy.ui.component
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,10 +60,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.lingion.sleepy.R
 import com.lingion.sleepy.data.entity.CourseEntity
 import com.lingion.sleepy.ui.theme.SleepyTextStyle
 import com.lingion.sleepy.ui.theme.SleepyTheme
+import com.lingion.sleepy.ui.theme.noRippleCombinedClickable
 import com.lingion.sleepy.ui.theme.noRippleClickable
 import com.lingion.sleepy.util.AppPrefs
 import com.lingion.sleepy.util.ConflictLayoutEngine
@@ -76,6 +83,7 @@ import com.lingion.sleepy.util.TimetableViewportPolicy
 import kotlinx.coroutines.flow.filter
 import java.time.LocalTime
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -118,6 +126,9 @@ data class TimeSlot(
  */
 @Composable
 fun CardsGridView(
+    onQuickAdd: ((Int, Int, Int) -> Unit)? = null,
+    quickAddState: QuickAddCourseState = remember { QuickAddCourseState() },
+    quickAddEnabled: Boolean = true,
     courses: List<CourseEntity>,
     allCourses: List<CourseEntity> = courses,
     timeSlots: List<TimeSlot>,
@@ -128,6 +139,7 @@ fun CardsGridView(
     today: Int = DateUtils.todayDayOfWeek(),
     todayDate: java.time.LocalDate = java.time.LocalDate.now(),
     onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)? = null,
     modifier: Modifier = Modifier,
     greyDays: Set<Int> = emptySet(),  // 本周应灰显的星期几 (1-7)
     topOverrides: Map<String, Long> = emptyMap(),           // v7.10.5: 会话级置顶 override,上提到 ScheduleScreen(radio 瞬时更新写入同一真相源)
@@ -143,9 +155,39 @@ fun CardsGridView(
     rowHeightScale: Float = 1f,
     onRowHeightScaleChange: (Float) -> Unit = {},
     // v1.0.56 T3(实验室): 双指捏放行高总开关, 默认 false = 手势整个不挂(存量缩放值不清)。
-    pinchZoomEnabled: Boolean = false
+    pinchZoomEnabled: Boolean = false,
+    // 长按浮起拖拽换节: onOccurrenceMove != null 即启用(传 null 保留旧长按直开编辑器路径)。
+    // floatState 与 quickAddState 同级由调用方持有 — HorizontalPager 翻页销毁不掉浮动态。
+    // onOccurrenceMove(course, day, node, step, resizeOnly, onResult): 管线落库后回 saved —
+    // true=浮层已可关, false=用户否决/未落库, 网格按当前语义弹回或复原拉伸;
+    // resizeOnly=true 表示这次提交来自「把手拉伸后经空白点击确认」而非网格落点。
+    floatState: CourseFloatState = remember { CourseFloatState() },
+    onOccurrenceMove: ((CourseEntity, Int, Int, Int, Boolean, (Boolean) -> Unit) -> Unit)? = null,
+    onOccurrenceDelete: ((CourseEntity) -> Unit)? = null,
+    // 浮窗「调整本次」直达回调: 用户已在浮窗点过调整, 调用方应直接展开编辑表单。
+    // null = 退回长按通道(存量调用方契约不变)。
+    onOccurrenceEdit: ((CourseEntity) -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
+    val floatAware = onOccurrenceMove != null
+    // D 契约: 把手拉伸不即时落库; 空白点击/返回键把 pending 拉伸送进同一移动管线
+    // (resizeOnly → handler 分型为「是否调整持续节次」)。否决 → revertSpan 复原原跨度。
+    fun confirmPendingResizeOrDismiss() {
+        val lifted = floatState.course ?: return
+        if (!floatState.spanChanged) { floatState.dismiss(); return }
+        onOccurrenceMove?.invoke(lifted, lifted.day, floatState.startNode, floatState.step, true) { saved ->
+            if (saved) floatState.dismiss() else floatState.revertSpan()
+        }
+    }
+    LaunchedEffect(currentWeek, startDate, courses, timeSlots, visibleDays, quickAddEnabled) {
+        quickAddState.dismiss()
+    }
+    LaunchedEffect(currentWeek, startDate, courses, timeSlots, visibleDays, quickAddEnabled) {
+        floatState.dismiss()
+    }
+    androidx.activity.compose.BackHandler(enabled = quickAddEnabled && quickAddState.selection != null) { quickAddState.dismiss() }
+    // D 契约: 拉伸未确认时返回键 = 空白点击 — 先走确认, 无 pending 才直接关浮层。
+    androidx.activity.compose.BackHandler(enabled = floatAware && floatState.active) { confirmPendingResizeOrDismiss() }
     // 设置页改 scale / cornerRatio 后强制 recompose
     var prefVersion by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -294,6 +336,8 @@ fun CardsGridView(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .dismissQuickAddOnOutsidePress(quickAddState)
+            .dismissFloatOnOutsidePress(floatState, ::confirmPendingResizeOrDismiss)
             .background(colors.surfaceContainerHigh, gridBgShape)
             .padding(d(8f))
     ) {
@@ -480,6 +524,113 @@ fun CardsGridView(
 
             val scrollState = rememberScrollState()
 
+            // ---- 长按浮起交互 (onOccurrenceMove != null 才启用; null = 旧长按直开编辑器) ----
+            // 浮卡坐标与网格主体 Box 同原点(dp); 渲染在滚动 Column 的平级兄弟上 —
+            // renderEffect 自包含(整层进模糊纹理), 浮层若做 Column 子节点会被一起糊掉,
+            // 故 overlay y = floatState.y + headH + gapH − scrollState (抵消表头与滚动)。
+            var floatDragPx by remember { mutableFloatStateOf(0f) }
+            // 滚动偏移只在浮起态读取 — 平时不在 body 读 scrollState.value,
+            // 避免每帧滚动重组整个 BoxWithConstraints 子树。
+            val floatScrollDp =
+                if (floatState.active) with(headerDensity) { scrollState.value.toDp() } else 0.dp
+            val floatGridNodes = renderSlots.filter { !it.isPlaceholder }.map { it.nodeStart }
+            // 卡片顶/底边在网格坐标系的 dp 边界 (bottom=true 取底边, 与胶囊同口径)。
+            fun floatBoundary(node: Int, bottom: Boolean): Dp? {
+                val idx = slotIndexOf(node)
+                if (idx < 0) return null
+                return if (bottom) yOfRows(idx.toFloat()) + rowHeightAt(idx) - gapH
+                else yOfRows(idx.toFloat())
+            }
+            fun liftCourse(course: CourseEntity) {
+                if (!floatAware) { onCourseLongClick?.invoke(course); return }
+                val nodeIdx = slotIndexOf(course.startNode)
+                val dayIdx = sortedDays.indexOf(course.day)
+                if (nodeIdx < 0 || dayIdx < 0) return
+                val steps = course.step.coerceAtLeast(1).coerceAtMost(renderSlots.size - nodeIdx)
+                quickAddState.dismiss()
+                floatState.lift(
+                    course = course,
+                    day = course.day,
+                    week = currentWeek,
+                    startNode = course.startNode,
+                    endNode = course.startNode + steps - 1,
+                    x = timeW + gapW + (colW + gapW) * dayIdx,
+                    y = yOfRows(nodeIdx.toFloat()),
+                    width = colW,
+                    // 整格口径 (非 ownTime frac) — 与胶囊一致: 浮起后编辑/拖拽都按节次栅格走。
+                    height = TimetableViewportPolicy.longBreakCardHeightDp(
+                        naturalSpanDp = (naturalSpan((nodeIdx + steps).toFloat()) -
+                            naturalSpan(nodeIdx.toFloat())).value,
+                        gapDp = gapH.value,
+                    ).dp,
+                    isGrey = course.day in greyDays,
+                )
+            }
+            fun seedFloatResize(top: Boolean) {
+                val boundary = floatBoundary(if (top) floatState.startNode else floatState.endNode, !top)
+                    ?: return
+                floatDragPx = with(headerDensity) { boundary.toPx() }
+            }
+            // 与 QuickAddCourseCapsule 的 onResize 同款就近吸附: 只动被抓的边, 对边钉死。
+            fun applyFloatResize(top: Boolean, delta: Float) {
+                floatDragPx += delta
+                val nodes = floatGridNodes.toSet()
+                val candidates = if (top) {
+                    var first = floatState.startNode
+                    while (first > 1 && first - 1 in nodes) first--
+                    (first..floatState.endNode).filter { it in nodes }
+                } else {
+                    var last = floatState.endNode
+                    val maxNode = floatGridNodes.maxOrNull() ?: last
+                    while (last < maxNode && last + 1 in nodes) last++
+                    (floatState.startNode..last).filter { it in nodes }
+                }
+                val nearest = candidates.minByOrNull { node ->
+                    val b = floatBoundary(node, !top) ?: return@minByOrNull Float.MAX_VALUE
+                    abs(with(headerDensity) { b.toPx() } - floatDragPx)
+                } ?: return
+                if (top) {
+                    floatState.startNode = nearest
+                    floatState.y = yOfRows(slotIndexOf(nearest).toFloat())
+                } else floatState.endNode = nearest
+                val endIdx = slotIndexOf(floatState.endNode)
+                floatState.height =
+                    yOfRows(endIdx.toFloat()) + rowHeightAt(endIdx) - gapH - floatState.y
+            }
+            // 非法落点/拖拽撤销共用的弹回: 位置复位 + dragging=false → 模糊与浮框同帧回归。
+            fun springFloatBack() {
+                floatState.dragging = false
+                floatState.x = floatState.originX
+                floatState.y = floatState.originY
+            }
+            fun commitFloatDrop() {
+                val course = floatState.course ?: return
+                if (!floatState.dragging) return // 浮卡上的轻点: 不提交也不弹回(原位仍浮起)。
+                // 落点 = 卡片中心列 + 顶边最近节次; 任一环越界 = 非法落点, 弹回原位。
+                val centerRatio =
+                    (floatState.x + floatState.width / 2f - timeW - gapW).value / (colW + gapW).value
+                val dayIdx = floor(centerRatio).toInt()
+                val cardTopPx = with(headerDensity) { floatState.y.toPx() }
+                val snapped = floatGridNodes.minByOrNull { node ->
+                    val b = floatBoundary(node, false) ?: return@minByOrNull Float.MAX_VALUE
+                    abs(with(headerDensity) { b.toPx() } - cardTopPx)
+                }
+                val maxNode = floatGridNodes.maxOrNull()
+                // 跨度按"节次号连续"校验(午餐空隙不打断合法性), 只要求落点不越出末节。
+                val endNode = snapped?.let { it + floatState.step - 1 }
+                if (dayIdx !in sortedDays.indices || snapped == null || endNode == null ||
+                    maxNode == null || endNode > maxNode
+                ) {
+                    springFloatBack()
+                    return
+                }
+                onOccurrenceMove?.invoke(course, sortedDays[dayIdx], snapped, floatState.step, false) { saved ->
+                    // C 契约: 落库成功才收层; 否决/过期 → 弹回原位浮着(拉伸 pending 随卡保留,
+                    // 由空白点击/返回键走「是否调整持续节次」确认)。
+                    if (saved) floatState.dismiss() else springFloatBack()
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -497,6 +648,11 @@ fun CardsGridView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(scrollState)
+                        .then(
+                            // 浮起=整层网格进高斯模糊纹理; 移动中/dragging=false 复原。
+                            if (floatState.active && !floatState.dragging) Modifier.gridFloatBlur()
+                            else Modifier
+                        )
                 ) {
                 // ---- 表头：自然 Compose Row ----
                 Row(
@@ -606,7 +762,18 @@ fun CardsGridView(
                             )
                             // 透明占位：保证行宽和表头一致
                             for (day in sortedDays) {
-                                Spacer(modifier = Modifier.width(colW).fillMaxHeight())
+                                val addLabel = stringResource(R.string.occurrence_add_cell, DateUtils.localizedDay(day, context), slot.nodeStart)
+                                Spacer(modifier = Modifier.width(colW).fillMaxHeight().testTag("add-course-$day-${slot.nodeStart}").then(
+                                    if (onQuickAdd != null && quickAddEnabled && !slot.isPlaceholder) Modifier.semantics { contentDescription = addLabel }.noRippleCombinedClickable(
+                                        // B 契约: 浮动态轻点空白格 = 无动作(防误触), 长按才开加课胶囊;
+                                        // 旧非浮动态轻点即开不变。Course cards above this layer consume
+                                        // occupied-cell taps; 浮层空档按下已被 ancestor 消费, 到这里恒为无浮动态。
+                                        onClick = { if (!floatAware) quickAddState.selection = QuickAddRange(day, slot.nodeStart, slot.nodeStart) },
+                                        onLongClick = if (floatAware)
+                                            ({ quickAddState.selection = QuickAddRange(day, slot.nodeStart, slot.nodeStart) })
+                                        else null,
+                                    ) else Modifier
+                                ))
                             }
                         }
                     }
@@ -672,6 +839,7 @@ fun CardsGridView(
                                 onRotationStep(clusterKey, layerPos)
                             },
                             onCourseClick = onCourseClick,
+                            onCourseLongClick = if (floatAware) ({ c: CourseEntity -> liftCourse(c) }) else onCourseLongClick,
                             colW = colW,
                             rowH = rowH,
                             maxNode = maxNode,
@@ -728,6 +896,26 @@ fun CardsGridView(
                         CourseOverlayCard(
                             course = course,
                             onClick = { onCourseClick(course) },
+                            // 浮起开 → 长按只负责把卡提起来; 关 → 原编辑器快捷路径不变。
+                            onLongClick = if (floatAware || onCourseLongClick != null)
+                                ( { liftCourse(course) } )
+                            else null,
+                            // A 契约: 浮动态整卡交互 = 一次按下「长按浮起 → 不松手即拖」,
+                            // 取代 combinedClickable(官方长按 consumeUntilUp 后同指拖不起来);
+                            // 拖拽/落点复用浮卡同款 dragging 标记与 commitFloatDrop 判定。
+                            liftGesture = if (floatAware) Modifier.continuousFloatLift(
+                                lifted = { floatState.active },
+                                onTap = { onCourseClick(course) },
+                                onLift = { liftCourse(course) },
+                                onDragStart = { floatState.dragging = true },
+                                onDrag = { amount ->
+                                    with(headerDensity) {
+                                        floatState.x += amount.x.toDp()
+                                        floatState.y += amount.y.toDp()
+                                    }
+                                },
+                                onDrop = { commitFloatDrop() },
+                            ) else null,
                             modifier = Modifier
                                 .offset(x = cardX, y = cardY)
                                 .width(colW)
@@ -738,8 +926,124 @@ fun CardsGridView(
                             groupRows = courses.filter { it.groupId == course.groupId }
                         )
                     }
+                    quickAddState.selection?.takeIf { quickAddEnabled }?.let { selected ->
+                        val startIndex = slotIndexOf(selected.startNode)
+                        val endIndex = slotIndexOf(selected.endNode)
+                        val dayIndex = sortedDays.indexOf(selected.day)
+                        if (startIndex >= 0 && endIndex >= startIndex && dayIndex >= 0) {
+                            val density = LocalDensity.current
+                            val maxStandard = timeJson?.let { json ->
+                                TimeTableUtils.parseTimeSlotRows(json).filter { it.edgeClass == null }.maxOfOrNull { it.node }
+                            } ?: timeSlots.maxOfOrNull { it.nodeEnd } ?: 12
+                            val nodes = renderSlots.filter { !it.isPlaceholder }.map { it.nodeStart }.toSet()
+                            // Edge periods are single-slot entries in the add form; standard periods may span adjacent nodes.
+                            var firstNode = selected.startNode
+                            var lastNode = selected.endNode
+                            if (selected.startNode in 1..maxStandard) {
+                                while (firstNode > 1 && firstNode - 1 in nodes) firstNode--
+                                while (lastNode < maxStandard && lastNode + 1 in nodes) lastNode++
+                            }
+                            var dragPosition by remember { mutableStateOf(0f) }
+                            QuickAddCourseCapsule(
+                                selection = selected,
+                                state = quickAddState,
+                                onConfirm = {
+                                    quickAddState.dismiss()
+                                    onQuickAdd?.invoke(selected.day, selected.startNode, selected.step)
+                                },
+                                onResizeStart = { top ->
+                                    dragPosition = with(density) {
+                                        (if (top) yOfRows(startIndex.toFloat())
+                                        else yOfRows(endIndex.toFloat()) + rowHeightAt(endIndex) - gapH).toPx()
+                                    }
+                                },
+                                onResize = { top, delta ->
+                                    dragPosition += delta
+                                    val candidates = if (top) firstNode..selected.endNode else selected.startNode..lastNode
+                                    val nearest = candidates.minByOrNull { node ->
+                                        val index = slotIndexOf(node)
+                                        val boundary = if (top) yOfRows(index.toFloat())
+                                            else yOfRows(index.toFloat()) + rowHeightAt(index) - gapH
+                                        abs(with(density) { boundary.toPx() } - dragPosition)
+                                    }
+                                    if (nearest != null) quickAddState.selection = if (top) selected.copy(startNode = nearest)
+                                        else selected.copy(endNode = nearest)
+                                },
+                                modifier = Modifier
+                                    .offset(x = timeW + gapW + (colW + gapW) * dayIndex, y = yOfRows(startIndex.toFloat()))
+                                    .width(colW)
+                                    .height(yOfRows(endIndex.toFloat()) + rowHeightAt(endIndex) - gapH - yOfRows(startIndex.toFloat()))
+                            )
+                        }
+                    }
                 }
                     if (navExtra > 0.dp) Spacer(modifier = Modifier.height(navExtra))
+                }
+
+                // ---- 浮起的课程卡 + 遮罩 + 小浮框 (滚动 Column 的兄弟节点, 不进模糊纹理) ----
+                if (floatState.active) {
+                    val lifted = floatState.course
+                    // API 26-30 无 RenderEffect — 压暗兜底把视觉焦点让给浮卡。
+                    val scrimAlpha = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) 0.35f else 0.10f
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .testTag("float-backdrop")
+                            .background(colors.scrim.copy(alpha = scrimAlpha))
+                    )
+                    if (lifted != null) {
+                        val overlayY = floatState.y + headH + gapH - floatScrollDp
+                        FloatingOccurrenceCard(
+                            state = floatState,
+                            scale = scale,
+                            cornerRatio = cornerRatio,
+                            groupRows = courses.filter { it.groupId == lifted.groupId },
+                            onDragStart = { floatState.dragging = true },
+                            onDrag = { amount ->
+                                with(headerDensity) {
+                                    floatState.x += amount.x.toDp()
+                                    floatState.y += amount.y.toDp()
+                                }
+                            },
+                            onDrop = { commitFloatDrop() },
+                            onResizeStart = { top -> seedFloatResize(top) },
+                            onResize = { top, delta -> applyFloatResize(top, delta) },
+                            modifier = Modifier
+                                .offset(x = floatState.x, y = overlayY)
+                                .width(floatState.width)
+                                .height(floatState.height),
+                        )
+                        if (!floatState.dragging) {
+                            // 浮框宽于列宽(文案"调整本次|删除本次" ≈ 2×列宽): 容器收列宽,
+                            // 内容 wrapContentWidth(unbounded) 量自然宽并居中溢出绘制 —
+                            // 否则 Row 被压到列宽, 右半段(删除)宽度塌缩为 0 不可点。
+                            Box(
+                                modifier = Modifier
+                                    .offset(
+                                        x = floatState.x,
+                                        y = (overlayY - d(36f)).coerceAtLeast(0.dp),
+                                    )
+                                    .width(floatState.width),
+                                contentAlignment = Alignment.TopCenter,
+                            ) {
+                                FloatActionPopup(
+                                    state = floatState,
+                                    scale = scale,
+                                    onEdit = {
+                                        floatState.dismiss()
+                                        // 浮窗已点「调整本次」→ 优先直达回调; 无则退回长按通道。
+                                        if (onOccurrenceEdit != null) onOccurrenceEdit(lifted)
+                                        else onCourseLongClick?.invoke(lifted)
+                                    },
+                                    onDelete = {
+                                        floatState.dismiss()
+                                        onOccurrenceDelete?.invoke(lifted)
+                                    },
+                                    modifier = Modifier.wrapContentWidth(unbounded = true),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -887,14 +1191,18 @@ private fun SingleTimeHeadCell(slot: TimeSlot, scale: Float = 1f, modifier: Modi
 // EmptyGridCell 死组件已删（注释自述弃用, 全库零调用——Cards 网格走 SingleTimeHeadCell + CourseOverlayCard）。
 
 @Composable
-private fun CourseOverlayCard(
+internal fun CourseOverlayCard(
     course: CourseEntity,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     isGrey: Boolean = false,
     scale: Float = 1f,
     cornerRatio: Float = 1f,
-    groupRows: List<CourseEntity> = listOf(course)
+    groupRows: List<CourseEntity> = listOf(course),
+    // 浮动态连续手势(A 契约): 非 null 即整卡交互改走该修饰符(长按浮起→不松手即拖),
+    // onClick/onLongClick 不再挂载 — 与 onClick 可空模式同款, 调用方只传一个语义开关。
+    liftGesture: Modifier? = null,
 ) {
     val palette = SleepyTheme.palette
     val colors = MaterialTheme.colorScheme
@@ -939,7 +1247,7 @@ private fun CourseOverlayCard(
             .padding(sd(2f))
             .clip(shape)
             .background(effectiveBg)
-            .noRippleClickable(onClick)
+            .then(liftGesture ?: if (onClick != null) Modifier.noRippleCombinedClickable(onClick, onLongClick) else Modifier)
             .padding(sd(4f))
     ) {
         if (subText.isBlank()) {
@@ -1069,6 +1377,7 @@ fun FullWeekView(
     startDate: String = "",
     currentWeek: Int = 1,
     onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)? = null,
     modifier: Modifier = Modifier,
     greyDays: Set<Int> = emptySet(),
     showDate: Boolean = false
@@ -1114,6 +1423,8 @@ fun FullWeekView(
     ) {
         WeekStrip(
             byDay = byDay,
+            onCourseClick = onCourseClick,
+            onCourseLongClick = onCourseLongClick,
             visibleDays = visibleDays,
             today = today,
             todayDate = todayDate,
@@ -1134,7 +1445,7 @@ fun FullWeekView(
             todayDate = todayDate,
             startDate = startDate,
             currentWeek = currentWeek,
-            onCourseClick = onCourseClick,
+            onCourseClick = onCourseClick, onCourseLongClick = onCourseLongClick,
             greyDays = greyDays,
             scale = scale,
             cornerRatio = cornerRatio,
@@ -1151,6 +1462,8 @@ fun FullWeekView(
 @Composable
 private fun WeekStrip(
     byDay: Map<Int, List<CourseEntity>>,
+    onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)?,
     today: Int,
     todayDate: java.time.LocalDate,
     startDate: String,
@@ -1183,6 +1496,8 @@ private fun WeekStrip(
             }.getOrDefault(false)
             DaySummaryCell(
                 day = day,
+                onCourseClick = onCourseClick,
+                onCourseLongClick = onCourseLongClick,
                 courses = dayCourses,
                 isToday = isToday,
                 isGrey = day in greyDays,
@@ -1215,6 +1530,8 @@ private fun WeekStrip(
 @Composable
 private fun DaySummaryCell(
     day: Int,
+    onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)?,
     courses: List<CourseEntity>,
     isToday: Boolean,
     isGrey: Boolean = false,
@@ -1291,6 +1608,10 @@ private fun DaySummaryCell(
         ) {
             courses.take(5).forEach { c ->
                 Text(
+                    modifier = Modifier.noRippleCombinedClickable(
+                        onClick = { onCourseClick(c) },
+                        onLongClick = onCourseLongClick?.let { callback -> { callback(c) } }
+                    ),
                     text = com.lingion.sleepy.util.CourseDisplayUtil.displayName(c, useAlias),
                     style = SleepyTextStyle.micro().copy(fontSize = (9 * scale).sp, lineHeight = (11 * scale).sp),
                     color = if (isToday) colors.onPrimaryContainer.copy(alpha = SleepyTheme.Alpha.highContent) else colors.onSurfaceVariant,
@@ -1313,6 +1634,7 @@ private fun DetailPanel(
     displayMode: String,
     timeJson: String,
     onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)? = null,
     greyDays: Set<Int> = emptySet(),
     scale: Float = 1f,
     cornerRatio: Float = 1f,
@@ -1357,7 +1679,7 @@ private fun DetailPanel(
                 days = split.first,
                 byDay = byDay, today = today, todayDate = todayDate, startDate = startDate,
                 currentWeek = currentWeek, displayMode = displayMode, timeJson = timeJson,
-                onCourseClick = onCourseClick, greyDays = greyDays,
+                onCourseClick = onCourseClick, onCourseLongClick = onCourseLongClick, greyDays = greyDays,
                 scale = scale, cornerRatio = cornerRatio,
                 dayDate = dayDate,
                 modifier = Modifier.weight(1f)
@@ -1367,7 +1689,7 @@ private fun DetailPanel(
                     days = split.second,
                     byDay = byDay, today = today, todayDate = todayDate, startDate = startDate,
                     currentWeek = currentWeek, displayMode = displayMode, timeJson = timeJson,
-                    onCourseClick = onCourseClick, greyDays = greyDays,
+                    onCourseClick = onCourseClick, onCourseLongClick = onCourseLongClick, greyDays = greyDays,
                     scale = scale, cornerRatio = cornerRatio,
                     dayDate = dayDate,
                     modifier = Modifier.weight(1f)
@@ -1394,7 +1716,7 @@ private fun DetailPanel(
                     }.getOrDefault(false),
                     displayMode = displayMode,
                     timeJson = timeJson,
-                    onCourseClick = onCourseClick,
+                    onCourseClick = onCourseClick, onCourseLongClick = onCourseLongClick,
                     isGrey = day in greyDays,
                     scale = scale,
                     cornerRatio = cornerRatio,
@@ -1417,6 +1739,7 @@ private fun DayColumn(
     displayMode: String,
     timeJson: String,
     onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)? = null,
     greyDays: Set<Int>,
     scale: Float,
     cornerRatio: Float,
@@ -1443,7 +1766,7 @@ private fun DayColumn(
                 }.getOrDefault(false),
                 displayMode = displayMode,
                 timeJson = timeJson,
-                onCourseClick = onCourseClick,
+                onCourseClick = onCourseClick, onCourseLongClick = onCourseLongClick,
                 isGrey = day in greyDays,
                 scale = scale,
                 cornerRatio = cornerRatio,
@@ -1462,6 +1785,7 @@ private fun DetailDayCard(
     displayMode: String = "node",
     timeJson: String = "",
     onCourseClick: (CourseEntity) -> Unit,
+    onCourseLongClick: ((CourseEntity) -> Unit)? = null,
     scale: Float = 1f,
     cornerRatio: Float = 1f,
     dateStr: String? = null
@@ -1511,7 +1835,8 @@ private fun DetailDayCard(
                     if (row.laneCount == 1) {
                         LessonRow(
                             course = row.courses[0], displayMode = displayMode, timeJson = timeJson,
-                            onClick = { onCourseClick(row.courses[0]) }, isGrey = isGrey,
+                            onClick = { onCourseClick(row.courses[0]) },
+                            onLongClick = onCourseLongClick?.let { callback -> { callback(row.courses[0]) } }, isGrey = isGrey,
                             scale = scale, cornerRatio = cornerRatio,
                             groupRows = courses.filter { it.groupId == row.courses[0].groupId }
                         )
@@ -1552,6 +1877,7 @@ private fun DetailDayCard(
                                                     course = laneCourse, displayMode = displayMode,
                                                     timeJson = timeJson,
                                                     onClick = { onCourseClick(laneCourse) },
+                            onLongClick = onCourseLongClick?.let { callback -> { callback(laneCourse) } },
                                                     isGrey = isGrey, scale = scale, cornerRatio = cornerRatio,
                                                     laneScale = laneScale, hideSideLabel = hideSide,
                                                     groupRows = courses.filter { it.groupId == laneCourse.groupId }
@@ -1597,6 +1923,7 @@ private fun LessonRow(
     displayMode: String,
     timeJson: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     isGrey: Boolean = false,
     scale: Float = 1f,
     cornerRatio: Float = 1f,
@@ -1642,7 +1969,7 @@ private fun LessonRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(sd(12f * cornerRatio)))
             .background(effectiveBg)
-            .noRippleClickable(onClick)
+            .noRippleCombinedClickable(onClick, onLongClick)
             .padding(sd(9f)),
         horizontalArrangement = Arrangement.spacedBy(sd(8f))
     ) {

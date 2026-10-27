@@ -68,6 +68,9 @@ import com.lingion.sleepy.R
 import com.lingion.sleepy.data.entity.CourseEntity
 import com.lingion.sleepy.data.entity.TimeTableEntity
 import com.lingion.sleepy.ui.component.CardsGridView
+import com.lingion.sleepy.ui.component.CourseFloatState
+import com.lingion.sleepy.ui.component.dismissFloatOnOutsidePress
+import com.lingion.sleepy.ui.component.dismissQuickAddOnOutsidePress
 import com.lingion.sleepy.ui.component.CourseDetailSheet
 import com.lingion.sleepy.ui.component.FullWeekView
 import com.lingion.sleepy.ui.component.SectionHead
@@ -94,12 +97,16 @@ fun ScheduleScreen(
     onViewModeChange: (ViewMode) -> Unit,
     onGoImport: () -> Unit = {},
     onManualAdd: () -> Unit = {},
+    onAddAt: (Long, Int, Int, Int, Int) -> Unit = { _, _, _, _, _ -> },
     onCreateTable: () -> Unit = {},
     onEditCourse: (CourseEntity) -> Unit = {},
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
+    var selectedOccurrence by remember { mutableStateOf<com.lingion.sleepy.util.CourseOccurrence?>(null) }
+    // 浮窗「调整本次」入口置 true → 面板直接展开编辑表单; 长按通道置 false 保留两级菜单。
+    var occurrenceEditDirect by remember { mutableStateOf(false) }
     var selectedCourse by remember { mutableStateOf<CourseEntity?>(null) }
     // v7.10.5 会话级置顶 override — 网格 onPickTop 与详情弹窗 radio 共用真相源。
     // radio 点击 → 这里瞬时换层(同帧) + AppPrefs 持久化(跨会话),两条通道一次写齐。
@@ -129,11 +136,59 @@ fun ScheduleScreen(
     var savedRowScale by remember(state.selectedTableId) { mutableFloatStateOf(AppPrefs.getGridRowScale(context)) }
     val scaleUncommitted = kotlin.math.abs(rowHeightScale - savedRowScale) > 0.001f
 
+    val quickAddState = remember(state.selectedTableId, state.selectedWeek) { com.lingion.sleepy.ui.component.QuickAddCourseState() }
+    LaunchedEffect(viewMode) { quickAddState.dismiss() }
+    // 浮起卡态与 quickAddState 同级上提 — HorizontalPager 翻页重组不丢浮动态;
+    // 切表/切周由 remember 键重建自动清空(旧表浮卡随新表渲染失效)。
+    val floatState = remember(state.selectedTableId, state.selectedWeek) { com.lingion.sleepy.ui.component.CourseFloatState() }
+    LaunchedEffect(viewMode) { floatState.dismiss() }
+    // 浮框/编辑弹窗的审批问题宿主(与 OccurrenceEditor 同一 OccurrenceSaveDialogs 形态)。
+    val floatDialogs = remember(context) { com.lingion.sleepy.ui.screen.edit.OccurrenceSaveDialogs(context) }
+    com.lingion.sleepy.ui.screen.edit.OccurrenceSaveDialogHost(floatDialogs)
+    val floatScope = androidx.compose.runtime.rememberCoroutineScope()
+    var floatBusy by remember { mutableStateOf(false) }
+    // 浮层写路径共用一把屏内闸: 弹窗审批挂起期间禁止叠第二个移动/删除(与 OccurrenceEditor
+    // 的 busy 同语义)。快照/预期表在协程内现读, STALE/NOT_FOUND 只提示不落库。
+    // [onResult] 回给网格/浮层: true=SAVED 可收层, false=否决/过期(弹回或复原拉伸)。
+    fun runFloatOccurrence(
+        work: suspend (FloatOccurrenceHandler) -> FloatOccurrenceHandler.Outcome,
+        onResult: (Boolean) -> Unit = {},
+    ) {
+        if (floatBusy) return
+        val table = state.effectiveCurrentTable ?: return
+        floatBusy = true
+        floatScope.launch {
+            try {
+                val handler = FloatOccurrenceHandler(
+                    context, com.lingion.sleepy.SleepyApp.get().repository, floatDialogs, table,
+                )
+                when (val outcome = work(handler)) {
+                    FloatOccurrenceHandler.Outcome.STALE, FloatOccurrenceHandler.Outcome.NOT_FOUND -> {
+                        android.widget.Toast.makeText(context, R.string.occurrence_stale, android.widget.Toast.LENGTH_SHORT).show()
+                        onResult(false)
+                    }
+                    FloatOccurrenceHandler.Outcome.SAVED -> onResult(true)
+                    FloatOccurrenceHandler.Outcome.CANCELED -> onResult(false)
+                }
+            } finally { floatBusy = false }
+        }
+    }
     val hasTable = state.tables.isNotEmpty()
     val hasCourses = state.courses.isNotEmpty()
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().dismissQuickAddOnOutsidePress(quickAddState)
+            // D 契约: 屏根空档按下也要先走「是否调整持续节次」确认 — 时间域用
+            // floatState.week(浮起时快照, 屏根看不到网格 currentWeek); 无 pending 时
+            // confirmPendingResizeBeforeDismiss 自会直接收层。
+            .dismissFloatOnOutsidePress(floatState) {
+                floatState.confirmPendingResizeBeforeDismiss { lifted, day, node, step, onResult ->
+                    runFloatOccurrence(
+                        { it.move(lifted, floatState.week, day, node, step, FloatEditIntent.SPAN_RESIZE) },
+                        onResult,
+                    )
+                }
+            }
     ) {
         if (!hasTable) {
             // 真的没表：导入或建表 (不用加课 — 无表载体时加课无从谈起)
@@ -328,18 +383,41 @@ fun ScheduleScreen(
                         startDate = state.currentTable?.startDate ?: "",
                         currentWeek = page + 1,
                         onCourseClick = { selectedCourse = it },
+                        onCourseLongClick = { projected ->
+                            occurrenceEditDirect = false
+                            val table = state.currentTable
+                            val original = state.courses.firstOrNull { it.id == projected.id }
+                            if (table != null && original != null) {
+                                selectedOccurrence = com.lingion.sleepy.util.CourseOccurrences.resolve(
+                                    original, DateUtils.dateOfWeek(table.startDate, page + 1, projected.day), state.transfers
+                                )
+                            }
+                        },
                         greyDays = greyDays,
                         showDate = showDate
                     )
                     ViewMode.Cards -> CardsGridView(
                         courses = renderCourses,
                         allCourses = state.courses,
+                        onQuickAdd = { day, node, step -> state.currentTable?.let { onAddAt(it.id, page + 1, day, node, step) } },
+                        quickAddState = quickAddState,
+                        quickAddEnabled = page == pagerState.currentPage && !pagerState.isScrollInProgress,
                         timeSlots = TimeTableUtils.timeSlotsFor(state.effectiveCurrentTable),
                         visibleDays = visibleDays,
                         showDate = showDate,
                         startDate = state.currentTable?.startDate ?: "",
                         currentWeek = page + 1,
                         onCourseClick = { selectedCourse = it },
+                        onCourseLongClick = { projected ->
+                            occurrenceEditDirect = false
+                            val table = state.currentTable
+                            val original = state.courses.firstOrNull { it.id == projected.id }
+                            if (table != null && original != null) {
+                                selectedOccurrence = com.lingion.sleepy.util.CourseOccurrences.resolve(
+                                    original, DateUtils.dateOfWeek(table.startDate, page + 1, projected.day), state.transfers
+                                )
+                            }
+                        },
                         greyDays = greyDays,
                         topOverrides = topOverrides,
                         onSetTopOverride = ::setTopOverride,
@@ -354,12 +432,52 @@ fun ScheduleScreen(
                         rowHeightScale = rowHeightScale,
                         onRowHeightScaleChange = { rowHeightScale = it },
                         // v1.0.56 T3: 实验室开关 — 默认关=手势不挂(顶栏 tick 按钮也随 scaleUncommitted 恒 false 不亮)
-                        pinchZoomEnabled = AppPrefs.isGridPinchZoom(context)
+                        pinchZoomEnabled = AppPrefs.isGridPinchZoom(context),
+                        // 长按浮起换格: 移动/删除走 FloatOccurrenceHandler 单格落库管线
+                        // (与 OccurrenceEditor.save 同口径); week = 页 + 1, 与渲染同一时间域。
+                        // resizeOnly=true = 把手拉伸后经网格空档确认 → 「调整持续节次」弹窗分型。
+                        floatState = floatState,
+                        onOccurrenceMove = { projected, day, node, step, resizeOnly, onResult ->
+                            runFloatOccurrence(
+                                {
+                                    it.move(
+                                        projected, page + 1, day, node, step,
+                                        if (resizeOnly) FloatEditIntent.SPAN_RESIZE else FloatEditIntent.MOVE,
+                                    )
+                                },
+                                onResult,
+                            )
+                        },
+                        onOccurrenceDelete = { projected ->
+                            runFloatOccurrence(work = { it.delete(projected, page + 1) })
+                        },
+                        // 浮窗「调整本次」→ 解析当次 occurrence 并直达编辑表单(不再二次点击)。
+                        onOccurrenceEdit = { projected ->
+                            occurrenceEditDirect = true
+                            val table = state.currentTable
+                            val original = state.courses.firstOrNull { it.id == projected.id }
+                            if (table != null && original != null) {
+                                selectedOccurrence = com.lingion.sleepy.util.CourseOccurrences.resolve(
+                                    original, DateUtils.dateOfWeek(table.startDate, page + 1, projected.day), state.transfers
+                                )
+                            }
+                        },
                     )
                 }
             }
         }
 
+        selectedOccurrence?.let { occurrence ->
+            state.effectiveCurrentTable?.takeIf { it.id == occurrence.course.tableId }?.let { table ->
+                androidx.compose.runtime.key(occurrence) {
+                    com.lingion.sleepy.ui.screen.edit.OccurrenceEditor(
+                        occurrence, table,
+                        onDismiss = { selectedOccurrence = null },
+                        startInEdit = occurrenceEditDirect
+                    )
+                }
+            }
+        }
         // 详情 Bottom Sheet
         // v7.10.16q: allCourses 必须与网格同周域(state.selectedWeek 过滤) —
         // 此前传全周课程, ICS 往返/换教师拆出的周次不相交同行(如周四 8-10 的
