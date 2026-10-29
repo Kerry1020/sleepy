@@ -499,14 +499,13 @@ private fun DockNavigationBar(
 
         // ── Layer 3: Active tab capsule ──
         if (bd != null && sdk >= 33 && tabsBackdrop != null) {
-            val pp = pressProgress.value
-            val innerShadowRadius = 8.dp * pp
             val combinedBd = rememberCombinedBackdrop(bd, tabsBackdrop)
             Box(
                 Modifier
                     .offset(y = NavDockSpec.thumbYOffset)
                     .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
                     .graphicsLayer {
+                        val pp = pressProgress.value
                         alpha = if (state.thumbPlaced) 1f else 0f
                         translationX = state.thumbX.value - thumbHalf
                         val scale = 1f + (78f / 56f - 1f) * pp
@@ -517,23 +516,26 @@ private fun DockNavigationBar(
                         backdrop = combinedBd,
                         shape = { RoundedCornerShape(percent = 50) },
                         effects = {
+                            val pp = pressProgress.value
                             lens(
                                 10.dp.toPx() * pp,
                                 14.dp.toPx() * pp,
                                 chromaticAberration = pp > 0.05f
                             )
                         },
-                        highlight = { Highlight.Default.copy(alpha = pp) },
-                        shadow = { Shadow.Default.copy(alpha = pp) },
+                        highlight = { Highlight.Default.copy(alpha = pressProgress.value) },
+                        shadow = { Shadow.Default.copy(alpha = pressProgress.value) },
                         innerShadow = {
+                            val pp = pressProgress.value
                             InnerShadow(
-                                radius = innerShadowRadius,
+                                radius = 8.dp * pp,
                                 offset = androidx.compose.ui.unit.DpOffset(0.dp, 2.dp * pp),
                                 color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.15f),
                                 alpha = pp
                             )
                         },
                         onDrawSurface = {
+                            val pp = pressProgress.value
                             drawRect(
                                 if (isLight) androidx.compose.ui.graphics.Color.Black.copy(0.1f)
                                 else androidx.compose.ui.graphics.Color.White.copy(0.1f),
