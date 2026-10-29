@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -429,7 +430,7 @@ private fun DockNavigationBar(
     // ── Surface modifier: Layer 1 container ──
     val surfaceModifier = if (bd != null && sdk >= 31) {
         modifier
-            .windowInsetsPadding(WindowInsets.navigationBars.only(androidx.compose.foundation.layout.WindowInsetsSides.Bottom))
+            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
             .padding(horizontal = NavDockSpec.horizontalMargin)
             .padding(bottom = NavDockSpec.bottomFloat)
             .width(totalWidth)
@@ -452,7 +453,7 @@ private fun DockNavigationBar(
             )
     } else {
         modifier
-            .windowInsetsPadding(WindowInsets.navigationBars.only(androidx.compose.foundation.layout.WindowInsetsSides.Bottom))
+            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
             .padding(horizontal = NavDockSpec.horizontalMargin)
             .padding(bottom = NavDockSpec.bottomFloat)
             .shadow(elevation = 12.dp, shape = capsuleShape, clip = false,
