@@ -51,6 +51,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.ui.theme.noRippleClickable
 
@@ -115,6 +120,7 @@ fun PillNavigationBar(
     modifier: Modifier = Modifier,
     dock: Boolean = false,
     state: PillBarState = remember { PillBarState() },
+    backdrop: Backdrop? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val density = LocalDensity.current
@@ -178,6 +184,7 @@ fun PillNavigationBar(
             },
             modifier = modifier,
             state = state,
+            backdrop = backdrop,
         )
         return
     }
@@ -300,6 +307,15 @@ private fun intervalCoverage(aStart: Float, aEnd: Float, bStart: Float, bEnd: Fl
  * Dock 悬浮胶囊(独立组件, 由 PillNavigationBar dock=true 分流进入)。
  * 用户定版(2026-09-04): 悬浮形态 + icon+label 双行(与贴底一致), thumb 色块包住图标,
  * 顶部收一点 — 高 64dp, 座位 56dp 宽, thumb 48×40 罩住 24dp 图标, label 8dp 字号在下。
+ *
+ * 液态玻璃(2026-10-28, 对齐 iOS 26 原生 TabBar): 调用方给 backdrop(内容层快照)时,
+ * 胶囊表面 = vibrancy 提饱和 + blur + lens 边缘折射(Kyant Backdrop AGSL),
+ * thumb/图标/label 浮在折射之上。分档(与 iOS NavStyleResolver 悬浮档自动分档同构):
+ * - API 33+(RuntimeShader): 全量玻璃(lens 折射 24dp + blur 8dp + vibrancy)
+ * - API 31–32(RenderEffect 无 shader): 半玻璃 = vibrancy+blur 8, 无折射
+ * - API ≤30 或 backdrop=null: 平面 0.86 胶囊(原实现)
+ * 投影用库的 Shadow/highlight/innerShadow drawBackdrop 默认值(iOS 原生玻璃边缘高光
+ * 语义), 不再走 Compose elevation 阴影。
  */
 @Composable
 private fun DockNavigationBar(
@@ -310,7 +326,8 @@ private fun DockNavigationBar(
     density: androidx.compose.ui.unit.Density,
     onBarGeometry: (Float, Float, Boolean) -> Unit,
     state: PillBarState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
     val count = items.size.coerceAtLeast(1)
     val seatHalf = with(density) { (NavDockSpec.itemSeat / 2).toPx() }
@@ -321,6 +338,16 @@ private fun DockNavigationBar(
 
     val capsuleShape = RoundedCornerShape(percent = 50)
     val glassBg = colors.surfaceContainer.copy(alpha = 0.86f)
+
+    // ── 玻璃分档(对齐 iOS 26 原生 TabBar 语义, 悬浮档内自动分档) ──
+    // vibrancy+blur 需 RenderEffect(API 31+), lens 折射需 RuntimeShader(API 33+);
+    // 低于 31 或调用方未给 backdrop → 走原平面 0.86 胶囊, 视觉零变化。
+    val bd = backdrop
+    val sdk = android.os.Build.VERSION.SDK_INT
+    // 实机微调位: tint 透明度 / 模糊半径 / 折射高度 — 参考库 demo LiquidBottomTabs
+    // (containerColor 0.4 / blur 8dp / lens 24dp); tint 用主题 surfaceContainer 保
+    // 配色体系一致, 不用 demo 写死的 #FAFAFA/#121212。
+    val glassTint = colors.surfaceContainer.copy(alpha = 0.5f)
 
     // 座位中心 = 内边距 + 座位宽/2 + i*(座位+间距) — 定宽几何, 直接算, 不实测
     val seatTotal = NavDockSpec.itemSeat + NavDockSpec.itemGap
@@ -357,8 +384,31 @@ private fun DockNavigationBar(
     val totalWidth = NavDockSpec.itemSeat * count +
         NavDockSpec.itemGap * (count - 1) + NavDockSpec.innerPad * 2
 
-    Box(
-        modifier = modifier
+    // 玻璃路径: drawBackdrop 自带 Shadow/highlight 默认值(iOS 原生玻璃边缘高光+投影),
+    // 内部 graphicsLayer clip=true + shape → 子级(thumb/内容)天然裁进胶囊轮廓;
+    // 绘制序 = 折射背景 → onDrawSurface 色彩 tint → 子级内容, 与 iOS 玻璃栈同构。
+    // 平面路径: 原链零改动(含 elevation 12dp 投影)。
+    val surfaceModifier = if (bd != null && sdk >= 31) {
+        modifier
+            .padding(horizontal = NavDockSpec.horizontalMargin)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(bottom = NavDockSpec.bottomFloat)
+            .width(totalWidth)
+            .height(NavDockSpec.capsuleHeight)
+            .drawBackdrop(
+                backdrop = bd,
+                shape = { capsuleShape },
+                effects = {
+                    vibrancy()
+                    blur(8.dp.toPx())
+                    // 参数直采官方 demo LiquidBottomTabs: blur 8dp + lens 24dp/24dp
+                    // (lens 高度必须 ≤ 胶囊最小圆角 32dp, 24 留安全边距)
+                    if (sdk >= 33) lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = true)
+                },
+                onDrawSurface = { drawRect(glassTint) },
+            )
+    } else {
+        modifier
             .padding(horizontal = NavDockSpec.horizontalMargin)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(bottom = NavDockSpec.bottomFloat)
@@ -367,6 +417,10 @@ private fun DockNavigationBar(
             .height(NavDockSpec.capsuleHeight)
             .clip(capsuleShape)
             .background(glassBg)
+    }
+
+    Box(
+        modifier = surfaceModifier
             .onGloballyPositioned { c ->
                 onBarGeometry(c.positionInRoot().x, c.positionInRoot().y, true)
             }

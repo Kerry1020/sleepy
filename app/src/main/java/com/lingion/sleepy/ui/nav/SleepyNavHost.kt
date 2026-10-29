@@ -66,6 +66,8 @@ import androidx.navigation3.scene.Scene
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.lingion.sleepy.R
 import com.lingion.sleepy.ui.component.NavDockSpec
 import com.lingion.sleepy.ui.component.PillNavigationBar
@@ -650,12 +652,17 @@ private fun MainRoute(
         }
     } else if (navDock) {
         // Compact + 悬浮 Dock: 官方无此形态 → 保留自研 PillNavigationBar(dock=true)
+        // 液态玻璃(2026-10-28, 对齐 iOS 26 原生 TabBar): 内容层录进 backdrop,
+        // 胶囊 drawBackdrop 实时折射其下方内容(API 31+ blur / API 33+ lens,
+        // 更低版本组件内自动回落平面胶囊 — 分档语义同 iOS NavStyleResolver 悬浮档)。
         var dockExtraDp by remember { mutableStateOf(NavDockSpec.capsuleHeight + NavDockSpec.bottomFloat) }
         var dockOverlayPx by remember { mutableStateOf(0) }
         val densityForDock = LocalDensity.current
         if (dockOverlayPx > 0) {
             dockExtraDp = with(densityForDock) { dockOverlayPx.toDp() }
         }
+        // 内容快照 backdrop: 只录 MainTabs 内容层(胶囊不进快照 → 内容直通玻璃下方)
+        val navBackdrop = rememberLayerBackdrop()
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -665,7 +672,11 @@ private fun MainRoute(
             androidx.compose.runtime.CompositionLocalProvider(
                 LocalNavExtraBottomPadding provides dockExtraDp
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .layerBackdrop(navBackdrop)
+                ) {
                     MainTabs(
                         currentTab = currentTab,
                         setCurrentTab = setCurrentTab,
@@ -691,6 +702,7 @@ private fun MainRoute(
                     onSelect = { setCurrentTab(Tab.entries[it]) },
                     dock = true,
                     state = pillBarState,
+                    backdrop = navBackdrop,
                 )
             }
         }
