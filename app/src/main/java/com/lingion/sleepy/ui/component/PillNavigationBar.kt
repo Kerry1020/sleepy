@@ -488,7 +488,7 @@ private fun DockNavigationBar(
                             vibrancy()
                             blur(8.dp.toPx())
                         },
-                        onDrawSurface = { drawRect(accentColor) },
+                        onDrawSurface = { /* Layer 2 不绘制任何内容;accent tint 由 Layer 3 combinedBd 提供 */ },
                     ),
                 horizontalArrangement = Arrangement.spacedBy(NavDockSpec.itemGap, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
