@@ -423,11 +423,10 @@ private fun DockNavigationBar(
         }
     }
 
-    // ── Layer 2 backdrop ──
-    val tabsBackdrop = if (bd != null && sdk >= 31) rememberLayerBackdrop() else null
+    // ── Layer 2 backdrop (only needed when Layer 3 will consume it, i.e. API 33+) ──
+    val tabsBackdrop = if (bd != null && sdk >= 33) rememberLayerBackdrop() else null
 
     // ── Surface modifier: Layer 1 container ──
-    val pp = pressProgress.value
     val surfaceModifier = if (bd != null && sdk >= 31) {
         modifier
             .windowInsetsPadding(WindowInsets.navigationBars.only(androidx.compose.foundation.layout.WindowInsetsSides.Bottom))
@@ -437,7 +436,7 @@ private fun DockNavigationBar(
             .height(NavDockSpec.capsuleHeight)
             .graphicsLayer {
                 // 容器 press 微缩放(Kyant demo: lerp(1.0, 1+16dp/w, progress))
-                val containerScale = 1f + (16f / totalWidth.toPx()) * pp
+                val containerScale = 1f + (16f / totalWidth.toPx()) * pressProgress.value
                 scaleX = containerScale
                 scaleY = containerScale
             }
@@ -500,6 +499,7 @@ private fun DockNavigationBar(
 
         // ── Layer 3: Active tab capsule ──
         if (bd != null && sdk >= 33 && tabsBackdrop != null) {
+            val pp = pressProgress.value
             val innerShadowRadius = 8.dp * pp
             val combinedBd = rememberCombinedBackdrop(bd, tabsBackdrop)
             Box(
@@ -571,7 +571,7 @@ private fun DockNavigationBar(
                     tc - thumbHalf, tc + thumbHalf,
                     centers[i] - iconHalf, centers[i] + iconHalf
                 )
-                val tabScale = 1f + 0.2f * pp * if (isSel) 1f else 0f
+                val tabScale = 1f + 0.2f * pressProgress.value * if (isSel) 1f else 0f
 
                 Column(
                     modifier = Modifier
