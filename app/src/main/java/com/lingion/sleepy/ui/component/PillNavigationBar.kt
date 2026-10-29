@@ -105,15 +105,15 @@ val LocalNavExtraBottomPadding = compositionLocalOf { 0.dp }
 
 /** Dock 形态常量 — 对齐 iOS 26 Liquid Glass TabBar 真实测量值 */
 object NavDockSpec {
-    val horizontalMargin = 21.dp   // iOS 26: 21pt from screen edge (learnui.design)
-    val bottomFloat = 21.dp        // iOS 26: 21pt from home indicator (learnui.design)
+    val horizontalMargin = 16.dp   // iOS DockSpec: 16pt from screen edge
+    val bottomFloat = 12.dp        // iOS DockSpec: 12pt from home indicator
     val capsuleHeight = 64.dp      // iOS 26 measured 62pt, Kyant demo 64dp
-    val itemSeat = 84.dp           // iOS 26 measured ~84pt
-    val itemGap = 0.dp             // seat already includes spacing
+    val itemSeat = 56.dp           // iOS DockSpec: 56pt seat
+    val itemGap = 4.dp             // iOS DockSpec: 4pt gap between seats
     val innerPad = 4.dp            // Kyant demo padding
     val iconSize = 24.dp           // iOS 26 measured ~24pt
-    val thumbHeight = 56.dp        // Kyant demo indicator height
-    val thumbYOffset = 4.dp        // (64 - 56) / 2 = 4dp vertical centering
+    val thumbHeight = 52.dp        // iOS DockSpec: 52pt height in 64dp capsule
+    val thumbYOffset = 6.dp        // (64 - 52) / 2 = 6dp vertical centering
 }
 
 /**
@@ -366,11 +366,9 @@ private fun DockNavigationBar(
     } else {
         androidx.compose.ui.graphics.Color(0xFF121212).copy(alpha = 0.4f)
     }
-    val accentColor = if (isLight) {
-        androidx.compose.ui.graphics.Color(0xFF0088FF)
-    } else {
-        androidx.compose.ui.graphics.Color(0xFF0091FF)
-    }
+    // Use theme colors instead of hardcoded accent — secondaryContainer for thumb fill,
+    // onSecondaryContainer for selected icon/text tint
+    val selectedTint = colors.onSecondaryContainer
 
     // ── Press 动效 ──
     val pressProgress = remember { Animatable(0f) }
@@ -449,7 +447,7 @@ private fun DockNavigationBar(
                 effects = {
                     vibrancy()
                     blur(8.dp.toPx())
-                    if (sdk >= 33) lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = false)
+                    if (sdk >= 33) lens(34.dp.toPx(), 40.dp.toPx(), chromaticAberration = false)
                 },
                 onDrawSurface = { drawRect(glassTint) },
             )
@@ -481,7 +479,7 @@ private fun DockNavigationBar(
                     .fillMaxWidth()
                     .height(NavDockSpec.capsuleHeight)
                     .layerBackdrop(tabsBackdrop)
-                    .graphicsLayer(colorFilter = ColorFilter.tint(accentColor))
+                    .graphicsLayer(colorFilter = ColorFilter.tint(selectedTint))
                     .drawBackdrop(
                         backdrop = bd,
                         shape = { capsuleShape },
@@ -527,8 +525,8 @@ private fun DockNavigationBar(
                                 chromaticAberration = pp > 0.05f
                             )
                         },
-                        highlight = { Highlight.Default.copy(alpha = pressProgress.value * 0.07f) },
-                        shadow = { Shadow.Default.copy(alpha = pressProgress.value * 0.05f) },
+                        highlight = { Highlight.Default.copy(alpha = pressProgress.value * 0.45f) },
+                        shadow = { Shadow.Default.copy(alpha = pressProgress.value * 0.10f) },
                         innerShadow = {
                             val pp = pressProgress.value
                             InnerShadow(
@@ -599,7 +597,7 @@ private fun DockNavigationBar(
                                     scope.launch {
                                         pressProgress.animateTo(
                                             0f,
-                                            spring(dampingRatio = 1.0f, stiffness = 1000f)
+                                            spring(dampingRatio = 1.0f, stiffness = 300f)
                                         )
                                     }
                                 },
@@ -617,7 +615,7 @@ private fun DockNavigationBar(
                         Icon(
                             imageVector = item.icon,
                             contentDescription = null,
-                            tint = lerp(colors.onSurfaceVariant, accentColor, iconCov),
+                            tint = lerp(colors.onSurfaceVariant, selectedTint, iconCov),
                             modifier = Modifier.size(NavDockSpec.iconSize)
                         )
                         if (item.badge) {
@@ -634,7 +632,7 @@ private fun DockNavigationBar(
                         text = item.label,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
-                        color = lerp(colors.onSurfaceVariant, accentColor, iconCov)
+                        color = lerp(colors.onSurfaceVariant, selectedTint, iconCov)
                     )
                 }
             }
