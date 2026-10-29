@@ -344,10 +344,14 @@ private fun DockNavigationBar(
     // 低于 31 或调用方未给 backdrop → 走原平面 0.86 胶囊, 视觉零变化。
     val bd = backdrop
     val sdk = android.os.Build.VERSION.SDK_INT
-    // 实机微调位: tint 透明度 / 模糊半径 / 折射高度 — 参考库 demo LiquidBottomTabs
-    // (containerColor 0.4 / blur 8dp / lens 24dp); tint 用主题 surfaceContainer 保
-    // 配色体系一致, 不用 demo 写死的 #FAFAFA/#121212。
-    val glassTint = colors.surfaceContainer.copy(alpha = 0.5f)
+    // tint 直采 Kyant demo LiquidBottomTabs: light #FAFAFA / dark #121212, alpha 0.4。
+    // 不用主题 surfaceContainer(Material3 偏暖/偏饱和, 玻璃观感发灰发黄)。
+    val isLight = !androidx.compose.foundation.isSystemInDarkTheme()
+    val glassTint = if (isLight) {
+        androidx.compose.ui.graphics.Color(0xFFFAFAFA).copy(alpha = 0.4f)
+    } else {
+        androidx.compose.ui.graphics.Color(0xFF121212).copy(alpha = 0.4f)
+    }
 
     // 座位中心 = 内边距 + 座位宽/2 + i*(座位+间距) — 定宽几何, 直接算, 不实测
     val seatTotal = NavDockSpec.itemSeat + NavDockSpec.itemGap
