@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -106,14 +107,13 @@ val LocalNavExtraBottomPadding = compositionLocalOf { 0.dp }
 object NavDockSpec {
     val horizontalMargin = 21.dp   // iOS 26: 21pt from screen edge (learnui.design)
     val bottomFloat = 21.dp        // iOS 26: 21pt from home indicator (learnui.design)
-    val capsuleHeight = 56.dp      // iOS 26: ~54-56pt capsule (community measurement)
-    val itemSeat = 86.dp           // iOS 26: 86pt center-to-center (adaptive_liquid_glass)
-    val itemGap = 0.dp             // 86dp 已含间距, 不再额外加
-    val innerPad = 14.dp           // iOS 26: ~14pt internal padding
-    val iconSize = 25.dp           // iOS 26: 25pt (uiuxdesigning.com)
-    val thumbWidth = 78.dp         // Kyant demo: pressedScale = 78/56 ≈ 1.393
-    val thumbHeight = 48.dp        // 适配 56dp capsule, 上下各留 4dp
-    val thumbYOffset = 4.dp        // (56 - 48) / 2 = 4dp 垂直居中
+    val capsuleHeight = 64.dp      // iOS 26 measured 62pt, Kyant demo 64dp
+    val itemSeat = 84.dp           // iOS 26 measured ~84pt
+    val itemGap = 0.dp             // seat already includes spacing
+    val innerPad = 4.dp            // Kyant demo padding
+    val iconSize = 24.dp           // iOS 26 measured ~24pt
+    val thumbHeight = 56.dp        // Kyant demo indicator height
+    val thumbYOffset = 4.dp        // (64 - 56) / 2 = 4dp vertical centering
 }
 
 /**
@@ -352,7 +352,6 @@ private fun DockNavigationBar(
     backdrop: Backdrop? = null,
 ) {
     val count = items.size.coerceAtLeast(1)
-    val thumbHalf = with(density) { (NavDockSpec.thumbWidth / 2).toPx() }
     val iconHalf = with(density) { (NavDockSpec.iconSize / 2).toPx() }
 
     val capsuleShape = RoundedCornerShape(percent = 50)
@@ -390,6 +389,8 @@ private fun DockNavigationBar(
     }
     val effectiveInnerPad = if (useCompactLayout) 8.dp else NavDockSpec.innerPad
     val totalWidth = effectiveSeat * count + effectiveInnerPad * 2
+    val dynamicThumbWidth = totalWidth / count
+    val thumbHalf = with(density) { (dynamicThumbWidth / 2).toPx() }
 
     // ── 座位中心(RTL 感知) ──
     val isRtl = layoutDir == androidx.compose.ui.unit.LayoutDirection.Rtl
@@ -480,15 +481,16 @@ private fun DockNavigationBar(
                     .fillMaxWidth()
                     .height(NavDockSpec.capsuleHeight)
                     .layerBackdrop(tabsBackdrop)
+                    .graphicsLayer(colorFilter = ColorFilter.tint(accentColor))
                     .drawBackdrop(
                         backdrop = bd,
                         shape = { capsuleShape },
                         effects = {
-                            opacity(0f) // 隐藏视觉输出但保留 backdrop 捕获
+                            opacity(0f)
                             vibrancy()
                             blur(8.dp.toPx())
                         },
-                        onDrawSurface = { /* Layer 2 不绘制任何内容;accent tint 由 Layer 3 combinedBd 提供 */ },
+                        onDrawSurface = { /* empty — no visible drawing */ },
                     ),
                 horizontalArrangement = Arrangement.spacedBy(NavDockSpec.itemGap, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
@@ -505,12 +507,12 @@ private fun DockNavigationBar(
             Box(
                 Modifier
                     .offset(y = NavDockSpec.thumbYOffset)
-                    .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
+                    .size(width = dynamicThumbWidth, height = NavDockSpec.thumbHeight)
                     .graphicsLayer {
                         val pp = pressProgress.value
                         alpha = if (state.thumbPlaced) 1f else 0f
                         translationX = state.thumbX.value - thumbHalf
-                        val scale = 1f + (78f / 56f - 1f) * pp
+                        val scale = 1f + 0.2f * pp
                         scaleX = scale
                         scaleY = scale
                     }
@@ -525,15 +527,15 @@ private fun DockNavigationBar(
                                 chromaticAberration = pp > 0.05f
                             )
                         },
-                        highlight = { Highlight.Default.copy(alpha = pressProgress.value) },
-                        shadow = { Shadow.Default.copy(alpha = pressProgress.value) },
+                        highlight = { Highlight.Default.copy(alpha = pressProgress.value * 0.07f) },
+                        shadow = { Shadow.Default.copy(alpha = pressProgress.value * 0.05f) },
                         innerShadow = {
                             val pp = pressProgress.value
                             InnerShadow(
                                 radius = 8.dp * pp,
                                 offset = androidx.compose.ui.unit.DpOffset(0.dp, 2.dp * pp),
                                 color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.15f),
-                                alpha = pp
+                                alpha = pp * 0.08f
                             )
                         },
                         onDrawSurface = {
@@ -552,7 +554,7 @@ private fun DockNavigationBar(
             Box(
                 Modifier
                     .offset(y = NavDockSpec.thumbYOffset)
-                    .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
+                    .size(width = dynamicThumbWidth, height = NavDockSpec.thumbHeight)
                     .graphicsLayer {
                         alpha = if (state.thumbPlaced) 1f else 0f
                         translationX = state.thumbX.value - thumbHalf
@@ -615,7 +617,7 @@ private fun DockNavigationBar(
                         Icon(
                             imageVector = item.icon,
                             contentDescription = null,
-                            tint = lerp(colors.onSurfaceVariant, colors.onSecondaryContainer, iconCov),
+                            tint = lerp(colors.onSurfaceVariant, accentColor, iconCov),
                             modifier = Modifier.size(NavDockSpec.iconSize)
                         )
                         if (item.badge) {
@@ -632,7 +634,7 @@ private fun DockNavigationBar(
                         text = item.label,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
-                        color = lerp(colors.onSurfaceVariant, colors.onSecondaryContainer, iconCov)
+                        color = lerp(colors.onSurfaceVariant, accentColor, iconCov)
                     )
                 }
             }
