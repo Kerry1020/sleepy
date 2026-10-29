@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +43,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
@@ -56,8 +59,15 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.Shadow
+import com.kyant.backdrop.shadow.InnerShadow
 import com.lingion.sleepy.ui.theme.SleepyTheme
 import com.lingion.sleepy.ui.theme.noRippleClickable
+import kotlinx.coroutines.launch
 
 /**
  * 底栏单项数据。v2 起组件内部要管理 thumb 滑块几何(目标位置/逐字符扫过变色),
@@ -89,14 +99,18 @@ class PillBarState {
  */
 val LocalNavExtraBottomPadding = compositionLocalOf { 0.dp }
 
-/** Dock 形态常量 — 悬浮几何三处共用(组件本体/滚动余量换算/维护锚点) */
+/** Dock 形态常量 — 对齐 iOS 26 Liquid Glass TabBar 真实测量值 */
 object NavDockSpec {
-    val horizontalMargin = 16.dp   // 左右距屏幕边缘
-    val bottomFloat = 12.dp        // 胶囊底边再悬于手势条上方的高度
-    val capsuleHeight = 64.dp      // 胶囊本体高(icon+label 双行, 比贴底 76dp 收一档)
-    val itemSeat = 56.dp           // 每 tab 座位宽(≥48dp 触摸目标)
-    val itemGap = 4.dp             // 座位间距
-    val innerPad = 8.dp            // 胶囊内边距
+    val horizontalMargin = 21.dp   // iOS 26: 21pt from screen edge (learnui.design)
+    val bottomFloat = 21.dp        // iOS 26: 21pt from home indicator (learnui.design)
+    val capsuleHeight = 56.dp      // iOS 26: ~54-56pt capsule (community measurement)
+    val itemSeat = 86.dp           // iOS 26: 86pt center-to-center (adaptive_liquid_glass)
+    val itemGap = 0.dp             // 86dp 已含间距, 不再额外加
+    val innerPad = 14.dp           // iOS 26: ~14pt internal padding
+    val iconSize = 25.dp           // iOS 26: 25pt (uiuxdesigning.com)
+    val thumbWidth = 78.dp         // Kyant demo: pressedScale = 78/56 ≈ 1.393
+    val thumbHeight = 48.dp        // 适配 56dp capsule, 上下各留 4dp
+    val thumbYOffset = 4.dp        // (56 - 48) / 2 = 4dp 垂直居中
 }
 
 /**
@@ -304,18 +318,22 @@ private fun intervalCoverage(aStart: Float, aEnd: Float, bStart: Float, bEnd: Fl
 }
 
 /**
- * Dock 悬浮胶囊(独立组件, 由 PillNavigationBar dock=true 分流进入)。
- * 用户定版(2026-09-04): 悬浮形态 + icon+label 双行(与贴底一致), thumb 色块包住图标,
- * 顶部收一点 — 高 64dp, 座位 56dp 宽, thumb 48×40 罩住 24dp 图标, label 8dp 字号在下。
+ * Dock 悬浮胶囊 — 全量对齐 iOS 26 Liquid Glass TabBar (2026-10-29 v3)
  *
- * 液态玻璃(2026-10-28, 对齐 iOS 26 原生 TabBar): 调用方给 backdrop(内容层快照)时,
- * 胶囊表面 = vibrancy 提饱和 + blur + lens 边缘折射(Kyant Backdrop AGSL),
- * thumb/图标/label 浮在折射之上。分档(与 iOS NavStyleResolver 悬浮档自动分档同构):
- * - API 33+(RuntimeShader): 全量玻璃(lens 折射 24dp + blur 8dp + vibrancy)
- * - API 31–32(RenderEffect 无 shader): 半玻璃 = vibrancy+blur 8, 无折射
- * - API ≤30 或 backdrop=null: 平面 0.86 胶囊(原实现)
- * 投影用库的 Shadow/highlight/innerShadow drawBackdrop 默认值(iOS 原生玻璃边缘高光
- * 语义), 不再走 Compose elevation 阴影。
+ * 三层结构(参照 Kyant Backdrop demo LiquidBottomTabs):
+ *   Layer 1: 外层容器(56dp) — vibrancy + blur 8dp + lens 24/24 + tint
+ *   Layer 2: Tabs backdrop(48dp, alpha=0) — accent tint backdrop 源
+ *   Layer 3: 活动 tab 胶囊(48dp, 滑动) — lens 10/14 + chromaticAberration +
+ *            highlight + shadow + innerShadow + surfaceTint, 全部 * pressProgress
+ *
+ * Press 动效: touchDown → pressProgress=1 (spring 0.5/300),
+ *             touchUp → pressProgress=0 (spring 1.0/1000)
+ *             驱动 Layer 3 效果强度 + tab scale lerp(1.0, 1.2)
+ *
+ * 几何对齐 iOS 26 真实测量: 21dp 边距, 86dp tab 间距, 56dp capsule,
+ * 25dp icon, 11sp label。
+ *
+ * API 分档: 33+ 全量 / 31-32 blur 半玻璃 / ≤30 平面胶囊
  */
 @Composable
 private fun DockNavigationBar(
@@ -331,33 +349,35 @@ private fun DockNavigationBar(
 ) {
     val count = items.size.coerceAtLeast(1)
     val seatHalf = with(density) { (NavDockSpec.itemSeat / 2).toPx() }
-    val iconHalf = with(density) { 12.dp.toPx() }
-
-    // Dock 与贴底共用外部状态,避免 Main entry 重建时高亮从课表 tab 闪现。
-    // 定宽几何 Seat 中心已知,首帧直接对齐 state.thumbX 与 state.thumbCenter。
+    val iconHalf = with(density) { (NavDockSpec.iconSize / 2).toPx() }
 
     val capsuleShape = RoundedCornerShape(percent = 50)
     val glassBg = colors.surfaceContainer.copy(alpha = 0.86f)
 
-    // ── 玻璃分档(对齐 iOS 26 原生 TabBar 语义, 悬浮档内自动分档) ──
-    // vibrancy+blur 需 RenderEffect(API 31+), lens 折射需 RuntimeShader(API 33+);
-    // 低于 31 或调用方未给 backdrop → 走原平面 0.86 胶囊, 视觉零变化。
+    // ── 玻璃分档 ──
     val bd = backdrop
     val sdk = android.os.Build.VERSION.SDK_INT
-    // tint 直采 Kyant demo LiquidBottomTabs: light #FAFAFA / dark #121212, alpha 0.4。
-    // 不用主题 surfaceContainer(Material3 偏暖/偏饱和, 玻璃观感发灰发黄)。
     val isLight = !androidx.compose.foundation.isSystemInDarkTheme()
     val glassTint = if (isLight) {
         androidx.compose.ui.graphics.Color(0xFFFAFAFA).copy(alpha = 0.4f)
     } else {
         androidx.compose.ui.graphics.Color(0xFF121212).copy(alpha = 0.4f)
     }
+    // Accent tint for Layer 2 (Kyant demo: #0088FF light / #0091FF dark)
+    val accentColor = if (isLight) {
+        androidx.compose.ui.graphics.Color(0xFF0088FF)
+    } else {
+        androidx.compose.ui.graphics.Color(0xFF0091FF)
+    }
 
-    // 座位中心 = 内边距 + 座位宽/2 + i*(座位+间距) — 定宽几何, 直接算, 不实测
-    val seatTotal = NavDockSpec.itemSeat + NavDockSpec.itemGap
+    // ── Press 动效 ──
+    val pressProgress = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
+    // ── 座位中心(定宽几何, 直接算) ──
     val centers = List(count) { i ->
         with(density) {
-            (NavDockSpec.innerPad + NavDockSpec.itemSeat / 2 + seatTotal * i).toPx()
+            (NavDockSpec.innerPad + NavDockSpec.itemSeat / 2 + NavDockSpec.itemSeat * i).toPx()
         }
     }
 
@@ -385,13 +405,12 @@ private fun DockNavigationBar(
         }
     }
 
-    val totalWidth = NavDockSpec.itemSeat * count +
-        NavDockSpec.itemGap * (count - 1) + NavDockSpec.innerPad * 2
+    val totalWidth = NavDockSpec.itemSeat * count + NavDockSpec.innerPad * 2
 
-    // 玻璃路径: drawBackdrop 自带 Shadow/highlight 默认值(iOS 原生玻璃边缘高光+投影),
-    // 内部 graphicsLayer clip=true + shape → 子级(thumb/内容)天然裁进胶囊轮廓;
-    // 绘制序 = 折射背景 → onDrawSurface 色彩 tint → 子级内容, 与 iOS 玻璃栈同构。
-    // 平面路径: 原链零改动(含 elevation 12dp 投影)。
+    // ── Layer 2: Tabs backdrop (accent tint source, alpha=0 invisible) ──
+    val tabsBackdrop = rememberLayerBackdrop()
+
+    // ── Surface modifier: Layer 1 container ──
     val surfaceModifier = if (bd != null && sdk >= 31) {
         modifier
             .padding(horizontal = NavDockSpec.horizontalMargin)
@@ -405,9 +424,7 @@ private fun DockNavigationBar(
                 effects = {
                     vibrancy()
                     blur(8.dp.toPx())
-                    // 参数直采官方 demo LiquidBottomTabs: blur 8dp + lens 24dp/24dp
-                    // (lens 高度必须 ≤ 胶囊最小圆角 32dp, 24 留安全边距)
-                    if (sdk >= 33) lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = true)
+                    if (sdk >= 33) lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = false)
                 },
                 onDrawSurface = { drawRect(glassTint) },
             )
@@ -416,7 +433,9 @@ private fun DockNavigationBar(
             .padding(horizontal = NavDockSpec.horizontalMargin)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(bottom = NavDockSpec.bottomFloat)
-            .shadow(elevation = 12.dp, shape = capsuleShape, clip = false, ambientColor = androidx.compose.ui.graphics.Color.Black, spotColor = androidx.compose.ui.graphics.Color.Black)
+            .shadow(elevation = 12.dp, shape = capsuleShape, clip = false,
+                ambientColor = androidx.compose.ui.graphics.Color.Black,
+                spotColor = androidx.compose.ui.graphics.Color.Black)
             .width(totalWidth)
             .height(NavDockSpec.capsuleHeight)
             .clip(capsuleShape)
@@ -429,22 +448,96 @@ private fun DockNavigationBar(
                 onBarGeometry(c.positionInRoot().x, c.positionInRoot().y, true)
             }
     ) {
-        // thumb 色块包住整个座位(图标+文字全包, 不留半包): 56×52dp, y=6dp 起
-        // 座位内容(图标24+间距2+label~14=40dp)垂直居中于 64dp → 内容顶 12dp;
-        // thumb 6..58dp 完整罩住内容, 上下各留 6dp 呼吸, 不破胶囊轮廓
-        // 横向定位: translationX = thumbX - seatHalf(28) → thumb 中心 = 座位中心
-        Box(
-            Modifier
-                .offset(y = 6.dp)
-                .size(width = NavDockSpec.itemSeat, height = 52.dp)
-                .graphicsLayer {
-                    alpha = if (state.thumbPlaced) 1f else 0f
-                    translationX = state.thumbX.value - seatHalf
-                    translationY = 0f
+        // ── Layer 2: invisible tabs backdrop with accent tint ──
+        if (bd != null && sdk >= 31) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(NavDockSpec.capsuleHeight)
+                    .graphicsLayer { alpha = 0f }
+                    .layerBackdrop(tabsBackdrop)
+                    .drawBackdrop(
+                        backdrop = bd,
+                        shape = { capsuleShape },
+                        effects = {
+                            vibrancy()
+                            blur(8.dp.toPx())
+                            if (sdk >= 33) lens(
+                                24.dp.toPx() * pressProgress.value,
+                                24.dp.toPx() * pressProgress.value
+                            )
+                        },
+                        onDrawSurface = { drawRect(accentColor) },
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(NavDockSpec.itemGap, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { i, _ ->
+                    Box(Modifier.size(NavDockSpec.itemSeat, NavDockSpec.capsuleHeight))
                 }
-                .clip(RoundedCornerShape(percent = 50))
-                .background(colors.secondaryContainer)
-        )
+            }
+        }
+
+        // ── Layer 3: Active tab capsule (glass lens, slides with thumb) ──
+        if (bd != null && sdk >= 33) {
+            val pp = pressProgress.value
+            val innerShadowRadius = 8.dp * pp
+            Box(
+                Modifier
+                    .offset(y = NavDockSpec.thumbYOffset)
+                    .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
+                    .graphicsLayer {
+                        alpha = if (state.thumbPlaced) 1f else 0f
+                        translationX = state.thumbX.value - seatHalf
+                        val scale = 1f + (78f / 56f - 1f) * pp
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .drawBackdrop(
+                        backdrop = rememberCombinedBackdrop(bd, tabsBackdrop),
+                        shape = { RoundedCornerShape(percent = 50) },
+                        effects = {
+                            lens(
+                                10.dp.toPx() * pp,
+                                14.dp.toPx() * pp,
+                                chromaticAberration = pp > 0.01f
+                            )
+                        },
+                        highlight = { Highlight.Default.copy(alpha = pp) },
+                        shadow = { Shadow.Default.copy(alpha = pp) },
+                        innerShadow = {
+                            InnerShadow.Default.copy(
+                                radius = innerShadowRadius,
+                                alpha = pp
+                            )
+                        },
+                        onDrawSurface = {
+                            val surfaceAlpha = (1f - pp)
+                            drawRect(
+                                if (isLight) androidx.compose.ui.graphics.Color.Black.copy(0.1f)
+                                else androidx.compose.ui.graphics.Color.White.copy(0.1f),
+                                alpha = surfaceAlpha
+                            )
+                            drawRect(androidx.compose.ui.graphics.Color.Black.copy(0.03f * pp))
+                        },
+                    )
+            )
+        } else {
+            // Fallback thumb (no glass): secondaryContainer color block
+            Box(
+                Modifier
+                    .offset(y = NavDockSpec.thumbYOffset)
+                    .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
+                    .graphicsLayer {
+                        alpha = if (state.thumbPlaced) 1f else 0f
+                        translationX = state.thumbX.value - seatHalf
+                    }
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(colors.secondaryContainer)
+            )
+        }
+
+        // ── Tab content (icons + labels) ──
         Row(
             modifier = Modifier.fillMaxWidth().height(NavDockSpec.capsuleHeight),
             horizontalArrangement = Arrangement.spacedBy(NavDockSpec.itemGap, Alignment.CenterHorizontally),
@@ -457,10 +550,36 @@ private fun DockNavigationBar(
                     tc - seatHalf, tc + seatHalf,
                     centers[i] - iconHalf, centers[i] + iconHalf
                 )
+                val pp = pressProgress.value
+                val tabScale = 1f + 0.2f * pp * if (isSel) 1f else 0f
+
                 Column(
                     modifier = Modifier
                         .size(NavDockSpec.itemSeat, NavDockSpec.capsuleHeight)
-                        .noRippleClickable { onSelect(i) }
+                        .graphicsLayer {
+                            scaleX = tabScale
+                            scaleY = tabScale
+                        }
+                        .pointerInput(i) {
+                            detectTapGestures(
+                                onPress = {
+                                    scope.launch {
+                                        pressProgress.animateTo(
+                                            1f,
+                                            spring(dampingRatio = 0.5f, stiffness = 300f)
+                                        )
+                                    }
+                                    tryAwaitRelease()
+                                    scope.launch {
+                                        pressProgress.animateTo(
+                                            0f,
+                                            spring(dampingRatio = 1.0f, stiffness = 1000f)
+                                        )
+                                    }
+                                },
+                                onTap = { onSelect(i) }
+                            )
+                        }
                         .semantics {
                             role = Role.Tab
                             selected = isSel
@@ -473,7 +592,7 @@ private fun DockNavigationBar(
                             imageVector = item.icon,
                             contentDescription = null,
                             tint = lerp(colors.onSurfaceVariant, colors.onSecondaryContainer, iconCov),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(NavDockSpec.iconSize)
                         )
                         if (item.badge) {
                             Box(
