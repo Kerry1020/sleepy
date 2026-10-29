@@ -366,7 +366,7 @@ object AppPrefs {
 
     /** 底栏形态: false=贴底(默认), true=悬浮药丸 Dock */
     fun isNavDock(ctx: Context): Boolean =
-        sp(ctx).getBoolean(KEY_NAV_DOCK, false)
+        sp(ctx).getBoolean(KEY_NAV_DOCK, true) // 默认悬浮(对齐 iOS 26 原生 TabBar)
 
     fun setNavDock(ctx: Context, value: Boolean) {
         sp(ctx).edit().putBoolean(KEY_NAV_DOCK, value).apply()
