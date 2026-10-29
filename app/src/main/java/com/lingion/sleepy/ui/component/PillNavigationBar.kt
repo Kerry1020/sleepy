@@ -349,6 +349,7 @@ private fun DockNavigationBar(
 ) {
     val count = items.size.coerceAtLeast(1)
     val seatHalf = with(density) { (NavDockSpec.itemSeat / 2).toPx() }
+    val thumbHalf = with(density) { (NavDockSpec.thumbWidth / 2).toPx() }
     val iconHalf = with(density) { (NavDockSpec.iconSize / 2).toPx() }
 
     val capsuleShape = RoundedCornerShape(percent = 50)
@@ -405,7 +406,14 @@ private fun DockNavigationBar(
         }
     }
 
-    val totalWidth = NavDockSpec.itemSeat * count + NavDockSpec.innerPad * 2
+    // 窄屏守卫: 4 tab × 86dp + 2×14dp = 372dp, <380dp 屏幕回落等分
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidthDp = config.screenWidthDp.dp
+    val useCompactLayout = screenWidthDp < 380.dp
+    val effectiveSeat = if (useCompactLayout) screenWidthDp / count else NavDockSpec.itemSeat
+    val effectiveInnerPad = if (useCompactLayout) 8.dp else NavDockSpec.innerPad
+
+    val totalWidth = effectiveSeat * count + effectiveInnerPad * 2
 
     // ── Layer 2: Tabs backdrop (accent tint source, alpha=0 invisible) ──
     val tabsBackdrop = rememberLayerBackdrop()
@@ -482,19 +490,20 @@ private fun DockNavigationBar(
         if (bd != null && sdk >= 33) {
             val pp = pressProgress.value
             val innerShadowRadius = 8.dp * pp
+            val combinedBd = rememberCombinedBackdrop(bd, tabsBackdrop)
             Box(
                 Modifier
                     .offset(y = NavDockSpec.thumbYOffset)
                     .size(width = NavDockSpec.thumbWidth, height = NavDockSpec.thumbHeight)
                     .graphicsLayer {
                         alpha = if (state.thumbPlaced) 1f else 0f
-                        translationX = state.thumbX.value - seatHalf
+                        translationX = state.thumbX.value - thumbHalf
                         val scale = 1f + (78f / 56f - 1f) * pp
                         scaleX = scale
                         scaleY = scale
                     }
                     .drawBackdrop(
-                        backdrop = rememberCombinedBackdrop(bd, tabsBackdrop),
+                        backdrop = combinedBd,
                         shape = { RoundedCornerShape(percent = 50) },
                         effects = {
                             lens(
@@ -506,8 +515,10 @@ private fun DockNavigationBar(
                         highlight = { Highlight.Default.copy(alpha = pp) },
                         shadow = { Shadow.Default.copy(alpha = pp) },
                         innerShadow = {
-                            InnerShadow.Default.copy(
+                            InnerShadow(
                                 radius = innerShadowRadius,
+                                offset = androidx.compose.ui.unit.DpOffset(0.dp, innerShadowRadius),
+                                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.15f),
                                 alpha = pp
                             )
                         },
