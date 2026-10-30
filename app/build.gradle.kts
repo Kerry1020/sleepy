@@ -229,6 +229,11 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.coil.compose)
 
+    // HCT 色调运算 (液态玻璃暗色 tint / 镜片托盘), 移植自 FLClash 的
+    // material-color-utilities Hct; com.google.android.material:material-color-utilities
+    // 不存在于任何 Maven 仓库, 故用 API 等价的 studio.lunabee.compose 分发包。
+    implementation(libs.material.color.utilities)
+
     // Test
     testImplementation(libs.junit)
     testImplementation(libs.junit.params)
