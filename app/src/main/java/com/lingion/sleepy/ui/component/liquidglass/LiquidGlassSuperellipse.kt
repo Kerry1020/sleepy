@@ -516,22 +516,6 @@ internal object LiquidGlassSuperellipse {
         data object Close : PathOp
     }
 
-    /**
-     * 将指令序列回放到 Android `Compose` 路径上。
-     * 对应 FLClash 的 `Path` 回放（`moveTo`/`lineTo`/`cubicTo`/`close`），
-     * 仅转发顶点，不做任何几何改动。
-     */
-    internal fun List<PathOp>.toAndroidPath(path: android.graphics.Path) {
-        for (op in this) {
-            when (op) {
-                is PathOp.Move -> path.moveTo(op.x, op.y)
-                is PathOp.Line -> path.lineTo(op.x, op.y)
-                is PathOp.Cubic -> path.cubicTo(op.c1x, op.c1y, op.c2x, op.c2y, op.x, op.y)
-                is PathOp.Close -> path.close()
-            }
-        }
-    }
-
     // ---------------------------------------------------------------------
     // 入口
     // ---------------------------------------------------------------------
@@ -654,13 +638,22 @@ internal object LiquidGlassSuperellipse {
         else -> value
     }
 
-    /** 对应引擎的 `FindCircleCenter`。 */
+    /**
+     * 对应引擎的 `FindCircleCenter`。
+     *
+     * 引擎在 `-O2` 构建下把 `r*r - distanceAm*distanceAm` 缩缩约为一次
+     * 融合乘-减（FMA），复现 `golden_labelled.txt`；`-ffp-contract=off`
+     * 构建给出未缩缩约的结果，对应 `golden_labelled_nofma.txt`。
+     *
+     * 此处用 `java.lang.Math.fma(-d, d, r*r)` 对准引擎的默认 `-O2` 行为。
+     * `Math.fma` 是 API 24+，minSdk 26 的应用安全调用。
+     */
     private fun findCircleCenter(a: Vec, b: Vec, r: Float): Vec {
         val aToB = b - a
         val m = (a + b) * 0.5f
         val cToM = Vec(-aToB.y, aToB.x)
         val distanceAm = aToB.length() / 2f
-        val distanceCm = sqrt(r * r - distanceAm * distanceAm)
+        val distanceCm = sqrt(Math.fma(-distanceAm, distanceAm, r * r))
         return m - cToM.normalize() * distanceCm
     }
 
@@ -924,5 +917,23 @@ internal object LiquidGlassSuperellipse {
             (1f - frac) * kBezierFactors[left * 2] + frac * kBezierFactors[(left + 1) * 2],
             (1f - frac) * kBezierFactors[left * 2 + 1] + frac * kBezierFactors[(left + 1) * 2 + 1],
         )
+    }
+}
+
+/**
+ * 将 [LiquidGlassSuperellipse.PathOp] 序列回放到 Android `Compose` 路径上。
+ *
+ * 对应 FLClash 的 `Path` 回放（`moveTo`/`lineTo`/`cubicTo`/`close`），
+ * 仅转发顶点，不做任何几何改动。声明为顶层扩展而非成员，方便来自另一
+ * module 的调用方直导 `ops.toAndroidPath(path)`。
+ */
+internal fun List<LiquidGlassSuperellipse.PathOp>.toAndroidPath(path: android.graphics.Path) {
+    for (op in this) {
+        when (op) {
+            is LiquidGlassSuperellipse.PathOp.Move -> path.moveTo(op.x, op.y)
+            is LiquidGlassSuperellipse.PathOp.Line -> path.lineTo(op.x, op.y)
+            is LiquidGlassSuperellipse.PathOp.Cubic -> path.cubicTo(op.c1x, op.c1y, op.c2x, op.c2y, op.x, op.y)
+            is LiquidGlassSuperellipse.PathOp.Close -> path.close()
+        }
     }
 }
